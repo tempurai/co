@@ -11,7 +11,7 @@ type awaiter struct {
 	responses []interface{}
 }
 
-func Await(handlers ...func() interface{}) []interface{} {
+func AwaitAll(handlers ...func() interface{}) []interface{} {
 	w := &awaiter{
 		handlers:  make([]awaitHandler, len(handlers)),
 		responses: make([]interface{}, len(handlers)),
@@ -33,4 +33,34 @@ func Await(handlers ...func() interface{}) []interface{} {
 
 	wg.Wait()
 	return w.responses
+}
+
+func AwaitRace(handlers ...func() (interface{}, error)) interface{} {
+	resp := make(chan interface{})
+
+	for i := range handlers {
+		go func(i int) {
+			val, err := handlers[i]()
+			if err != nil {
+				return
+			}
+			resp <- val
+		}(i)
+	}
+
+	return <-resp
+}
+
+func AwaitAny(handlers ...func() interface{}) interface{} {
+	wrappedHandlers := make([]func() (interface{}, error), 0)
+
+	for i := range handlers {
+		func(i int) {
+			wrappedHandlers[i] = func() (interface{}, error) {
+				return handlers[i](), nil
+			}
+		}(i)
+	}
+
+	return AwaitRace(wrappedHandlers...)
 }
