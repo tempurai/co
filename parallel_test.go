@@ -29,6 +29,28 @@ func TestParallel(t *testing.T) {
 	})
 }
 
+func TestParallelWithResponse(t *testing.T) {
+	Convey("given a sequential tasks", t, func() {
+		p := co.NewParallelWithResponse(10)
+		for i := 0; i < 10000; i++ {
+			i := i
+			p.AddWithResponse(func() interface{} {
+				return i + 1
+			})
+		}
+
+		Convey("On wait", func() {
+			vals := p.Wait()
+
+			Convey("Each response should be valid", func() {
+				for i := 0; i < 10000; i++ {
+					So(vals[i], ShouldEqual, i + 1)
+				}
+			})
+		})
+	})
+}
+
 func TestParallelSeparatedAdd(t *testing.T) {
 	Convey("given a sequential tasks", t, func() {
 		markers := make([]bool, 10000)

@@ -19,7 +19,7 @@ func NewParallel(workers int) *parallelDispatcher {
 	}
 
 	for i := 0; i < d.maxWorkers; i++ {
-		worker := newParallelWorker(d.workerPool, d.wg)
+		worker := newParallelWorker(d)
 		d.workers = append(d.workers, worker)
 		worker.start()
 	}
@@ -28,7 +28,16 @@ func NewParallel(workers int) *parallelDispatcher {
 	return d
 }
 
-type payload func() ()
+func NewParallelWithResponse(workers int) *parallelDispatcher {
+	d := NewParallel(workers)
+	d.ifResponse = true
+	return d
+}
+
+type payload struct {
+	job func() interface{}
+	seq int
+}
 
 type parallelDispatcher struct {
 	workerPool chan chan payload // received empty job queue
@@ -38,10 +47,14 @@ type parallelDispatcher struct {
 	workers    []parallelWorker
 
 	mux       sync.Mutex // mutex of queue
-	queueCond sync.Cond // condition variable for queue
+	queueCond sync.Cond  // condition variable for queue
 	queue     *list.List
 
 	wg *sync.WaitGroup
+
+	ifResponse   bool
+	responses    []interface{} // record response
+	responsesMux sync.Mutex    // prevent concurrent write since no idea size of job
 }
 
 func (d *parallelDispatcher) listen() {
@@ -74,19 +87,33 @@ func (d *parallelDispatcher) listen() {
 	}()
 }
 
-func (d *parallelDispatcher) Add(job payload) {
+func (d *parallelDispatcher) Add(job func()) {
+	d.AddWithResponse(func() interface{} {
+		job()
+		return nil
+	})
+}
+
+func (d *parallelDispatcher) AddWithResponse(job func() interface{}) {
 	d.wg.Add(1)
+
+	if d.ifResponse {
+		d.responsesMux.Lock()
+		defer d.responsesMux.Unlock()
+		d.responses = append(d.responses, nil)
+	}
 
 	d.mux.Lock()
 	defer d.mux.Unlock()
 
-	d.queue.PushBack(job)
+	d.queue.PushBack(payload{job: job, seq: len(d.responses) - 1})
 	d.queueCond.Signal()
 }
 
-func (d *parallelDispatcher) Wait() {
+func (d *parallelDispatcher) Wait() []interface{} {
 	d.wg.Wait()
 	d.Stop()
+	return d.responses
 }
 
 func (d *parallelDispatcher) Stop() {
@@ -100,33 +127,38 @@ func (d *parallelDispatcher) Stop() {
 }
 
 type parallelWorker struct {
-	workerPool chan chan payload
+	dispatcher *parallelDispatcher
 	jobChannel chan payload
 	quit       chan bool
-	wg         *sync.WaitGroup
 }
 
-func newParallelWorker(workerPool chan chan payload, wg *sync.WaitGroup) parallelWorker {
+func newParallelWorker(d *parallelDispatcher) parallelWorker {
 	return parallelWorker{
-		workerPool: workerPool,
+		dispatcher: d,
 		jobChannel: make(chan payload),
 		quit:       make(chan bool),
-		wg:         wg,
 	}
 }
 
 func (w parallelWorker) start() {
 	go func() {
 		for {
-			w.workerPool <- w.jobChannel
+			w.dispatcher.workerPool <- w.jobChannel
 
 			select {
 			case <-w.quit:
 				return
 
-			case job := <-w.jobChannel:
-				job() // fire
-				w.wg.Done()
+			case load := <-w.jobChannel:
+				resp := load.job() // fire
+
+				if w.dispatcher.ifResponse {
+					w.dispatcher.responsesMux.Lock()
+					w.dispatcher.responses[load.seq] = resp
+					w.dispatcher.responsesMux.Unlock()
+				}
+
+				w.dispatcher.wg.Done()
 			}
 		}
 	}()
