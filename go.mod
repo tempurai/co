@@ -1,4 +1,4 @@
-module github.com/tempera-shrimp/co
+module github.com/tempura-shrimp/co
 
 go 1.13
 
