@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"github.com/tempera-shrimp/co"
+	"github.com/tempura-shrimp/co"
 )
 
 func TestParallel(t *testing.T) {
@@ -45,7 +45,7 @@ func TestParallelWithResponse(t *testing.T) {
 
 			Convey("Each response should be valid", func() {
 				for i := 0; i < 10000; i++ {
-					So(vals[i], ShouldEqual, i + 1)
+					So(vals[i], ShouldEqual, i+1)
 				}
 			})
 		})

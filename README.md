@@ -26,7 +26,7 @@ https://godoc.org/github.com/tempura-shrimp/co
 p := co.NewParallelWithResponse(10) // worker size
 for i := 0; i < 10000; i++ {
     i := i
-    p.AddWithResponse(func() interface{} {
+    p.AddWithResponse[int](func() interface{} {
         return i + 1
     })
 }
@@ -40,13 +40,13 @@ vals := p.Wait()
 
 ```golang
 
-handlers := make([]func() interface{}, 0)
+handlers := make([]func() int, 0)
 for i := 0; i < 1000; i++ {
     i := i
-    handlers = append(handlers, func() interface{} {
+    handlers = append(handlers, func() int {
         return i + 1
     })
 }
 
-responses := co.AwaitAll(handlers...)
+responses := co.AwaitAll[int](handlers...)
 ```

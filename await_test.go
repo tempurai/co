@@ -1,11 +1,12 @@
 package co_test
 
 import (
-	. "github.com/smartystreets/goconvey/convey"
-	"github.com/tempera-shrimp/co"
 	"runtime"
 	"testing"
 	"time"
+
+	. "github.com/smartystreets/goconvey/convey"
+	"github.com/tempura-shrimp/co"
 )
 
 func TestAwaitAll(t *testing.T) {
