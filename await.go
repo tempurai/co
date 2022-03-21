@@ -4,17 +4,17 @@ import (
 	"sync"
 )
 
-type awaitHandler func() interface{}
+type awaitHandler[K any] func() K
 
-type awaiter struct {
-	handlers  []awaitHandler
-	responses []interface{}
+type awaiter[T any] struct {
+	handlers  []awaitHandler[T]
+	responses []T
 }
 
-func AwaitAll(handlers ...func() interface{}) []interface{} {
-	w := &awaiter{
-		handlers:  make([]awaitHandler, len(handlers)),
-		responses: make([]interface{}, len(handlers)),
+func AwaitAll[K any](handlers ...func() K) []K {
+	w := &awaiter[K]{
+		handlers:  make([]awaitHandler[K], len(handlers)),
+		responses: make([]K, len(handlers)),
 	}
 
 	wg := sync.WaitGroup{}
@@ -35,8 +35,8 @@ func AwaitAll(handlers ...func() interface{}) []interface{} {
 	return w.responses
 }
 
-func AwaitRace(handlers ...func() (interface{}, error)) interface{} {
-	resp := make(chan interface{})
+func AwaitRace[K any](handlers ...func() (K, error)) K {
+	resp := make(chan K)
 
 	for i := range handlers {
 		go func(i int) {
@@ -51,12 +51,12 @@ func AwaitRace(handlers ...func() (interface{}, error)) interface{} {
 	return <-resp
 }
 
-func AwaitAny(handlers ...func() interface{}) interface{} {
-	wrappedHandlers := make([]func() (interface{}, error), 0)
+func AwaitAny[K any](handlers ...func() K) K {
+	wrappedHandlers := make([]func() (K, error), 0)
 
 	for i := range handlers {
 		func(i int) {
-			wrappedHandlers[i] = func() (interface{}, error) {
+			wrappedHandlers[i] = func() (K, error) {
 				return handlers[i](), nil
 			}
 		}(i)

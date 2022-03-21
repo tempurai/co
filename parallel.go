@@ -5,9 +5,20 @@ import (
 	"sync"
 )
 
-func NewParallel(workers int) *parallelDispatcher {
-	d := &parallelDispatcher{
-		workerPool: make(chan chan payload, workers),
+func NewParallel(workers int) *parallelDispatcher[int] {
+	d := createBaseParallel[int](workers)
+	return d
+}
+
+func NewParallelWithResponse[K any](workers int) *parallelDispatcher[K] {
+	d := createBaseParallel[K](workers)
+	d.ifResponse = true
+	return d
+}
+
+func createBaseParallel[K any](workers int) *parallelDispatcher[K] {
+	d := &parallelDispatcher[K]{
+		workerPool: make(chan chan payload[K], workers),
 		quit:       make(chan bool),
 
 		maxWorkers: workers,
@@ -28,23 +39,17 @@ func NewParallel(workers int) *parallelDispatcher {
 	return d
 }
 
-func NewParallelWithResponse(workers int) *parallelDispatcher {
-	d := NewParallel(workers)
-	d.ifResponse = true
-	return d
-}
-
-type payload struct {
-	job func() interface{}
+type payload[K any] struct {
+	job func() K
 	seq int
 }
 
-type parallelDispatcher struct {
-	workerPool chan chan payload // received empty job queue
+type parallelDispatcher[K any] struct {
+	workerPool chan chan payload[K] // received empty job queue
 	quit       chan bool
 
 	maxWorkers int
-	workers    []parallelWorker
+	workers    []parallelWorker[K]
 
 	mux       sync.Mutex // mutex of queue
 	queueCond sync.Cond  // condition variable for queue
@@ -53,11 +58,11 @@ type parallelDispatcher struct {
 	wg *sync.WaitGroup
 
 	ifResponse   bool
-	responses    []interface{} // record response
-	responsesMux sync.Mutex    // prevent concurrent write since no idea size of job
+	responses    []K        // record response
+	responsesMux sync.Mutex // prevent concurrent write since no idea size of job
 }
 
-func (d *parallelDispatcher) listen() {
+func (d *parallelDispatcher[K]) listen() {
 	go func() {
 		for {
 			select {
@@ -78,7 +83,7 @@ func (d *parallelDispatcher) listen() {
 				d.mux.Lock()
 
 				el := d.queue.Front()
-				jobChannel <- el.Value.(payload)
+				jobChannel <- el.Value.(payload[K])
 				d.queue.Remove(el)
 
 				d.mux.Unlock()
@@ -87,36 +92,36 @@ func (d *parallelDispatcher) listen() {
 	}()
 }
 
-func (d *parallelDispatcher) Add(job func()) {
-	d.AddWithResponse(func() interface{} {
+func (d *parallelDispatcher[K]) Add(job func()) {
+	d.AddWithResponse(func() K {
 		job()
-		return nil
+		return *new(K)
 	})
 }
 
-func (d *parallelDispatcher) AddWithResponse(job func() interface{}) {
+func (d *parallelDispatcher[K]) AddWithResponse(job func() K) {
 	d.wg.Add(1)
 
 	if d.ifResponse {
 		d.responsesMux.Lock()
 		defer d.responsesMux.Unlock()
-		d.responses = append(d.responses, nil)
+		d.responses = append(d.responses, *new(K))
 	}
 
 	d.mux.Lock()
 	defer d.mux.Unlock()
 
-	d.queue.PushBack(payload{job: job, seq: len(d.responses) - 1})
+	d.queue.PushBack(payload[K]{job: job, seq: len(d.responses) - 1})
 	d.queueCond.Signal()
 }
 
-func (d *parallelDispatcher) Wait() []interface{} {
+func (d *parallelDispatcher[K]) Wait() []K {
 	d.wg.Wait()
 	d.Stop()
 	return d.responses
 }
 
-func (d *parallelDispatcher) Stop() {
+func (d *parallelDispatcher[K]) Stop() {
 	for _, worker := range d.workers {
 		worker.stop()
 	}
@@ -126,21 +131,21 @@ func (d *parallelDispatcher) Stop() {
 	d.queueCond.Broadcast()
 }
 
-type parallelWorker struct {
-	dispatcher *parallelDispatcher
-	jobChannel chan payload
+type parallelWorker[K any] struct {
+	dispatcher *parallelDispatcher[K]
+	jobChannel chan payload[K]
 	quit       chan bool
 }
 
-func newParallelWorker(d *parallelDispatcher) parallelWorker {
-	return parallelWorker{
+func newParallelWorker[K any](d *parallelDispatcher[K]) parallelWorker[K] {
+	return parallelWorker[K]{
 		dispatcher: d,
-		jobChannel: make(chan payload),
+		jobChannel: make(chan payload[K]),
 		quit:       make(chan bool),
 	}
 }
 
-func (w parallelWorker) start() {
+func (w parallelWorker[K]) start() {
 	go func() {
 		for {
 			w.dispatcher.workerPool <- w.jobChannel
@@ -164,6 +169,6 @@ func (w parallelWorker) start() {
 	}()
 }
 
-func (w parallelWorker) stop() {
+func (w parallelWorker[K]) stop() {
 	w.quit <- true
 }

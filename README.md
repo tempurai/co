@@ -1,9 +1,9 @@
 # Co
 
-A concurrency related project dedicate to help developer ease the pain of dealing goroutine and 
+A concurrency lib project with GENERIC SUPPORTED dedicate to help developer ease the pain of dealing goroutine and
 channel when coding 2 more lines of channel code become annoying.
 
-`Co` provides a lot of (at least in planning) helper functions and utils such as `AwaitAll` `AwaitAny` and 
+`Co` provides a lot of (at least in planning) helper functions and utils such as `AwaitAll` `AwaitAny` and
 Parallel execution mechanism with concurrency limitation.
 
 If there are some concurrency patterns you would like me to implement and there is none available in
@@ -16,10 +16,6 @@ MIT
 ## Doc
 
 https://godoc.org/github.com/tempura-shrimp/co
-
-Note: there are a lot interface{} in project and types, which i do not like, but since Go have not yet
-implemented Generic, this is what I need to do in order to make response work. Once Go release a version
-with Generic (some day), I'll adapt that ASAP.
 
 ## Examples
 

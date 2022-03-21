@@ -1,9 +1,10 @@
 package co_test
 
 import (
+	"testing"
+
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/tempera-shrimp/co"
-	"testing"
 )
 
 func TestParallel(t *testing.T) {
@@ -31,10 +32,10 @@ func TestParallel(t *testing.T) {
 
 func TestParallelWithResponse(t *testing.T) {
 	Convey("given a sequential tasks", t, func() {
-		p := co.NewParallelWithResponse(10)
+		p := co.NewParallelWithResponse[int](10)
 		for i := 0; i < 10000; i++ {
 			i := i
-			p.AddWithResponse(func() interface{} {
+			p.AddWithResponse(func() int {
 				return i + 1
 			})
 		}
