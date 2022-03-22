@@ -26,7 +26,7 @@ https://godoc.org/github.com/tempura-shrimp/co
 p := co.NewParallelWithResponse(10) // worker size
 for i := 0; i < 10000; i++ {
     i := i
-    p.AddWithResponse[int](func() interface{} {
+    p.AddWithResponse[int](func() int {
         return i + 1
     })
 }
