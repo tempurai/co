@@ -54,6 +54,7 @@ responses := co.AwaitAll[int](handlers...)
 ## Benchmark
 
 ```
+Running tool: /usr/local/bin/go test -benchmem -run=^$ -bench ^BenchmarkWithoutParallel$ github.com/tempura-shrimp/co
 goos: darwin
 goarch: amd64
 pkg: github.com/tempura-shrimp/co
@@ -62,9 +63,6 @@ BenchmarkWithoutParallel
 BenchmarkWithoutParallel-12        10000            896080 ns/op          427370 B/op        178 allocs/op
 PASS
 ok      github.com/tempura-shrimp/co    9.252s
-
-
-> Test run finished at 3/24/2022, 9:15:18 PM <
 
 Running tool: /usr/local/bin/go test -benchmem -run=^$ -bench ^BenchmarkParallel$ github.com/tempura-shrimp/co
 
