@@ -50,3 +50,30 @@ for i := 0; i < 1000; i++ {
 
 responses := co.AwaitAll[int](handlers...)
 ```
+
+## Benchmark
+
+```
+goos: darwin
+goarch: amd64
+pkg: github.com/tempura-shrimp/co
+cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+BenchmarkWithoutParallel
+BenchmarkWithoutParallel-12        10000            896080 ns/op          427370 B/op        178 allocs/op
+PASS
+ok      github.com/tempura-shrimp/co    9.252s
+
+
+> Test run finished at 3/24/2022, 9:15:18 PM <
+
+Running tool: /usr/local/bin/go test -benchmem -run=^$ -bench ^BenchmarkParallel$ github.com/tempura-shrimp/co
+
+goos: darwin
+goarch: amd64
+pkg: github.com/tempura-shrimp/co
+cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+BenchmarkParallel
+BenchmarkParallel-12               10000            209875 ns/op          427471 B/op        182 allocs/op
+PASS
+ok      github.com/tempura-shrimp/co    2.216s
+```

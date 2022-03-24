@@ -2,7 +2,6 @@ module github.com/tempura-shrimp/co
 
 go 1.18
 
-
 require (
     github.com/smartystreets/goconvey v1.6.4
 	github.com/gopherjs/gopherjs v0.0.0-20181017120253-0766667cb4d1 // indirect
