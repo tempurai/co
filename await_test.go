@@ -53,3 +53,16 @@ func TestAwaitRace(t *testing.T) {
 		})
 	})
 }
+
+func BenchmarkAwaitAll(b *testing.B) {
+	handlers := make([]func() int, 0)
+	for i := 1; i < b.N; i++ {
+		func(idx int) {
+			handlers = append(handlers, func() int {
+				return memoizeFib(idx)
+			})
+		}(i)
+	}
+
+	co.AwaitAll(handlers...)
+}
