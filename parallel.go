@@ -104,14 +104,14 @@ func (d *parallelDispatcher[K]) AddWithResponse(job func() K) {
 
 	if d.ifResponse {
 		d.responsesMux.Lock()
-		defer d.responsesMux.Unlock()
 		d.responses = append(d.responses, *new(K))
+		d.responsesMux.Unlock()
 	}
 
 	d.mux.Lock()
-	defer d.mux.Unlock()
-
 	d.queue.PushBack(payload[K]{job: job, seq: len(d.responses) - 1})
+	d.mux.Unlock()
+
 	d.queueCond.Signal()
 }
 

@@ -22,3 +22,14 @@ func ReadBoolChan(ch chan bool) (bool, bool) {
 		return false, true
 	}
 }
+
+func SafeSend[T any](ch chan T, value T) (closed bool) {
+	defer func() {
+		if recover() != nil {
+			closed = true
+		}
+	}()
+
+	ch <- value
+	return false
+}

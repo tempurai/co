@@ -24,9 +24,7 @@ func AwaitAll[K any](handlers ...func() K) []K {
 		w.handlers[i] = handlers[i]
 
 		go func(i int) {
-			vals := w.handlers[i]()
-			w.responses[i] = vals
-
+			w.responses[i] = w.handlers[i]()
 			wg.Done()
 		}(i)
 	}
@@ -44,11 +42,14 @@ func AwaitRace[K any](handlers ...func() (K, error)) K {
 			if err != nil {
 				return
 			}
-			resp <- val
+			SafeSend(resp, val)
 		}(i)
 	}
 
-	return <-resp
+	val := <-resp
+	close(resp)
+
+	return val
 }
 
 func AwaitAny[K any](handlers ...func() K) K {
