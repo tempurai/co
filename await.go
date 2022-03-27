@@ -4,45 +4,62 @@ import (
 	"sync"
 )
 
-type awaitHandler[K any] func() K
+type Await[R any] struct {
+	co *Concurrent[R]
 
-type awaiter[T any] struct {
-	handlers  []awaitHandler[T]
-	responses []T
+	raceIncludeError bool
 }
 
-func AwaitAll[K any](handlers ...func() K) []K {
-	w := &awaiter[K]{
-		handlers:  make([]awaitHandler[K], len(handlers)),
-		responses: make([]K, len(handlers)),
+func NewAwait[R any]() *Await[R] {
+	return &Await[R]{
+		co: NewConcurrent[R](),
+	}
+}
+
+func (a *Await[R]) Add(handlers ...func() (R, error)) *Await[R] {
+	respSlice := make([]*Result[R], len(handlers))
+	for i, fn := range handlers {
+		resp := NewResult[R]()
+		resp.Handler = fn
+		respSlice[i] = resp
 	}
 
+	a.co.Append(respSlice...)
+	return a
+}
+
+func (a *Await[R]) All() []*Result[R] {
 	wg := sync.WaitGroup{}
-	wg.Add(len(handlers))
+	wg.Add(len(a.co.Results))
 
-	for i := range handlers {
-		w.handlers[i] = handlers[i]
-
+	for i := range a.co.Results {
 		go func(i int) {
-			w.responses[i] = w.handlers[i]()
+			a.co.Results[i].Data, a.co.Results[i].Error = a.co.Results[i].Handler()
 			wg.Done()
 		}(i)
 	}
 
 	wg.Wait()
-	return w.responses
+	return a.co.GetAll()
 }
 
-func AwaitRace[K any](handlers ...func() (K, error)) K {
-	resp := make(chan K)
+func (a *Await[R]) Race() R {
+	resp := make(chan R)
+	aBool := &AtomicBool{}
 
-	for i := range handlers {
+	for i := range a.co.Results {
 		go func(i int) {
-			val, err := handlers[i]()
-			if err != nil {
+			if aBool.Get() {
 				return
 			}
+
+			val, err := a.co.Results[i].Handler()
+			if err != nil && !a.raceIncludeError {
+				return
+			}
+
 			SafeSend(resp, val)
+			aBool.Set(true)
 		}(i)
 	}
 
@@ -52,16 +69,19 @@ func AwaitRace[K any](handlers ...func() (K, error)) K {
 	return val
 }
 
-func AwaitAny[K any](handlers ...func() K) K {
-	wrappedHandlers := make([]func() (K, error), 0)
+func (a *Await[R]) Any() R {
+	a.raceIncludeError = true
+	return a.Race()
+}
 
-	for i := range handlers {
-		func(i int) {
-			wrappedHandlers[i] = func() (K, error) {
-				return handlers[i](), nil
-			}
-		}(i)
-	}
+func AwaitAll[R any](handlers ...func() (R, error)) []*Result[R] {
+	return NewAwait[R]().Add(handlers...).All()
+}
 
-	return AwaitRace(wrappedHandlers...)
+func AwaitRace[R any](handlers ...func() (R, error)) R {
+	return NewAwait[R]().Add(handlers...).Race()
+}
+
+func AwaitAny[R any](handlers ...func() (R, error)) R {
+	return NewAwait[R]().Add(handlers...).Any()
 }
