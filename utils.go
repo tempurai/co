@@ -2,6 +2,8 @@ package co
 
 import (
 	"sync"
+
+	"golang.org/x/exp/constraints"
 )
 
 func NewLockedMutex() *sync.Mutex {
@@ -32,4 +34,20 @@ func SafeSend[T any](ch chan T, value T) (closed bool) {
 
 	ch <- value
 	return false
+}
+
+func CastOrNil[T any](el any) T {
+	if (el == nil) {
+		return *new(T)
+	}
+	return el.(T
+}
+
+func EvertGET[T constraints](ele []T, target T) bool {
+	for _, e := range ele {
+		if e <= target {
+			return false
+		}
+	}
+	return true
 }

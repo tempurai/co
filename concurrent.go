@@ -1,7 +1,13 @@
 package co
 
+type concurrentIterator struct {
+	index int
+}
+
 type Concurrent[R any] struct {
 	executorList[R]
+
+	concurrentIterator concurrentIterator
 }
 
 func NewConcurrent[R any]() *Concurrent[R] {
@@ -46,9 +52,32 @@ func (co *Concurrent[R]) Append(co2 *Concurrent[R]) *Concurrent[R] {
 }
 
 type ConcurrentExecutor interface {
-	latestFnToAny() (any, error)
+	len() int
+	exeFnAt(int) (any, error)
+
+	prepareIterator()
+	exeNextFn() (any, error)
+	finished() bool
 }
 
-func (co *Concurrent[R]) latestFnToAny() (any, error) {
-	return co.executors[len(co.executors)-1].exe()
+func (co *Concurrent[R]) len() int {
+	return len(co.executors)
+}
+
+func (co *Concurrent[R]) exeFnAt(i int) (any, error) {
+	return co.executors[i].exe()
+}
+
+func (co *Concurrent[R]) prepareIterator() {
+	co.concurrentIterator = concurrentIterator{}
+}
+
+func (co *Concurrent[R]) exeNextFn() (any, error) {
+	data, err := co.executors[co.concurrentIterator.index].exe()
+	co.concurrentIterator.index++
+	return data, err
+}
+
+func (co *Concurrent[R]) finished() bool {
+	return co.concurrentIterator.index >= co.len()
 }
