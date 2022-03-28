@@ -37,13 +37,13 @@ func SafeSend[T any](ch chan T, value T) (closed bool) {
 }
 
 func CastOrNil[T any](el any) T {
-	if (el == nil) {
+	if el == nil {
 		return *new(T)
 	}
 	return el.(T)
 }
 
-func EvertGET[T constraints](ele []T, target T) bool {
+func EvertGET[T constraints.Ordered](ele []T, target T) bool {
 	for _, e := range ele {
 		if e <= target {
 			return false
@@ -52,9 +52,9 @@ func EvertGET[T constraints](ele []T, target T) bool {
 	return true
 }
 
-func EvertET[T constraints](ele []T, target T) bool {
+func EvertET[T constraints.Ordered](ele []T, target T) bool {
 	for _, e := range ele {
-		if e = target {
+		if e == target {
 			return false
 		}
 	}
