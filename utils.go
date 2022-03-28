@@ -51,3 +51,12 @@ func EvertGET[T constraints](ele []T, target T) bool {
 	}
 	return true
 }
+
+func EvertET[T constraints](ele []T, target T) bool {
+	for _, e := range ele {
+		if e = target {
+			return false
+		}
+	}
+	return true
+}
