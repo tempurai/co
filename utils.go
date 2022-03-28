@@ -40,7 +40,7 @@ func CastOrNil[T any](el any) T {
 	if (el == nil) {
 		return *new(T)
 	}
-	return el.(T
+	return el.(T)
 }
 
 func EvertGET[T constraints](ele []T, target T) bool {
