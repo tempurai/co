@@ -39,7 +39,7 @@ func CombineLatest[T1, T2 any](co1 *Concurrent[T1], co2 *Concurrent[T2]) (T1, T2
 }
 
 func CombineLatest3[T1, T2, T3 any](co1 *Concurrent[T1], co2 *Concurrent[T2], co3 *Concurrent[T3]) (T1, T2, T3, error) {
-	results, err := combineLatestRunner([]ConcurrentExecutor{co1, co2}...)
+	results, err := combineLatestRunner([]ConcurrentExecutor{co1, co2, co3}...)
 
 	return results[0].(T1), results[1].(T2), results[2].(T3), err
 }
