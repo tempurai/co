@@ -3,13 +3,22 @@ package co
 import "sync"
 
 type Result[R any] struct {
-	Handler func() (R, error)
-	Data    R
-	Error   error
+	exeFn func() (R, error)
+	Data  R
+	Error error
 }
 
 func NewResult[R any]() *Result[R] {
 	return &Result[R]{}
+}
+
+func (r *Result[R]) SetExe(fn func() (R, error)) *Result[R] {
+	r.exeFn = fn
+	return r
+}
+
+func (r *Result[R]) Exe() (R, error) {
+	return r.exeFn()
 }
 
 type Concurrent[R any] struct {
@@ -33,20 +42,6 @@ func (co *Concurrent[R]) Insert(idx int, resp *Result[R]) {
 	defer co.mux.Unlock()
 
 	co.Results[idx] = resp
-}
-
-func (co *Concurrent[R]) InsertVal(idx int, val R) {
-	co.mux.Lock()
-	defer co.mux.Unlock()
-
-	co.Results[idx].Data = val
-}
-
-func (co *Concurrent[R]) InsertError(idx int, err error) {
-	co.mux.Lock()
-	defer co.mux.Unlock()
-
-	co.Results[idx].Error = err
 }
 
 func (co *Concurrent[R]) Append(resp ...*Result[R]) {

@@ -16,12 +16,11 @@ func NewAwait[R any]() *Await[R] {
 	}
 }
 
-func (a *Await[R]) Add(handlers ...func() (R, error)) *Await[R] {
-	respSlice := make([]*Result[R], len(handlers))
-	for i, fn := range handlers {
-		resp := NewResult[R]()
-		resp.Handler = fn
-		respSlice[i] = resp
+func (a *Await[R]) Add(fns ...func() (R, error)) *Await[R] {
+	respSlice := make([]*Result[R], len(fns))
+	for i, fn := range fns {
+		respSlice[i] = NewResult[R]()
+		respSlice[i].SetExe(fn)
 	}
 
 	a.co.Append(respSlice...)
@@ -34,7 +33,7 @@ func (a *Await[R]) All() []*Result[R] {
 
 	for i := range a.co.Results {
 		go func(i int) {
-			a.co.Results[i].Data, a.co.Results[i].Error = a.co.Results[i].Handler()
+			a.co.Results[i].Data, a.co.Results[i].Error = a.co.Results[i].Exe()
 			wg.Done()
 		}(i)
 	}
@@ -53,7 +52,7 @@ func (a *Await[R]) Race() R {
 				return
 			}
 
-			val, err := a.co.Results[i].Handler()
+			val, err := a.co.Results[i].Exe()
 			if err != nil && !a.raceIncludeError {
 				return
 			}
@@ -74,14 +73,14 @@ func (a *Await[R]) Any() R {
 	return a.Race()
 }
 
-func AwaitAll[R any](handlers ...func() (R, error)) []*Result[R] {
-	return NewAwait[R]().Add(handlers...).All()
+func AwaitAll[R any](fns ...func() (R, error)) []*Result[R] {
+	return NewAwait[R]().Add(fns...).All()
 }
 
-func AwaitRace[R any](handlers ...func() (R, error)) R {
-	return NewAwait[R]().Add(handlers...).Race()
+func AwaitRace[R any](fns ...func() (R, error)) R {
+	return NewAwait[R]().Add(fns...).Race()
 }
 
-func AwaitAny[R any](handlers ...func() (R, error)) R {
-	return NewAwait[R]().Add(handlers...).Any()
+func AwaitAny[R any](fns ...func() (R, error)) R {
+	return NewAwait[R]().Add(fns...).Any()
 }
