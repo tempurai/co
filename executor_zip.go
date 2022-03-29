@@ -83,13 +83,13 @@ func (z *zipBasic) exe() {
 	wg.Wait()
 }
 
-func Zip[T1, T2 any](co1 *Concurrent[T1], co2 *Concurrent[T2], fn func(T1, T2, error, bool)) {
+func Zip[T1, T2 any](fn func(T1, T2, error, bool), co1 *Concurrent[T1], co2 *Concurrent[T2]) {
 	NewZipBasic([]ConcurrentExecutor{co1, co2}, func(a []any, err error, b bool) {
 		fn(CastOrNil[T1](a[0]), CastOrNil[T2](a[1]), err, b)
 	}).exe()
 }
 
-func Zip3[T1, T2, T3 any](co1 *Concurrent[T1], co2 *Concurrent[T2], co3 *Concurrent[T3], fn func(T1, T2, T3, error, bool)) {
+func Zip3[T1, T2, T3 any](fn func(T1, T2, T3, error, bool), co1 *Concurrent[T1], co2 *Concurrent[T2], co3 *Concurrent[T3]) {
 	NewZipBasic([]ConcurrentExecutor{co1, co2, co3}, func(a []any, err error, b bool) {
 		fn(CastOrNil[T1](a[0]), CastOrNil[T2](a[1]), CastOrNil[T3](a[2]), err, b)
 	}).exe()

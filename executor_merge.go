@@ -1,17 +1,16 @@
 package co
 
 type mergeBasic[R any] struct {
-	cos []*Concurrent[R]
-	fn  func(R, error)
-
-	cosIndex int
-	exeIndex int
+	cos   []*Concurrent[R]
+	fn    func(*SequenceableData[R])
+	width int
 }
 
-func NewMergeBasic[R any](cos []*Concurrent[R], fn func(R, error)) *mergeBasic[R] {
+func NewMergeBasic[R any](cos []*Concurrent[R], width int, fn func(*SequenceableData[R])) *mergeBasic[R] {
 	return &mergeBasic[R]{
-		cos: cos,
-		fn:  fn,
+		cos:   cos,
+		fn:    fn,
+		width: width,
 	}
 }
 
@@ -28,14 +27,22 @@ func (m *mergeBasic[R]) maxLen() int {
 func (m *mergeBasic[R]) exe() {
 	mLen := m.maxLen()
 
+	seqData := NewSequenceableData[R]()
+
 	for i := 0; i < mLen; i++ {
 		for j := range m.cos {
 			data, err := m.cos[j].exeFnAt(i)
-			m.fn(data, err)
+
+			seqData.resultAdd(data, err)
+
+			if seqData.len() == m.width {
+				m.fn(seqData)
+				seqData = NewSequenceableData[R]()
+			}
 		}
 	}
 }
 
-func Merge[R any](fn func(R, error), cos ...*Concurrent[R]) {
-	NewMergeBasic(cos, fn).exe()
+func Merge[R any](fn func(*SequenceableData[R]), width int, cos ...*Concurrent[R]) {
+	NewMergeBasic(cos, width, fn).exe()
 }

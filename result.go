@@ -64,8 +64,18 @@ func NewExecutorList[R any]() *executorList[R] {
 	}
 }
 
-func (r *executorList[R]) executorLen() int {
+func (r *executorList[R]) len() int {
 	return len(r.executors)
+}
+
+func (r *executorList[R]) resultAdd(data R, err error) {
+	r.rwmux.Lock()
+	defer r.rwmux.Unlock()
+
+	e := NewExecutor[R]()
+	e.Data = data
+	e.Error = err
+	r.executors = append(r.executors, e)
 }
 
 func (r *executorList[R]) executorInsert(idx int, resp *executor[R]) {
