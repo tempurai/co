@@ -47,7 +47,7 @@ func (c *combineLatestBasic) exe() {
 			defer wg.Done()
 
 			for j := 0; j < ce.len(); j++ {
-				data, err := ce.exeFnAt(j)
+				data, err := ce.exeAnyFnAt(j)
 				SafeSend(resultChan, combineLatestResult{idx, data, err})
 			}
 		}(i, ce)

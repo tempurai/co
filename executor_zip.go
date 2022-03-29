@@ -47,7 +47,7 @@ func (z *zipBasic) exe() {
 			for j := 0; j < ce.len(); j++ {
 				cond.Wait()
 
-				data, err := ce.exeFnAt(j)
+				data, err := ce.exeAnyFnAt(j)
 				SafeSend(resultChan, combineLatestResult{idx, data, err})
 			}
 		}(i, ce)

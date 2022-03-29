@@ -24,6 +24,12 @@ func (r *executor[R]) setExeFn(fn func() (R, error)) *executor[R] {
 }
 
 func (r *executor[R]) exe() (R, error) {
+	defer func() {
+		if r := recover(); r != nil {
+
+		}
+	}()
+
 	if r.isExecuted() {
 		return r.Data, nil
 	}

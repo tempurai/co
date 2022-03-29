@@ -51,12 +51,16 @@ func (co *Concurrent[R]) Append(co2 *Concurrent[R]) *Concurrent[R] {
 	return co
 }
 
+func (co *Concurrent[R]) exeFnAt(i int) (R, error) {
+	return co.executors[i].exe()
+}
+
 type ConcurrentExecutor interface {
 	len() int
-	exeFnAt(int) (any, error)
+	exeAnyFnAt(int) (any, error)
 
 	prepareIterator()
-	exeNextFn() (any, error)
+	exeNextAnyFn() (any, error)
 	finished() bool
 }
 
@@ -64,7 +68,7 @@ func (co *Concurrent[R]) len() int {
 	return len(co.executors)
 }
 
-func (co *Concurrent[R]) exeFnAt(i int) (any, error) {
+func (co *Concurrent[R]) exeAnyFnAt(i int) (any, error) {
 	return co.executors[i].exe()
 }
 
@@ -72,7 +76,7 @@ func (co *Concurrent[R]) prepareIterator() {
 	co.concurrentIterator = concurrentIterator{}
 }
 
-func (co *Concurrent[R]) exeNextFn() (any, error) {
+func (co *Concurrent[R]) exeNextAnyFn() (any, error) {
 	data, err := co.executors[co.concurrentIterator.index].exe()
 	co.concurrentIterator.index++
 	return data, err
