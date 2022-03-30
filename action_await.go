@@ -4,13 +4,13 @@ import (
 	"sync"
 )
 
-type actionAll[R any] struct {
+type actionAwait[R any] struct {
 	*Action[*data[R]]
 
 	it ExecutableIterator[R]
 }
 
-func (a *actionAll[R]) run() {
+func (a *actionAwait[R]) run() {
 	wg := sync.WaitGroup{}
 	sData := NewSequenceableData[R]()
 
@@ -31,8 +31,8 @@ func (a *actionAll[R]) run() {
 	a.done()
 }
 
-func All[R any](co Concurrently[R]) *Action[*data[R]] {
-	action := &actionAll[R]{
+func Await[R any](co Concurrently[R]) *Action[*data[R]] {
+	action := &actionAwait[R]{
 		Action: NewAction[*data[R]](),
 		it:     co.Iterator(),
 	}

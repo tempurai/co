@@ -7,7 +7,7 @@ type ActionChain[R any] struct {
 
 func (a *ActionChain[R]) run() {
 	for i := 0; i < len(a.cos); i++ {
-		a.listenBulk(All(a.cos[i]).asData().getData())
+		a.listenBulk(Await(a.cos[i]).asData().getData())
 	}
 	a.done()
 }
