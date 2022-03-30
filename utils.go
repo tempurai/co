@@ -36,6 +36,26 @@ func SafeSend[T any](ch chan T, value T) (closed bool) {
 	return false
 }
 
+func SafeClose[T any](ch chan T) (closed bool) {
+	defer func() {
+		if recover() != nil {
+			closed = false
+		}
+	}()
+
+	close(ch)
+	return true
+}
+
+func SafeGo(fn func()) {
+	go func() {
+		defer func() {
+			recover()
+		}()
+		fn()
+	}()
+}
+
 func CastOrNil[T any](el any) T {
 	if el == nil {
 		return *new(T)

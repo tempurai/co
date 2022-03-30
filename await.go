@@ -1,7 +1,7 @@
 package co
 
 func AwaitAll[R any](fns ...func() (R, error)) []*data[R] {
-	return All[R](NewConcurrent[R]().addExeFn(fns...)).GetAll()
+	return All[R](NewConcurrent[R]().addExeFn(fns...)).asData().getData()
 }
 
 func AwaitRace[R any](fns ...func() (R, error)) R {
