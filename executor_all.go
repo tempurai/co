@@ -1,24 +1,26 @@
 package co
 
-import "sync"
+import (
+	"sync"
+)
 
-func All[R any](co *Concurrent[R]) *SequenceableData[R] {
+func All[R any](co Concurrently[R]) *SequenceableData[R] {
+	it := co.Iterator()
+
+	seqData := NewSequenceableData[R]()
 	wg := sync.WaitGroup{}
-	wg.Add(len(co.executors))
 
-	for i := range co.executors {
-		go func(i int) {
+	for i := 0; it.hasNext(); i++ {
+		wg.Add(1)
+
+		go func(i int, fn executableFn[R]) {
 			defer wg.Done()
-			if co.executors[i].isExecuted() {
-				return
-			}
-			co.executors[i].exe()
-		}(i)
+
+			val, err := fn()
+			seqData.setAt(i, val, err)
+		}(i, it.exeFn())
 	}
 
 	wg.Wait()
-	sData := NewSequenceableData[R]()
-	sData.executorSwap(co.executors)
-
-	return sData
+	return seqData
 }

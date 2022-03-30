@@ -1,11 +1,10 @@
 package co
 
-func TupleWise[R any](co *Concurrent[R], width int) []*SequenceableData[R] {
-	seqs := make([]*SequenceableData[R], 0, co.len()/width+1)
+func PairWise[R any](co Concurrently[R]) []*SequenceableData[R] {
+	return TupleWise[R](co, 2)
+}
 
-	Merge(func(seq *SequenceableData[R]) {
-		seqs = append(seqs, seq)
-	}, width, co)
-
+func TupleWise[R any](co Concurrently[R], width int) []*SequenceableData[R] {
+	seqs := make([]*SequenceableData[R], 0, width)
 	return seqs
 }

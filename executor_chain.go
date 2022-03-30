@@ -1,13 +1,14 @@
 package co
 
-func Chain[R any](cos ...*Concurrent[R]) *SequenceableData[R] {
+func Chain[R any](cos ...Concurrently[R]) *SequenceableData[R] {
 	if len(cos) == 0 {
 		return NewSequenceableData[R]()
 	}
-	if len(cos) != 1 {
-		for i := 1; i < len(cos); i++ {
-			cos[0].Append(cos[i])
-		}
+
+	seqData := NewSequenceableData[R]()
+	for i := 0; i < len(cos); i++ {
+		seqData.append(All(cos[i]).determinedDataList)
 	}
-	return All(cos[0])
+
+	return seqData
 }

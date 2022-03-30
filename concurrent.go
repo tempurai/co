@@ -1,87 +1,117 @@
 package co
 
-type concurrentIterator struct {
-	index int
-}
-
 type Concurrent[R any] struct {
-	executorList[R]
+	executables *executablesList[R]
+	data        *determinedDataList[R]
 
-	concurrentIterator concurrentIterator
+	_defaultIterator ExecutableSequence[R]
 }
 
 func NewConcurrent[R any]() *Concurrent[R] {
 	return &Concurrent[R]{
-		executorList: *NewExecutorList[R](),
+		executables: NewExecutablesList[R](),
+		data:        NewDeterminedDataList[R](),
 	}
 }
 
-func NewDataConcurrent[R any](data ...R) *Concurrent[R] {
-	co := NewConcurrent[R]()
+func (r *Concurrent[R]) len() int {
+	return r.executables.len()
+}
 
-	executors := make([]*executor[R], len(data))
-	for i := range data {
-		executors[i].Data = data[i]
-		executors[i].executed = true
+func (r *Concurrent[R]) exe(i int) (R, error) {
+	if r.executables.getAt(i).isExecuted() {
+		return r.data.getAt(i)
 	}
 
-	co.executorAppend(executors...)
-	return co
+	return r.forceExeAt(i)
 }
 
-func NewJobConcurrent[R any](fns ...func() (R, error)) *Concurrent[R] {
-	co := NewConcurrent[R]()
-	co.Add(fns...)
-	return co
+func (r *Concurrent[R]) forceExeAt(i int) (R, error) {
+	val, err := r.executables.getAt(i).exe()
+	r.data.setAt(i, val, err)
+
+	return val, err
 }
 
-func (co *Concurrent[R]) Add(fns ...func() (R, error)) *Concurrent[R] {
-	respSlice := make([]*executor[R], len(fns))
-	for i, fn := range fns {
-		respSlice[i] = NewExecutor[R]()
-		respSlice[i].setExeFn(fn)
+func (r *Concurrent[R]) addData(dVal ...*data[R]) *Concurrent[R] {
+	r.data.List.add(dVal...)
+
+	for range dVal {
+		r.executables.add(NewExecutor[R]())
+	}
+	return r
+
+}
+
+func (r *Concurrent[R]) addExeFn(fns ...func() (R, error)) *Concurrent[R] {
+	for i := range fns {
+		r.data.List.add(NewData[R]())
+
+		e := NewExecutor[R]()
+		e.fn = fns[i]
+		r.executables.add(e)
+	}
+	return r
+}
+
+func (r *Concurrent[R]) add(eVal ...*executable[R]) *Concurrent[R] {
+	for range eVal {
+		r.data.List.add(NewData[R]())
 	}
 
-	co.executorAppend(respSlice...)
-	return co
+	r.executables.add(eVal...)
+	return r
 }
 
-func (co *Concurrent[R]) Append(co2 *Concurrent[R]) *Concurrent[R] {
-	co.executorAppend(co2.executors...)
-	return co
+func (r *Concurrent[R]) swapValue(dVal *determinedDataList[R], eVal *executablesList[R]) *Concurrent[R] {
+	if dVal != nil {
+		r.data.swap(dVal.list)
+	}
+	if eVal != nil {
+		r.executables.swap(eVal.list)
+	}
+	return r
 }
 
-func (co *Concurrent[R]) exeFnAt(i int) (R, error) {
-	return co.executors[i].exe()
+func (r *Concurrent[R]) defaultIterator() ExecutableSequence[R] {
+	if r._defaultIterator != nil {
+		return r._defaultIterator
+	}
+	r._defaultIterator = r.Iterator()
+	return r._defaultIterator
 }
 
-type ConcurrentExecutor interface {
-	len() int
-	exeAnyFnAt(int) (any, error)
-
-	prepareIterator()
-	exeNextAnyFn() (any, error)
-	finished() bool
+func (r *Concurrent[R]) Iterator() ExecutableSequence[R] {
+	return &concurrentIterator[R]{
+		Concurrent:            r,
+		iterativeListIterator: r.executables.iterativeList.Iterator(),
+	}
 }
 
-func (co *Concurrent[R]) len() int {
-	return len(co.executors)
+type concurrentIterator[R any] struct {
+	*Concurrent[R]
+	*iterativeListIterator[*executable[R]]
 }
 
-func (co *Concurrent[R]) exeAnyFnAt(i int) (any, error) {
-	return co.executors[i].exe()
+func (r *concurrentIterator[R]) exeFn() func() (R, error) {
+	r.currentIndex++
+	return func(idx int) func() (R, error) {
+		return func() (R, error) { return r.exe(idx) }
+	}(r.currentIndex - 1)
 }
 
-func (co *Concurrent[R]) prepareIterator() {
-	co.concurrentIterator = concurrentIterator{}
+func (r *concurrentIterator[R]) exeNext() (R, error) {
+	r.currentIndex++
+	return r.exe(r.currentIndex - 1)
 }
 
-func (co *Concurrent[R]) exeNextAnyFn() (any, error) {
-	data, err := co.executors[co.concurrentIterator.index].exe()
-	co.concurrentIterator.index++
-	return data, err
+func (r *concurrentIterator[R]) exeFnAsAny() func() (any, error) {
+	r.currentIndex++
+	return func(idx int) func() (any, error) {
+		return func() (any, error) { return r.exe(idx) }
+	}(r.currentIndex - 1)
 }
 
-func (co *Concurrent[R]) finished() bool {
-	return co.concurrentIterator.index >= co.len()
+func (r *concurrentIterator[R]) exeNextAsAny() (any, error) {
+	return r.exeNext()
 }

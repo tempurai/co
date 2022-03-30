@@ -1,26 +1,25 @@
 package co
 
-func baseRace[R any](ignoreError bool, co *Concurrent[R]) R {
+func baseRace[R any](ignoreError bool, co Concurrently[R]) R {
+	it := co.Iterator()
+
 	respChan := make(chan R)
 	aBool := &AtomicBool{}
 
-	for i := range co.executors {
-		go func(i int) {
+	for i := 0; it.hasNext(); i++ {
+		go func(i int, fn executableFn[R]) {
 			if aBool.Get() {
 				return
 			}
-			if co.executors[i].isExecuted() {
-				return
-			}
 
-			val, err := co.executors[i].exe()
+			val, err := fn()
 			if err != nil && !ignoreError {
 				return
 			}
 
 			SafeSend(respChan, val)
 			aBool.Set(true)
-		}(i)
+		}(i, it.exeFn())
 	}
 
 	val := <-respChan
@@ -29,10 +28,10 @@ func baseRace[R any](ignoreError bool, co *Concurrent[R]) R {
 	return val
 }
 
-func Race[R any](co *Concurrent[R]) R {
-	return baseRace(true, co)
+func Race[R any](it Concurrently[R]) R {
+	return baseRace(true, it)
 }
 
-func Any[R any](co *Concurrent[R]) R {
-	return baseRace(false, co)
+func Any[R any](it Concurrently[R]) R {
+	return baseRace(false, it)
 }
