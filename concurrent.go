@@ -4,7 +4,7 @@ type Concurrent[R any] struct {
 	executables *executablesList[R]
 	data        *determinedDataList[R]
 
-	_defaultIterator ExecutableSequence[R]
+	_defaultIterator ExecutableIterator[R]
 }
 
 func NewConcurrent[R any]() *Concurrent[R] {
@@ -73,7 +73,7 @@ func (r *Concurrent[R]) swapValue(dVal *determinedDataList[R], eVal *executables
 	return r
 }
 
-func (r *Concurrent[R]) defaultIterator() ExecutableSequence[R] {
+func (r *Concurrent[R]) defaultIterator() ExecutableIterator[R] {
 	if r._defaultIterator != nil {
 		return r._defaultIterator
 	}
@@ -81,7 +81,7 @@ func (r *Concurrent[R]) defaultIterator() ExecutableSequence[R] {
 	return r._defaultIterator
 }
 
-func (r *Concurrent[R]) Iterator() ExecutableSequence[R] {
+func (r *Concurrent[R]) Iterator() ExecutableIterator[R] {
 	return &concurrentIterator[R]{
 		Concurrent:            r,
 		iterativeListIterator: r.executables.iterativeList.Iterator(),

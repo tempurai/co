@@ -1,12 +1,12 @@
 package co
 
 type partitionBasic[R any] struct {
-	its   []ExecutableSequence[R]
+	its   []ExecutableIterator[R]
 	fn    func(*SequenceableData[R])
 	width int
 }
 
-func NewPartitionBasic[R any](its []ExecutableSequence[R], width int, fn func(*SequenceableData[R])) *partitionBasic[R] {
+func NewPartitionBasic[R any](its []ExecutableIterator[R], width int, fn func(*SequenceableData[R])) *partitionBasic[R] {
 	return &partitionBasic[R]{
 		its:   its,
 		fn:    fn,

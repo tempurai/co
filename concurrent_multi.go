@@ -23,7 +23,7 @@ func (r *ConcurrentMulti[R]) Iterator() *concurrentMultiIterator[R] {
 }
 
 type concurrentMultiIterator[R any] struct {
-	iterators []ExecutableSequence[R]
+	iterators []ExecutableIterator[R]
 
 	currentIndex int
 }
