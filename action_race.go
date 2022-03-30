@@ -22,7 +22,7 @@ func (a *actionRace[R]) run() {
 				return
 			}
 
-			SafeSend(dataCh, NewDataWith[R](val, err))
+			SafeSend(dataCh, NewDataWith(val, err))
 			aBool.Set(true)
 		}(i, a.it.exeFn())
 	}
@@ -48,7 +48,7 @@ func Race[R any](it Concurrently[R]) *Action[R] {
 	action := baseRace(true, it)
 	action.wait()
 
-	return MapAction[*data[R], R](action, func(t *data[R]) R {
+	return MapAction(action, func(t *data[R]) R {
 		return t.value
 	})
 }
