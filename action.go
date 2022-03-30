@@ -42,10 +42,21 @@ func (a *Action[E]) asData() *Action[E] {
 	a.actionMode = ActionModeData
 	return a
 }
-
 func (a *Action[E]) getData() []E {
-	<-a.closeChan
+	a.wait()
 	return a.externalData
+}
+
+func (a *Action[E]) peakData() E {
+	a.wait()
+	if len(a.externalData) == 0 {
+		return *new(E)
+	}
+	return a.externalData[0]
+}
+
+func (a *Action[E]) wait() {
+	<-a.closeChan
 }
 
 func (a *Action[E]) listenProgressive(e E) {
@@ -82,4 +93,16 @@ func (a *Action[E]) done() {
 	SafeClose(a.externalCh)
 	SafeClose(a.externalCloseChan)
 	SafeClose(a.closeChan)
+}
+
+func MapAction[T1, T2 any](a1 *Action[T1], fn func(T1) T2) *Action[T2] {
+	a2 := NewAction[T2]()
+	a2.actionMode = a1.actionMode
+	a2.closeChan = a1.closeChan
+
+	a2.externalData = make([]T2, len(a1.externalData))
+	for i := range a1.externalData {
+		a2.externalData[i] = fn(a1.externalData[i])
+	}
+	return a2
 }

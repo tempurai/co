@@ -5,9 +5,9 @@ func AwaitAll[R any](fns ...func() (R, error)) []*data[R] {
 }
 
 func AwaitRace[R any](fns ...func() (R, error)) R {
-	return Race[R](NewConcurrent[R]().addExeFn(fns...))
+	return Race[R](NewConcurrent[R]().addExeFn(fns...)).asData().peakData()
 }
 
-func AwaitAny[R any](fns ...func() (R, error)) R {
-	return Any[R](NewConcurrent[R]().addExeFn(fns...))
+func AwaitAny[R any](fns ...func() (R, error)) *data[R] {
+	return Any[R](NewConcurrent[R]().addExeFn(fns...)).asData().peakData()
 }

@@ -78,7 +78,7 @@ func TestAwaitAny(t *testing.T) {
 			responses := co.AwaitAny(handlers...)
 
 			Convey("The responded value should be valid", func() {
-				So(responses, ShouldEqual, 12)
+				So(responses.GetValue(), ShouldEqual, 12)
 			})
 		})
 	})
