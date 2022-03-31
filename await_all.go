@@ -1,29 +1,30 @@
 package co
 
 import (
+	"log"
 	"sync"
 )
 
 type actionAwait[R any] struct {
 	*Action[*data[R]]
 
-	it Iterator[R]
+	list executableListIterator[R]
 }
 
 func (a *actionAwait[R]) run() {
 	wg := sync.WaitGroup{}
 	sData := NewSequenceableData[R]()
 
-	for i := 0; a.it.hasNext(); i++ {
+	for i := 0; a.list.hasNext(); i++ {
 		wg.Add(1)
 
-		go func(i int, fn dispatchFn[R]) {
+		go func(i int) {
 			defer wg.Done()
+			val, err := a.list.exeAt(i)
 
-			val, err := fn()
+			log.Println("$$$$ DEBUG i val", i, val)
 			sData.setAt(i, val, err)
-
-		}(i, a.it.dispatch())
+		}(i)
 	}
 
 	wg.Wait()
@@ -31,12 +32,16 @@ func (a *actionAwait[R]) run() {
 	a.done()
 }
 
-func Await[R any](co CoSequenceable[R]) *Action[*data[R]] {
+func Await[R any](list *executablesList[R]) *Action[*data[R]] {
 	action := &actionAwait[R]{
 		Action: NewAction[*data[R]](),
-		it:     co.Iterator(),
+		list:   list.Iterator(),
 	}
 
 	SafeGo(action.run)
 	return action.Action
+}
+
+func AwaitAll[R any](fns ...func() (R, error)) []*data[R] {
+	return Await(NewExecutablesList[R]().AddFn(fns...)).AsData().GetData()
 }

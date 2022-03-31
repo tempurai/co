@@ -44,3 +44,30 @@ func NewExecutablesList[R any]() *executablesList[R] {
 		iterativeList: NewIterativeList[*executable[R]](),
 	}
 }
+
+func (c *executablesList[R]) AddFn(fns ...func() (R, error)) *executablesList[R] {
+	for i := range fns {
+		e := NewExecutor[R]()
+		e.fn = fns[i]
+		c.add(e)
+	}
+	return c
+}
+
+func (it *executablesList[R]) Iterator() executableListIterator[R] {
+	return executableListIterator[R]{iterativeListIterator: it.iterativeList.Iterator(), executablesList: it}
+}
+
+type executableListIterator[R any] struct {
+	*executablesList[R]
+	iterativeListIterator[*executable[R]]
+}
+
+func (it *executableListIterator[R]) hasNext() bool {
+	defer func() { it.currentIndex++ }()
+	return it.iterativeListIterator.hasNext()
+}
+
+func (it *executableListIterator[R]) exeAt(i int) (R, error) {
+	return it.executablesList.getAt(i).exe()
+}

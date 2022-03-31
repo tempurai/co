@@ -65,16 +65,6 @@ type coExecutableSequenceIterator[R any] struct {
 }
 
 func (it *coExecutableSequenceIterator[R]) next() (R, error) {
-	it.currentIndex++
+	defer func() { it.currentIndex++ }()
 	return it.exe(it.currentIndex)
-}
-
-func (it *coExecutableSequenceIterator[R]) dispatch() func() (R, error) {
-	fn := Copy(it).next
-	it.currentIndex++
-	return fn
-}
-
-func (it *coExecutableSequenceIterator[R]) nextAny() (any, error) {
-	return it.next()
 }

@@ -17,16 +17,16 @@ func (a *actionPartition[R]) ifHasNext() bool {
 }
 
 func (a *actionPartition[R]) run() {
-	seqData := NewSequenceableData[R]()
+	values := make([]*data[R], 0)
 
 	for i := 0; a.ifHasNext(); i++ {
 		for j := range a.its {
-			data, err := a.its[j].next()
-			seqData.add(data, err)
+			val, err := a.its[j].next()
+			values = append(values, &data[R]{val, err})
 
-			if seqData.len() == a.width || !a.ifHasNext() {
-				a.listenProgressive(seqData.GetAll())
-				seqData = NewSequenceableData[R]()
+			if len(values) == a.width || !a.ifHasNext() {
+				a.listenProgressive(values)
+				values = make([]*data[R], 0)
 			}
 		}
 	}

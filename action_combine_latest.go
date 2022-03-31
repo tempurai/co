@@ -44,7 +44,7 @@ func (a *actionCombineLatest[R]) run() {
 		go func(idx int, seq IteratorAny) {
 			defer wg.Done()
 
-			for i := 0; seq.hasNext(); i++ {
+			for seq.hasNext() {
 				data, err := seq.nextAny()
 				SafeSend(resultChan, actionAnyResult{idx, data, err})
 			}

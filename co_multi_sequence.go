@@ -46,24 +46,18 @@ func (it *coMultiSequenceIterator[R]) hasNext() bool {
 	return false
 }
 
-func (it *coMultiSequenceIterator[R]) available() bool {
-	return it.hasNext()
-}
-
 func (it *coMultiSequenceIterator[R]) next() (R, error) {
 	for it.hasNext() {
-		i := it.nextIndex()
+		idx := it.nextIndex()
 
-		if !it.its[i].hasNext() || !it.its[i].available() {
+		if !it.its[idx].hasNext() {
 			continue
 		}
-
-		return it.its[i].next()
+		return it.its[idx].next()
 	}
-
 	return *new(R), fmt.Errorf("sequence have no next function to execute")
 }
 
 func (it *coMultiSequenceIterator[R]) nextAny() (any, error) {
-	return it.nextAny()
+	return it.next()
 }
