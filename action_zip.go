@@ -24,23 +24,23 @@ func (a *actionZip[R]) setFn(fn func(*actionZip[R], []any, error, bool)) *action
 	return a
 }
 
-func (z *actionZip[R]) ifReachesToIndexOrEnd(idx int) bool {
-	for i := range z.its {
-		if z.updated[i] != idx && !z.its[i].hasNext() {
+func (a *actionZip[R]) ifReachesToIndexOrEnd(idx int) bool {
+	for i := range a.its {
+		if a.updated[i] != idx && !a.its[i].hasNext() {
 			return false
 		}
 	}
 	return true
 }
 
-func (z *actionZip[R]) run() {
+func (a *actionZip[R]) run() {
 	resultChan := make(chan actionAnyResult)
 
 	wg := sync.WaitGroup{}
-	wg.Add(len(z.its))
+	wg.Add(len(a.its))
 
 	cond := sync.Cond{}
-	for i := range z.its {
+	for i := range a.its {
 		wg.Add(1)
 
 		go func(idx int, seq AnyExecutableIterator) {
@@ -52,27 +52,27 @@ func (z *actionZip[R]) run() {
 				data, err := seq.exeNextAsAny()
 				SafeSend(resultChan, actionAnyResult{idx, data, err})
 			}
-		}(i, z.its[i])
+		}(i, a.its[i])
 	}
 
-	latestResults := make([]any, len(z.its))
+	latestResults := make([]any, len(a.its))
 	go func() {
 		for {
 			select {
 			case result := <-resultChan:
 				latestResults[result.index] = result.data
-				z.updated[result.index]++
+				a.updated[result.index]++
 
-				if !EvertGET(z.updated, 1) {
+				if !EvertGET(a.updated, 1) {
 					continue
 				}
-				if !z.ifReachesToIndexOrEnd(z.currentIndex) {
+				if !a.ifReachesToIndexOrEnd(a.currentIndex) {
 					continue
 				}
-				z.currentIndex++
+				a.currentIndex++
 
-				rte := z.ifAllSequenceReachesToEnd()
-				z.fn(z, latestResults, result.err, rte)
+				rte := a.ifAllSequenceReachesToEnd()
+				a.fn(a, latestResults, result.err, rte)
 
 				cond.Broadcast()
 				if rte {
@@ -83,7 +83,7 @@ func (z *actionZip[R]) run() {
 	}()
 
 	wg.Wait()
-	z.done()
+	a.done()
 }
 
 func Zip[T1, T2 any](fn func(T1, T2, error, bool), seq1 Concurrently[T1], seq2 Concurrently[T2]) *Action[ActionBulkResult[Type2[T1, T2]]] {

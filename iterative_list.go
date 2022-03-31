@@ -14,47 +14,47 @@ func NewList[R any]() *List[R] {
 	return &List[R]{list: make([]R, 0)}
 }
 
-func (d *List[R]) len() int {
-	return len(d.list)
+func (l *List[R]) len() int {
+	return len(l.list)
 }
 
-func (d *List[R]) getAt(i int) R {
-	d.rwmux.RLock()
-	defer d.rwmux.RUnlock()
+func (l *List[R]) getAt(i int) R {
+	l.rwmux.RLock()
+	defer l.rwmux.RUnlock()
 
-	return d.list[i]
+	return l.list[i]
 }
 
-func (d *List[R]) setAt(i int, val R) {
-	d.rwmux.Lock()
-	defer d.rwmux.Unlock()
+func (l *List[R]) setAt(i int, val R) {
+	l.rwmux.Lock()
+	defer l.rwmux.Unlock()
 
-	d.list[i] = val
+	l.list[i] = val
 }
 
-func (d *List[R]) add(items ...R) {
-	d.rwmux.Lock()
-	defer d.rwmux.Unlock()
+func (l *List[R]) add(items ...R) {
+	l.rwmux.Lock()
+	defer l.rwmux.Unlock()
 
-	d.list = append(d.list, items...)
+	l.list = append(l.list, items...)
 }
 
-func (d *List[R]) swap(items []R) {
-	d.rwmux.Lock()
-	defer d.rwmux.Unlock()
+func (l *List[R]) swap(items []R) {
+	l.rwmux.Lock()
+	defer l.rwmux.Unlock()
 
-	d.list = items
+	l.list = items
 }
 
-func (d *List[R]) resizeTo(l int) {
-	if l <= d.len() {
+func (l *List[R]) resizeTo(len int) {
+	if len <= l.len() {
 		return
 	}
 
-	d.rwmux.Lock()
-	defer d.rwmux.Unlock()
+	l.rwmux.Lock()
+	defer l.rwmux.Unlock()
 
-	d.list = append(d.list, make([]R, l-d.len())...)
+	l.list = append(l.list, make([]R, len-l.len())...)
 }
 
 type iterativeList[R any] struct {
@@ -67,8 +67,8 @@ func NewIterativeList[R any]() *iterativeList[R] {
 	}
 }
 
-func (d *iterativeList[R]) Iterator() *iterativeListIterator[R] {
-	return &iterativeListIterator[R]{iterativeList: d}
+func (it *iterativeList[R]) Iterator() *iterativeListIterator[R] {
+	return &iterativeListIterator[R]{iterativeList: it}
 }
 
 type iterativeListIterator[R any] struct {
@@ -76,15 +76,15 @@ type iterativeListIterator[R any] struct {
 	currentIndex int
 }
 
-func (d *iterativeListIterator[R]) avaliable() bool {
-	return d.hasNext()
+func (it *iterativeListIterator[R]) available() bool {
+	return it.hasNext()
 }
 
-func (d *iterativeListIterator[R]) hasNext() bool {
-	return d.currentIndex < d.len()
+func (it *iterativeListIterator[R]) hasNext() bool {
+	return it.currentIndex < it.len()
 }
 
-func (d *iterativeListIterator[R]) next() R {
-	d.currentIndex++
-	return d.list[d.currentIndex-1]
+func (it *iterativeListIterator[R]) next() R {
+	it.currentIndex++
+	return it.list[it.currentIndex-1]
 }

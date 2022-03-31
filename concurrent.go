@@ -14,77 +14,77 @@ func NewConcurrent[R any]() *Concurrent[R] {
 	}
 }
 
-func (r *Concurrent[R]) len() int {
-	return r.executables.len()
+func (c *Concurrent[R]) len() int {
+	return c.executables.len()
 }
 
-func (r *Concurrent[R]) exe(i int) (R, error) {
-	if r.executables.getAt(i).isExecuted() {
-		return r.data.getAt(i)
+func (c *Concurrent[R]) exe(i int) (R, error) {
+	if c.executables.getAt(i).isExecuted() {
+		return c.data.getAt(i)
 	}
 
-	return r.forceExeAt(i)
+	return c.forceExeAt(i)
 }
 
-func (r *Concurrent[R]) forceExeAt(i int) (R, error) {
-	val, err := r.executables.getAt(i).exe()
-	r.data.setAt(i, val, err)
+func (c *Concurrent[R]) forceExeAt(i int) (R, error) {
+	val, err := c.executables.getAt(i).exe()
+	c.data.setAt(i, val, err)
 
 	return val, err
 }
 
-func (r *Concurrent[R]) addData(dVal ...*data[R]) *Concurrent[R] {
-	r.data.List.add(dVal...)
+func (c *Concurrent[R]) addData(dVal ...*data[R]) *Concurrent[R] {
+	c.data.List.add(dVal...)
 
 	for range dVal {
-		r.executables.add(NewExecutor[R]())
+		c.executables.add(NewExecutor[R]())
 	}
-	return r
+	return c
 
 }
 
-func (r *Concurrent[R]) addExeFn(fns ...func() (R, error)) *Concurrent[R] {
+func (c *Concurrent[R]) addExeFn(fns ...func() (R, error)) *Concurrent[R] {
 	for i := range fns {
-		r.data.List.add(NewData[R]())
+		c.data.List.add(NewData[R]())
 
 		e := NewExecutor[R]()
 		e.fn = fns[i]
-		r.executables.add(e)
+		c.executables.add(e)
 	}
-	return r
+	return c
 }
 
-func (r *Concurrent[R]) add(eVal ...*executable[R]) *Concurrent[R] {
+func (c *Concurrent[R]) add(eVal ...*executable[R]) *Concurrent[R] {
 	for range eVal {
-		r.data.List.add(NewData[R]())
+		c.data.List.add(NewData[R]())
 	}
 
-	r.executables.add(eVal...)
-	return r
+	c.executables.add(eVal...)
+	return c
 }
 
-func (r *Concurrent[R]) swapValue(dVal *determinedDataList[R], eVal *executablesList[R]) *Concurrent[R] {
+func (c *Concurrent[R]) swapValue(dVal *determinedDataList[R], eVal *executablesList[R]) *Concurrent[R] {
 	if dVal != nil {
-		r.data.swap(dVal.list)
+		c.data.swap(dVal.list)
 	}
 	if eVal != nil {
-		r.executables.swap(eVal.list)
+		c.executables.swap(eVal.list)
 	}
-	return r
+	return c
 }
 
-func (r *Concurrent[R]) defaultIterator() ExecutableIterator[R] {
-	if r._defaultIterator != nil {
-		return r._defaultIterator
+func (c *Concurrent[R]) defaultIterator() ExecutableIterator[R] {
+	if c._defaultIterator != nil {
+		return c._defaultIterator
 	}
-	r._defaultIterator = r.Iterator()
-	return r._defaultIterator
+	c._defaultIterator = c.Iterator()
+	return c._defaultIterator
 }
 
-func (r *Concurrent[R]) Iterator() ExecutableIterator[R] {
+func (c *Concurrent[R]) Iterator() ExecutableIterator[R] {
 	return &concurrentIterator[R]{
-		Concurrent:            r,
-		iterativeListIterator: r.executables.iterativeList.Iterator(),
+		Concurrent:            c,
+		iterativeListIterator: c.executables.iterativeList.Iterator(),
 	}
 }
 
@@ -93,25 +93,25 @@ type concurrentIterator[R any] struct {
 	*iterativeListIterator[*executable[R]]
 }
 
-func (r *concurrentIterator[R]) exeFn() func() (R, error) {
-	r.currentIndex++
+func (it *concurrentIterator[R]) exeFn() func() (R, error) {
+	it.currentIndex++
 	return func(idx int) func() (R, error) {
-		return func() (R, error) { return r.exe(idx) }
-	}(r.currentIndex - 1)
+		return func() (R, error) { return it.exe(idx) }
+	}(it.currentIndex - 1)
 }
 
-func (r *concurrentIterator[R]) exeNext() (R, error) {
-	r.currentIndex++
-	return r.exe(r.currentIndex - 1)
+func (it *concurrentIterator[R]) exeNext() (R, error) {
+	it.currentIndex++
+	return it.exe(it.currentIndex - 1)
 }
 
-func (r *concurrentIterator[R]) exeFnAsAny() func() (any, error) {
-	r.currentIndex++
+func (it *concurrentIterator[R]) exeFnAsAny() func() (any, error) {
+	it.currentIndex++
 	return func(idx int) func() (any, error) {
-		return func() (any, error) { return r.exe(idx) }
-	}(r.currentIndex - 1)
+		return func() (any, error) { return it.exe(idx) }
+	}(it.currentIndex - 1)
 }
 
-func (r *concurrentIterator[R]) exeNextAsAny() (any, error) {
-	return r.exeNext()
+func (it *concurrentIterator[R]) exeNextAsAny() (any, error) {
+	return it.exeNext()
 }

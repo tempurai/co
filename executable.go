@@ -15,26 +15,26 @@ func NewExecutor[R any]() *executable[R] {
 	return &executable[R]{}
 }
 
-func (r *executable[R]) setFn(fn func() (R, error)) *executable[R] {
-	r.fn = fn
-	return r
+func (e *executable[R]) setFn(fn func() (R, error)) *executable[R] {
+	e.fn = fn
+	return e
 }
 
-func (r *executable[R]) exe() (R, error) {
+func (e *executable[R]) exe() (R, error) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println("executable function error: %w", r)
 		}
 	}()
-	return r.fn()
+	return e.fn()
 }
 
-func (r *executable[R]) setExecuted(b bool) {
-	r.executed = b
+func (e *executable[R]) setExecuted(b bool) {
+	e.executed = b
 }
 
-func (r *executable[R]) isExecuted() bool {
-	return r.executed
+func (e *executable[R]) isExecuted() bool {
+	return e.executed
 }
 
 type executablesList[R any] struct {

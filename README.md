@@ -1,13 +1,10 @@
 # Co
 
-A concurrency lib project with GENERIC SUPPORTED dedicate to help developer ease the pain of dealing goroutine and
-channel when coding 2 more lines of channel code become annoying.
+A concurrency lib project with GENERIC SUPPORTED dedicate to help developer ease the pain of dealing goroutine and channel when coding 2 more lines of channel code become annoying.
 
-`Co` provides a lot of (at least in planning) helper functions and utils such as `AwaitAll` `AwaitAny` and
-Parallel execution mechanism with concurrency limitation.
+`Co` provides a lot of (at least in planning) helper functions and utils such as `AwaitAll` `AwaitAny` and Parallel execution mechanism with concurrency limitation.
 
-If there are some concurrency patterns you would like me to implement and there is none available in
-community or in go lib, you are more than welcome to open an issue.
+If there are some concurrency patterns you would like me to implement and there is none available in community or in go lib, you are more than welcome to open an issue.
 
 ## Listence
 

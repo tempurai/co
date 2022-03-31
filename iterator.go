@@ -5,7 +5,7 @@ type IteratorAction[T any] interface {
 }
 
 type IteratorOperator interface {
-	avaliable() bool // A Sequence is ready to execute next function
+	available() bool // A Sequence is ready to execute next function
 	hasNext() bool   // A Sequence have next executable function
 }
 

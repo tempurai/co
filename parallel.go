@@ -70,7 +70,7 @@ func (d *parallelDispatcher[K]) listen() {
 				return
 
 			case jobChannel := <-d.workerPool:
-				if d.queue.Len() == 0 { // if no data avaliable, wait
+				if d.queue.Len() == 0 { // if no data available, wait
 					d.queueCond.Wait()
 				}
 				if d.queue.Len() == 0 { // which means unlock but still no data
