@@ -16,6 +16,7 @@ type Action[E any] struct {
 
 	actionMode ActionMode
 	closeChan  chan bool
+	firstChan  chan bool
 }
 
 func NewAction[E any]() *Action[E] {
@@ -48,8 +49,8 @@ func (a *Action[E]) GetData() []E {
 }
 
 func (a *Action[E]) PeakData() E {
-	a.wait()
 	if len(a.externalData) == 0 {
+		<-a.firstChan
 		return *new(E)
 	}
 	return a.externalData[0]
@@ -66,7 +67,7 @@ func (a *Action[E]) listenProgressive(e E) {
 	case ActionModeChan:
 		a.externalCh <- e
 	case ActionModeData:
-		a.externalData = append(a.externalData, e)
+		a.appendToData(e)
 	}
 }
 
@@ -81,7 +82,18 @@ func (a *Action[E]) listenBulk(e []E) {
 			a.externalCh <- e[i]
 		}
 	case ActionModeData:
-		a.externalData = append(a.externalData, e...)
+		a.appendToData(e...)
+	}
+}
+
+func (a *Action[E]) appendToData(e ...E) {
+	if len(e) == 0 {
+		return
+	}
+	sendFirstCh := len(a.externalData) == 0
+	a.externalData = append(a.externalData, e...)
+	if sendFirstCh {
+		SafeSend(a.firstChan, true)
 	}
 }
 
