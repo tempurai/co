@@ -1,24 +1,24 @@
 package co
 
-type CoExecutableSequence[R any] struct {
+type CoExecutable[R any] struct {
 	executables *executablesList[R]
 	data        *determinedDataList[R]
 
 	_defaultIterator Iterator[R]
 }
 
-func NewCoExecutableSequence[R any]() *CoExecutableSequence[R] {
-	return &CoExecutableSequence[R]{
+func NewCoExecutable[R any]() *CoExecutable[R] {
+	return &CoExecutable[R]{
 		executables: NewExecutablesList[R](),
 		data:        NewDeterminedDataList[R](),
 	}
 }
 
-func (c *CoExecutableSequence[R]) len() int {
+func (c *CoExecutable[R]) len() int {
 	return c.executables.len()
 }
 
-func (c *CoExecutableSequence[R]) exe(i int) (R, error) {
+func (c *CoExecutable[R]) exe(i int) (R, error) {
 	if c.executables.getAt(i).isExecuted() {
 		return c.data.getAt(i)
 	}
@@ -26,14 +26,14 @@ func (c *CoExecutableSequence[R]) exe(i int) (R, error) {
 	return c.forceExeAt(i)
 }
 
-func (c *CoExecutableSequence[R]) forceExeAt(i int) (R, error) {
+func (c *CoExecutable[R]) forceExeAt(i int) (R, error) {
 	val, err := c.executables.getAt(i).exe()
 	c.data.setAt(i, val, err)
 
 	return val, err
 }
 
-func (c *CoExecutableSequence[R]) AddFn(fns ...func() (R, error)) *CoExecutableSequence[R] {
+func (c *CoExecutable[R]) AddFn(fns ...func() (R, error)) *CoExecutable[R] {
 	for i := range fns {
 		c.data.List.add(NewData[R]())
 
@@ -44,7 +44,7 @@ func (c *CoExecutableSequence[R]) AddFn(fns ...func() (R, error)) *CoExecutableS
 	return c
 }
 
-func (c *CoExecutableSequence[R]) defaultIterator() Iterator[R] {
+func (c *CoExecutable[R]) defaultIterator() Iterator[R] {
 	if c._defaultIterator != nil {
 		return c._defaultIterator
 	}
@@ -52,15 +52,15 @@ func (c *CoExecutableSequence[R]) defaultIterator() Iterator[R] {
 	return c._defaultIterator
 }
 
-func (c *CoExecutableSequence[R]) Iterator() Iterator[R] {
+func (c *CoExecutable[R]) Iterator() Iterator[R] {
 	return &coExecutableSequenceIterator[R]{
-		CoExecutableSequence:  c,
+		CoExecutable:          c,
 		iterativeListIterator: c.executables.iterativeList.Iterator(),
 	}
 }
 
 type coExecutableSequenceIterator[R any] struct {
-	*CoExecutableSequence[R]
+	*CoExecutable[R]
 	iterativeListIterator[*executable[R]]
 }
 

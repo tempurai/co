@@ -1,5 +1,9 @@
 package co
 
+import (
+	"sync"
+)
+
 type ActionMode int
 
 const (
@@ -17,6 +21,8 @@ type Action[E any] struct {
 	actionMode ActionMode
 	closeChan  chan bool
 	firstChan  chan bool
+
+	rwmux sync.RWMutex
 }
 
 func NewAction[E any]() *Action[E] {
@@ -25,6 +31,7 @@ func NewAction[E any]() *Action[E] {
 		externalData:      make([]E, 0),
 		externalCloseChan: make(chan bool),
 		closeChan:         make(chan bool),
+		firstChan:         make(chan bool),
 	}
 }
 
@@ -45,12 +52,22 @@ func (a *Action[E]) AsData() *Action[E] {
 }
 func (a *Action[E]) GetData() []E {
 	a.wait()
+
+	a.rwmux.RLock()
+	defer a.rwmux.RUnlock()
+
 	return a.externalData
 }
 
 func (a *Action[E]) PeakData() E {
 	if len(a.externalData) == 0 {
 		<-a.firstChan
+	}
+
+	a.rwmux.RLock()
+	defer a.rwmux.RUnlock()
+
+	if len(a.externalData) == 0 {
 		return *new(E)
 	}
 	return a.externalData[0]
@@ -90,10 +107,18 @@ func (a *Action[E]) appendToData(e ...E) {
 	if len(e) == 0 {
 		return
 	}
+
+	a.rwmux.Lock()
+	defer a.rwmux.Unlock()
+
 	sendFirstCh := len(a.externalData) == 0
 	a.externalData = append(a.externalData, e...)
+
 	if sendFirstCh {
-		SafeSend(a.firstChan, true)
+		go func() {
+			SafeSend(a.firstChan, true)
+			SafeClose(a.firstChan)
+		}()
 	}
 }
 

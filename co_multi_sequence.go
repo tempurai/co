@@ -5,10 +5,10 @@ import (
 )
 
 type CoMultiSequence[R any] struct {
-	concurrents []CoExecutableSequence[R]
+	concurrents []CoExecutable[R]
 }
 
-func NewCoMultiSequence[R any](cos ...CoExecutableSequence[R]) *CoMultiSequence[R] {
+func NewCoMultiSequence[R any](cos ...CoExecutable[R]) *CoMultiSequence[R] {
 	return &CoMultiSequence[R]{
 		concurrents: cos,
 	}
