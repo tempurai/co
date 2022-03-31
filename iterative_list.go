@@ -67,8 +67,8 @@ func NewIterativeList[R any]() *iterativeList[R] {
 	}
 }
 
-func (it *iterativeList[R]) Iterator() *iterativeListIterator[R] {
-	return &iterativeListIterator[R]{iterativeList: it}
+func (it *iterativeList[R]) Iterator() iterativeListIterator[R] {
+	return iterativeListIterator[R]{iterativeList: it, currentIndex: -1}
 }
 
 type iterativeListIterator[R any] struct {
@@ -81,10 +81,16 @@ func (it *iterativeListIterator[R]) available() bool {
 }
 
 func (it *iterativeListIterator[R]) hasNext() bool {
-	return it.currentIndex < it.len()
+	return it.currentIndex+1 < it.len()
 }
 
-func (it *iterativeListIterator[R]) next() R {
+func (it *iterativeListIterator[R]) next() (R, error) {
 	it.currentIndex++
-	return it.list[it.currentIndex-1]
+	return it.list[it.currentIndex], nil
+}
+
+func (it *iterativeListIterator[R]) dispatch() func() (R, error) {
+	fn := Copy(it).next
+	it.currentIndex++
+	return fn
 }

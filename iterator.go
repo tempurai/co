@@ -1,7 +1,15 @@
 package co
 
+type dispatchFn[T any] func() (T, error)
+
 type IteratorAction[T any] interface {
-	next() *executable[T]
+	next() (T, error)
+	dispatch() func() (T, error)
+}
+
+type IteratorAnyAction interface {
+	nextAny() (any, error)
+	nextAnyFn() func() (any, error)
 }
 
 type IteratorOperator interface {
@@ -14,25 +22,15 @@ type Iterator[T any] interface {
 	IteratorOperator
 }
 
-type ExecutableIterator[T any] interface {
-	Iterator[T]
-
-	exeNext() (T, error)
-	exeFn() func() (T, error)
-}
-
-type AnyExecutableIterator interface {
+type IteratorAny interface {
+	IteratorAnyAction
 	IteratorOperator
-
-	exeNextAsAny() (any, error)
-	exeFnAsAny() func() (any, error)
 }
 
-func castToAnyExecutableIterator(vals ...any) []AnyExecutableIterator {
-	casted := make([]AnyExecutableIterator, len(vals))
+func castToIteratorAny(vals ...any) []IteratorAny {
+	casted := make([]IteratorAny, len(vals))
 	for i := range vals {
-		casted[i] = vals[i].(AnyExecutableIterator)
+		casted[i] = vals[i].(IteratorAny)
 	}
-
 	return casted
 }

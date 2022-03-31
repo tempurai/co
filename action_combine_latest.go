@@ -7,11 +7,11 @@ import (
 type actionCombineLatest[R any] struct {
 	*Action[R]
 
-	its []AnyExecutableIterator
+	its []IteratorAny
 	fn  func(*actionCombineLatest[R], []any, error, bool)
 }
 
-func NewActionCombineLatest[R any](iterators []AnyExecutableIterator) *actionCombineLatest[R] {
+func NewActionCombineLatest[R any](iterators []IteratorAny) *actionCombineLatest[R] {
 	return &actionCombineLatest[R]{
 		Action: NewAction[R](),
 		its:    iterators,
@@ -41,11 +41,11 @@ func (a *actionCombineLatest[R]) run() {
 	for i := range a.its {
 		wg.Add(1)
 
-		go func(idx int, seq AnyExecutableIterator) {
+		go func(idx int, seq IteratorAny) {
 			defer wg.Done()
 
 			for i := 0; seq.hasNext(); i++ {
-				data, err := seq.exeNextAsAny()
+				data, err := seq.nextAny()
 				SafeSend(resultChan, actionAnyResult{idx, data, err})
 			}
 		}(i, a.its[i])
@@ -81,8 +81,8 @@ func (a *actionCombineLatest[R]) run() {
 	a.done()
 }
 
-func CombineLatest[T1, T2 any](seq1 Concurrently[T1], seq2 Concurrently[T2]) *Action[ActionBulkResult[Type2[T1, T2]]] {
-	action := NewActionCombineLatest[ActionBulkResult[Type2[T1, T2]]](castToAnyExecutableIterator(seq1.Iterator(), seq2.Iterator())).
+func CombineLatest[T1, T2 any](seq1 CoSequenceable[T1], seq2 CoSequenceable[T2]) *Action[ActionBulkResult[Type2[T1, T2]]] {
+	action := NewActionCombineLatest[ActionBulkResult[Type2[T1, T2]]](castToIteratorAny(seq1.Iterator(), seq2.Iterator())).
 		setFn(func(a *actionCombineLatest[ActionBulkResult[Type2[T1, T2]]], v []any, err error, b bool) {
 			a.listenProgressive(ActionBulkResult[Type2[T1, T2]]{
 				Value:        Type2[T1, T2]{CastOrNil[T1](v[0]), CastOrNil[T2](v[1])},
@@ -95,8 +95,8 @@ func CombineLatest[T1, T2 any](seq1 Concurrently[T1], seq2 Concurrently[T2]) *Ac
 	return action.Action
 }
 
-func CombineLatest3[T1, T2, T3 any](seq1 Concurrently[T1], seq2 Concurrently[T2], seq3 Concurrently[T3]) *Action[ActionBulkResult[Type3[T1, T2, T3]]] {
-	action := NewActionCombineLatest[ActionBulkResult[Type3[T1, T2, T3]]](castToAnyExecutableIterator(seq1.Iterator(), seq2.Iterator())).
+func CombineLatest3[T1, T2, T3 any](seq1 CoSequenceable[T1], seq2 CoSequenceable[T2], seq3 CoSequenceable[T3]) *Action[ActionBulkResult[Type3[T1, T2, T3]]] {
+	action := NewActionCombineLatest[ActionBulkResult[Type3[T1, T2, T3]]](castToIteratorAny(seq1.Iterator(), seq2.Iterator())).
 		setFn(func(a *actionCombineLatest[ActionBulkResult[Type3[T1, T2, T3]]], v []any, err error, b bool) {
 			a.listenProgressive(ActionBulkResult[Type3[T1, T2, T3]]{
 				Value:        Type3[T1, T2, T3]{CastOrNil[T1](v[0]), CastOrNil[T2](v[1]), CastOrNil[T3](v[2])},

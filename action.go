@@ -27,27 +27,27 @@ func NewAction[E any]() *Action[E] {
 	}
 }
 
-func (a *Action[E]) asChan() (chan E, chan bool) {
+func (a *Action[E]) AsChan() (chan E, chan bool) {
 	a.actionMode = ActionModeChan
 	return a.externalCh, a.externalCloseChan
 }
 
-func (a *Action[E]) asFn(fn func(E)) *Action[E] {
+func (a *Action[E]) AsFn(fn func(E)) *Action[E] {
 	a.actionMode = ActionModeFn
 	a.externalFn = fn
 	return a
 }
 
-func (a *Action[E]) asData() *Action[E] {
+func (a *Action[E]) AsData() *Action[E] {
 	a.actionMode = ActionModeData
 	return a
 }
-func (a *Action[E]) getData() []E {
+func (a *Action[E]) GetData() []E {
 	a.wait()
 	return a.externalData
 }
 
-func (a *Action[E]) peakData() E {
+func (a *Action[E]) PeakData() E {
 	a.wait()
 	if len(a.externalData) == 0 {
 		return *new(E)

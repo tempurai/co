@@ -1,13 +1,13 @@
 package co
 
 func AwaitAll[R any](fns ...func() (R, error)) []*data[R] {
-	return Await[R](NewConcurrent[R]().addExeFn(fns...)).asData().getData()
+	return Await[R](NewCoExecutableSequence[R]().AddFn(fns...)).AsData().GetData()
 }
 
 func AwaitRace[R any](fns ...func() (R, error)) R {
-	return Race[R](NewConcurrent[R]().addExeFn(fns...)).asData().peakData()
+	return Race[R](NewCoExecutableSequence[R]().AddFn(fns...)).AsData().PeakData()
 }
 
 func AwaitAny[R any](fns ...func() (R, error)) *data[R] {
-	return Any[R](NewConcurrent[R]().addExeFn(fns...)).asData().peakData()
+	return Any[R](NewCoExecutableSequence[R]().AddFn(fns...)).AsData().PeakData()
 }

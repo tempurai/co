@@ -1,5 +1,0 @@
-package co
-
-func Chunk() {
-
-}

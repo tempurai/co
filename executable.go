@@ -4,8 +4,6 @@ import (
 	"log"
 )
 
-type executableFn[R any] func() (R, error)
-
 type executable[R any] struct {
 	fn       func() (R, error)
 	executed bool

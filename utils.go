@@ -56,6 +56,11 @@ func SafeGo(fn func()) {
 	}()
 }
 
+func Copy[T any](v *T) *T {
+	v2 := *v
+	return &v2
+}
+
 func CastOrNil[T any](el any) T {
 	if el == nil {
 		return *new(T)

@@ -12,7 +12,7 @@ type actionZip[R any] struct {
 	currentIndex int
 }
 
-func NewActionZip[R any](its []AnyExecutableIterator) *actionZip[R] {
+func NewActionZip[R any](its []IteratorAny) *actionZip[R] {
 	return &actionZip[R]{
 		actionCombineLatest: NewActionCombineLatest[R](its),
 		currentIndex:        1,
@@ -43,13 +43,13 @@ func (a *actionZip[R]) run() {
 	for i := range a.its {
 		wg.Add(1)
 
-		go func(idx int, seq AnyExecutableIterator) {
+		go func(idx int, seq IteratorAny) {
 			defer wg.Done()
 
 			for i := 0; seq.hasNext(); i++ {
 				cond.Wait()
 
-				data, err := seq.exeNextAsAny()
+				data, err := seq.nextAny()
 				SafeSend(resultChan, actionAnyResult{idx, data, err})
 			}
 		}(i, a.its[i])
@@ -86,8 +86,8 @@ func (a *actionZip[R]) run() {
 	a.done()
 }
 
-func Zip[T1, T2 any](fn func(T1, T2, error, bool), seq1 Concurrently[T1], seq2 Concurrently[T2]) *Action[ActionBulkResult[Type2[T1, T2]]] {
-	action := NewActionZip[ActionBulkResult[Type2[T1, T2]]](castToAnyExecutableIterator(seq1.Iterator(), seq2.Iterator())).
+func Zip[T1, T2 any](fn func(T1, T2, error, bool), seq1 CoSequenceable[T1], seq2 CoSequenceable[T2]) *Action[ActionBulkResult[Type2[T1, T2]]] {
+	action := NewActionZip[ActionBulkResult[Type2[T1, T2]]](castToIteratorAny(seq1.Iterator(), seq2.Iterator())).
 		setFn(func(a *actionZip[ActionBulkResult[Type2[T1, T2]]], v []any, err error, b bool) {
 			a.listenProgressive(ActionBulkResult[Type2[T1, T2]]{
 				Value:        Type2[T1, T2]{CastOrNil[T1](v[0]), CastOrNil[T2](v[1])},
@@ -100,8 +100,8 @@ func Zip[T1, T2 any](fn func(T1, T2, error, bool), seq1 Concurrently[T1], seq2 C
 	return action.Action
 }
 
-func Zip3[T1, T2, T3 any](fn func(T1, T2, T3, error, bool), seq1 Concurrently[T1], seq2 Concurrently[T2], seq3 Concurrently[T3]) *Action[ActionBulkResult[Type3[T1, T2, T3]]] {
-	action := NewActionZip[ActionBulkResult[Type3[T1, T2, T3]]](castToAnyExecutableIterator(seq1.Iterator(), seq2.Iterator())).
+func Zip3[T1, T2, T3 any](fn func(T1, T2, T3, error, bool), seq1 CoSequenceable[T1], seq2 CoSequenceable[T2], seq3 CoSequenceable[T3]) *Action[ActionBulkResult[Type3[T1, T2, T3]]] {
+	action := NewActionZip[ActionBulkResult[Type3[T1, T2, T3]]](castToIteratorAny(seq1.Iterator(), seq2.Iterator())).
 		setFn(func(a *actionZip[ActionBulkResult[Type3[T1, T2, T3]]], v []any, err error, b bool) {
 			a.listenProgressive(ActionBulkResult[Type3[T1, T2, T3]]{
 				Value:        Type3[T1, T2, T3]{CastOrNil[T1](v[0]), CastOrNil[T2](v[1]), CastOrNil[T3](v[2])},

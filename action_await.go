@@ -7,7 +7,7 @@ import (
 type actionAwait[R any] struct {
 	*Action[*data[R]]
 
-	it ExecutableIterator[R]
+	it Iterator[R]
 }
 
 func (a *actionAwait[R]) run() {
@@ -17,13 +17,13 @@ func (a *actionAwait[R]) run() {
 	for i := 0; a.it.hasNext(); i++ {
 		wg.Add(1)
 
-		go func(i int, fn executableFn[R]) {
+		go func(i int, fn dispatchFn[R]) {
 			defer wg.Done()
 
 			val, err := fn()
 			sData.setAt(i, val, err)
 
-		}(i, a.it.exeFn())
+		}(i, a.it.dispatch())
 	}
 
 	wg.Wait()
@@ -31,7 +31,7 @@ func (a *actionAwait[R]) run() {
 	a.done()
 }
 
-func Await[R any](co Concurrently[R]) *Action[*data[R]] {
+func Await[R any](co CoSequenceable[R]) *Action[*data[R]] {
 	action := &actionAwait[R]{
 		Action: NewAction[*data[R]](),
 		it:     co.Iterator(),

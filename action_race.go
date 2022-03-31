@@ -3,7 +3,7 @@ package co
 type actionRace[R any] struct {
 	*Action[*data[R]]
 
-	it        ExecutableIterator[R]
+	it        Iterator[R]
 	ignoreErr bool
 }
 
@@ -12,7 +12,7 @@ func (a *actionRace[R]) run() {
 	aBool := &AtomicBool{}
 
 	for i := 0; a.it.hasNext(); i++ {
-		go func(i int, fn executableFn[R]) {
+		go func(i int, fn dispatchFn[R]) {
 			if aBool.Get() {
 				return
 			}
@@ -24,7 +24,7 @@ func (a *actionRace[R]) run() {
 
 			SafeSend(dataCh, NewDataWith(val, err))
 			aBool.Set(true)
-		}(i, a.it.exeFn())
+		}(i, a.it.dispatch())
 	}
 
 	a.listenProgressive(<-dataCh)
@@ -33,7 +33,7 @@ func (a *actionRace[R]) run() {
 	a.done()
 }
 
-func baseRace[R any](ignoreErr bool, co Concurrently[R]) *Action[*data[R]] {
+func baseRace[R any](ignoreErr bool, co CoSequenceable[R]) *Action[*data[R]] {
 	action := &actionRace[R]{
 		Action:    NewAction[*data[R]](),
 		it:        co.Iterator(),
@@ -44,7 +44,7 @@ func baseRace[R any](ignoreErr bool, co Concurrently[R]) *Action[*data[R]] {
 	return action.Action
 }
 
-func Race[R any](it Concurrently[R]) *Action[R] {
+func Race[R any](it CoSequenceable[R]) *Action[R] {
 	action := baseRace(true, it)
 	action.wait()
 
@@ -53,6 +53,6 @@ func Race[R any](it Concurrently[R]) *Action[R] {
 	})
 }
 
-func Any[R any](it Concurrently[R]) *Action[*data[R]] {
+func Any[R any](it CoSequenceable[R]) *Action[*data[R]] {
 	return baseRace(false, it)
 }

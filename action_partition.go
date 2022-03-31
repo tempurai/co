@@ -3,7 +3,7 @@ package co
 type actionPartition[R any] struct {
 	*Action[[]*data[R]]
 
-	its   []ExecutableIterator[R]
+	its   []Iterator[R]
 	width int
 }
 
@@ -21,7 +21,7 @@ func (a *actionPartition[R]) run() {
 
 	for i := 0; a.ifHasNext(); i++ {
 		for j := range a.its {
-			data, err := a.its[j].exeNext()
+			data, err := a.its[j].next()
 			seqData.add(data, err)
 
 			if seqData.len() == a.width || !a.ifHasNext() {
@@ -34,7 +34,7 @@ func (a *actionPartition[R]) run() {
 	a.done()
 }
 
-func Partition[R any](width int, cos ...Concurrently[R]) *Action[[]*data[R]] {
+func Partition[R any](width int, cos ...CoSequenceable[R]) *Action[[]*data[R]] {
 	action := &actionPartition[R]{
 		its:   toConcurrentIterators(cos...),
 		width: width,
