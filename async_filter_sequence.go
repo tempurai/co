@@ -27,10 +27,13 @@ func (c *AsyncFilterSequence[R]) Iterator() *asyncFilterSequenceIterator[R] {
 type asyncFilterSequenceIterator[R any] struct {
 	*AsyncFilterSequence[R]
 
+	preProcessed bool
 	previousData *data[R]
 }
 
 func (it *asyncFilterSequenceIterator[R]) hasNext() bool {
+	defer func() { it.preProcessed = true }()
+
 	if it.previousData == nil && !it.previousIterator.hasNext() {
 		return false
 	}
@@ -46,6 +49,11 @@ func (it *asyncFilterSequenceIterator[R]) hasNext() bool {
 }
 
 func (it *asyncFilterSequenceIterator[R]) next() (R, error) {
+	if !it.preProcessed {
+		it.hasNext()
+	}
+	defer func() { it.preProcessed = false }()
+
 	for it.previousIterator.hasNext() {
 		val, err := it.previousIterator.next()
 		if err != nil {

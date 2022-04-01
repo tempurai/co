@@ -22,10 +22,13 @@ func (c *AsyncCompactedSequence[R]) Iterator() *asyncCompactedSequenceIterator[R
 type asyncCompactedSequenceIterator[R comparable] struct {
 	*AsyncCompactedSequence[R]
 
+	preProcessed bool
 	previousData *data[R]
 }
 
 func (it *asyncCompactedSequenceIterator[R]) hasNext() bool {
+	defer func() { it.preProcessed = true }()
+
 	if it.previousData == nil && !it.previousIterator.hasNext() {
 		return false
 	}
@@ -52,6 +55,11 @@ func (it *asyncCompactedSequenceIterator[R]) hasNext() bool {
 }
 
 func (it *asyncCompactedSequenceIterator[R]) next() (R, error) {
+	if !it.preProcessed {
+		it.hasNext()
+	}
+	defer func() { it.preProcessed = false }()
+
 	rData := it.previousData
 	it.previousData = nil
 	return rData.value, rData.err
