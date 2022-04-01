@@ -63,9 +63,9 @@ type executableListIterator[R any] struct {
 	iterativeListIterator[*executable[R]]
 }
 
-func (it *executableListIterator[R]) hasNext() bool {
+func (it *executableListIterator[R]) preflight() bool {
 	defer func() { it.currentIndex++ }()
-	return it.iterativeListIterator.hasNext()
+	return it.iterativeListIterator.preflight()
 }
 
 func (it *executableListIterator[R]) exeAt(i int) (R, error) {

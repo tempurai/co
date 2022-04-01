@@ -37,9 +37,9 @@ func (it *asyncMergedSequenceIterator[R]) consumeIndex() int {
 	return it.currentIndex
 }
 
-func (it *asyncMergedSequenceIterator[R]) hasNext() bool {
+func (it *asyncMergedSequenceIterator[R]) preflight() bool {
 	for i := range it.its {
-		if it.its[i].hasNext() {
+		if it.its[i].preflight() {
 			return true
 		}
 	}
@@ -47,10 +47,10 @@ func (it *asyncMergedSequenceIterator[R]) hasNext() bool {
 }
 
 func (it *asyncMergedSequenceIterator[R]) consume() (R, error) {
-	for it.hasNext() {
+	for it.preflight() {
 		idx := it.consumeIndex()
 
-		if !it.its[idx].hasNext() {
+		if !it.its[idx].preflight() {
 			continue
 		}
 		return it.its[idx].consume()
@@ -59,7 +59,7 @@ func (it *asyncMergedSequenceIterator[R]) consume() (R, error) {
 }
 
 func (it *asyncMergedSequenceIterator[R]) next() (R, error) {
-	it.hasNext()
+	it.preflight()
 	return it.consume()
 }
 

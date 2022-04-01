@@ -52,6 +52,6 @@ func (it *asyncExecutableIterator[R]) consume() (R, error) {
 }
 
 func (it *asyncExecutableIterator[R]) next() (R, error) {
-	it.hasNext()
+	it.preflight()
 	return it.consume()
 }

@@ -14,7 +14,7 @@ func (a *actionAwait[R]) run() {
 	wg := sync.WaitGroup{}
 	dataList := NewList[*data[R]]()
 
-	for i := 0; a.list.hasNext(); i++ {
+	for i := 0; a.list.preflight(); i++ {
 		wg.Add(1)
 
 		go func(i int) {

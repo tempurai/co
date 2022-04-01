@@ -31,16 +31,16 @@ type asyncFilterSequenceIterator[R any] struct {
 	previousData *data[R]
 }
 
-func (it *asyncFilterSequenceIterator[R]) hasNext() bool {
+func (it *asyncFilterSequenceIterator[R]) preflight() bool {
 	defer func() { it.preProcessed = true }()
 
-	if it.previousData == nil && !it.previousIterator.hasNext() {
+	if it.previousData == nil && !it.previousIterator.preflight() {
 		return false
 	}
-	if it.previousData != nil && !it.previousIterator.hasNext() {
+	if it.previousData != nil && !it.previousIterator.preflight() {
 		return true
 	}
-	if it.previousData == nil && it.previousIterator.hasNext() {
+	if it.previousData == nil && it.previousIterator.preflight() {
 		val, err := it.previousIterator.consume()
 		it.previousData = NewDataWith(val, err)
 		return true
@@ -50,11 +50,11 @@ func (it *asyncFilterSequenceIterator[R]) hasNext() bool {
 
 func (it *asyncFilterSequenceIterator[R]) consume() (R, error) {
 	if !it.preProcessed {
-		it.hasNext()
+		it.preflight()
 	}
 	defer func() { it.preProcessed = false }()
 
-	for it.previousIterator.hasNext() {
+	for it.previousIterator.preflight() {
 		val, err := it.previousIterator.consume()
 		if err != nil {
 			it.previousData = NewDataWith(val, err)
@@ -72,7 +72,7 @@ func (it *asyncFilterSequenceIterator[R]) consume() (R, error) {
 }
 
 func (it *asyncFilterSequenceIterator[R]) next() (R, error) {
-	it.hasNext()
+	it.preflight()
 	return it.consume()
 }
 

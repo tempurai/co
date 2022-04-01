@@ -9,7 +9,7 @@ type actionPartition[R any] struct {
 
 func (a *actionPartition[R]) ifHasNext() bool {
 	for i := range a.its {
-		if a.its[i].hasNext() {
+		if a.its[i].preflight() {
 			return true
 		}
 	}

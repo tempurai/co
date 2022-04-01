@@ -26,17 +26,17 @@ type asyncCompactedSequenceIterator[R comparable] struct {
 	previousData *data[R]
 }
 
-func (it *asyncCompactedSequenceIterator[R]) hasNext() bool {
+func (it *asyncCompactedSequenceIterator[R]) preflight() bool {
 	defer func() { it.preProcessed = true }()
 
-	if it.previousData == nil && !it.previousIterator.hasNext() {
+	if it.previousData == nil && !it.previousIterator.preflight() {
 		return false
 	}
-	if it.previousData != nil && !it.previousIterator.hasNext() {
+	if it.previousData != nil && !it.previousIterator.preflight() {
 		return true
 	}
-	if it.previousData == nil && it.previousIterator.hasNext() {
-		for it.previousIterator.hasNext() {
+	if it.previousData == nil && it.previousIterator.preflight() {
+		for it.previousIterator.preflight() {
 			val, err := it.previousIterator.consume()
 			if err != nil {
 				it.previousData = NewDataWith(val, err)
@@ -56,7 +56,7 @@ func (it *asyncCompactedSequenceIterator[R]) hasNext() bool {
 
 func (it *asyncCompactedSequenceIterator[R]) consume() (R, error) {
 	if !it.preProcessed {
-		it.hasNext()
+		it.preflight()
 	}
 	defer func() { it.preProcessed = false }()
 
@@ -70,6 +70,6 @@ func (it *asyncCompactedSequenceIterator[R]) consumeAny() (any, error) {
 }
 
 func (it *asyncCompactedSequenceIterator[R]) next() (R, error) {
-	it.hasNext()
+	it.preflight()
 	return it.consume()
 }

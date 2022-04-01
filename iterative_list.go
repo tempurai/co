@@ -76,7 +76,7 @@ type iterativeListIterator[R any] struct {
 	currentIndex int
 }
 
-func (it *iterativeListIterator[R]) hasNext() bool {
+func (it *iterativeListIterator[R]) preflight() bool {
 	return it.currentIndex < it.len()
 }
 

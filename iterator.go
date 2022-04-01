@@ -1,7 +1,7 @@
 package co
 
 type IteratorAction[T any] interface {
-	consume() (T, error)
+	consume() (T, error) // must be called wiht preflight
 	next() (T, error)
 }
 
@@ -10,7 +10,7 @@ type IteratorAnyAction interface {
 }
 
 type IteratorOperator interface {
-	hasNext() bool // A Sequence have consume executable function
+	preflight() bool // A Sequence have next consume executable function
 }
 
 type Iterator[T any] interface {

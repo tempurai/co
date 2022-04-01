@@ -25,7 +25,7 @@ func (a *actionCombineLatest[R]) setFn(fn func(*actionCombineLatest[R], []any, e
 
 func (a *actionCombineLatest[R]) ifAllSequenceReachesToEnd() bool {
 	for _, it := range a.its {
-		if it.hasNext() {
+		if it.preflight() {
 			return false
 		}
 	}
@@ -44,7 +44,7 @@ func (a *actionCombineLatest[R]) run() {
 		go func(idx int, seq IteratorAny) {
 			defer wg.Done()
 
-			for seq.hasNext() {
+			for seq.preflight() {
 				data, err := seq.consumeAny()
 				SafeSend(resultChan, actionAnyResult{idx, data, err})
 			}

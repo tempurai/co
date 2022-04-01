@@ -11,7 +11,7 @@ func (a *actionRace[R]) run() {
 	dataCh := make(chan *data[R])
 	aBool := &AtomicBool{}
 
-	for i := 0; a.it.hasNext(); i++ {
+	for i := 0; a.it.preflight(); i++ {
 		go func(i int) {
 			if aBool.Get() {
 				return

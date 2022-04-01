@@ -26,7 +26,7 @@ func (a *actionZip[R]) setFn(fn func(*actionZip[R], []any, error, bool)) *action
 
 func (a *actionZip[R]) ifReachesToIndexOrEnd(idx int) bool {
 	for i := range a.its {
-		if a.updated[i] != idx && !a.its[i].hasNext() {
+		if a.updated[i] != idx && !a.its[i].preflight() {
 			return false
 		}
 	}
@@ -46,7 +46,7 @@ func (a *actionZip[R]) run() {
 		go func(idx int, seq IteratorAny) {
 			defer wg.Done()
 
-			for i := 0; seq.hasNext(); i++ {
+			for i := 0; seq.preflight(); i++ {
 				cond.Wait()
 
 				data, err := seq.consumeAny()
