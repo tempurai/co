@@ -13,10 +13,9 @@ const (
 )
 
 type Action[E any] struct {
-	emitFn        func(E)
-	emitCh        chan E
-	emitCloseChan chan bool
-	emitData      []E
+	emitFn   func(E)
+	emitCh   chan E
+	emitData []E
 
 	actionMode ActionMode
 	closeChan  chan bool
@@ -27,17 +26,16 @@ type Action[E any] struct {
 
 func NewAction[E any]() *Action[E] {
 	return &Action[E]{
-		emitCh:        make(chan E),
-		emitData:      make([]E, 0),
-		emitCloseChan: make(chan bool),
-		closeChan:     make(chan bool),
-		firstChan:     make(chan bool),
+		emitCh:    make(chan E),
+		emitData:  make([]E, 0),
+		closeChan: make(chan bool),
+		firstChan: make(chan bool),
 	}
 }
 
-func (a *Action[E]) AsChan() (chan E, chan bool) {
+func (a *Action[E]) AsChan() chan E {
 	a.actionMode = ActionModeChan
-	return a.emitCh, a.emitCloseChan
+	return a.emitCh
 }
 
 func (a *Action[E]) Emitter() chan E {
@@ -134,7 +132,6 @@ func (a *Action[E]) done() {
 		a.closeChan <- true
 	}
 	SafeClose(a.emitCh)
-	SafeClose(a.emitCloseChan)
 	SafeClose(a.closeChan)
 }
 
