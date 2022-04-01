@@ -45,7 +45,7 @@ func (a *Action[E]) Iterator() chan E {
 	return a.emitCh
 }
 
-func (a *Action[E]) AsFn(fn func(E)) *Action[E] {
+func (a *Action[E]) AsCallback(fn func(E)) *Action[E] {
 	a.actionMode = ActionModeFn
 	a.emitFn = fn
 	return a
