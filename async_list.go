@@ -8,7 +8,7 @@ type AsyncList[R any] struct {
 
 func NewAsyncList[R any]() *AsyncList[R] {
 	a := &AsyncList[R]{iterativeList: NewIterativeList[R]()}
-	a.asyncSequence = NewAsyncSequence(a.Iterator())
+	a.asyncSequence = NewAsyncSequence[R](a)
 	return a
 }
 

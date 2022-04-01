@@ -12,11 +12,11 @@ func NewAsyncCompactedSequence[R comparable](it AsyncSequenceable[R]) *AsyncComp
 		previousIterator: it.Iterator(),
 		predictorFn:      func(r R) bool { return r != *new(R) },
 	}
-	a.asyncSequence = NewAsyncSequence[R](a.Iterator())
+	a.asyncSequence = NewAsyncSequence[R](a)
 	return a
 }
 
-func (c *AsyncCompactedSequence[R]) Iterator() *asyncCompactedSequenceIterator[R] {
+func (c *AsyncCompactedSequence[R]) Iterator() Iterator[R] {
 	it := &asyncCompactedSequenceIterator[R]{
 		AsyncCompactedSequence: c,
 	}

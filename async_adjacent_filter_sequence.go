@@ -12,7 +12,7 @@ func NewAsyncAdjacentFilterSequence[R any](it AsyncSequenceable[R], fn func(R, R
 		previousIterator: it.Iterator(),
 		predictorFn:      fn,
 	}
-	a.asyncSequence = NewAsyncSequence(a.Iterator())
+	a.asyncSequence = NewAsyncSequence[R](a)
 	return a
 }
 

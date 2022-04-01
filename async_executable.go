@@ -10,7 +10,7 @@ func NewAsyncExecutable[R any]() *AsyncExecutable[R] {
 	a := &AsyncExecutable[R]{
 		executables: NewExecutablesList[R](),
 	}
-	a.asyncSequence = NewAsyncSequence(a.Iterator())
+	a.asyncSequence = NewAsyncSequence[R](a)
 	return a
 }
 

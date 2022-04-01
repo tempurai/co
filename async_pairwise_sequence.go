@@ -10,7 +10,7 @@ func NewAsyncPairwiseSequence[R any](it AsyncSequenceable[R]) *AsyncPairwiseSequ
 	a := &AsyncPairwiseSequence[R]{
 		previousIterator: it.Iterator(),
 	}
-	a.asyncSequence = NewAsyncSequence(a.Iterator())
+	a.asyncSequence = NewAsyncSequence[[]R](a)
 	return a
 }
 

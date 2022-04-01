@@ -5,14 +5,20 @@ import (
 )
 
 type asyncSequence[R any] struct {
+	async AsyncSequenceable[R]
+
 	_defaultIterator Iterator[R]
 }
 
-func NewAsyncSequence[R any](it Iterator[R]) *asyncSequence[R] {
-	return &asyncSequence[R]{_defaultIterator: it}
+func NewAsyncSequence[R any](it AsyncSequenceable[R]) *asyncSequence[R] {
+	return &asyncSequence[R]{async: it}
 }
 
 func (a *asyncSequence[R]) defaultIterator() Iterator[R] {
+	if a._defaultIterator != nil {
+		return a._defaultIterator
+	}
+	a._defaultIterator = a.async.Iterator()
 	return a._defaultIterator
 }
 

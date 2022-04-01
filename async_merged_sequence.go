@@ -10,7 +10,7 @@ func NewAsyncMergedSequence[R any](as ...AsyncSequenceable[R]) *AsyncMergedSeque
 	a := &AsyncMergedSequence[R]{
 		aSequenceables: as,
 	}
-	a.asyncSequence = NewAsyncSequence(a.Iterator())
+	a.asyncSequence = NewAsyncSequence[R](a)
 	return a
 }
 

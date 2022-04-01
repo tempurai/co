@@ -12,7 +12,7 @@ func NewAsyncMapSequence[R, T any](p AsyncSequenceable[R], fn func(R) T) *AsyncM
 		previousIterator: p.Iterator(),
 		predictorFn:      fn,
 	}
-	a.asyncSequence = NewAsyncSequence(a.Iterator())
+	a.asyncSequence = NewAsyncSequence[T](a)
 	return a
 }
 
