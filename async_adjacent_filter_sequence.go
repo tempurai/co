@@ -1,51 +1,51 @@
 package co
 
-type AsyncFilterSequence[R any] struct {
+type AsyncAdjacentFilterSequence[R any] struct {
 	*asyncSequence[R]
 
 	previousIterator Iterator[R]
 	predictorFn      func(R, R) bool
 }
 
-func NewAsyncFilterSequence[R any](it AsyncSequenceable[R]) *AsyncFilterSequence[R] {
-	a := &AsyncFilterSequence[R]{
+func NewAsyncAdjacentFilterSequence[R any](it AsyncSequenceable[R], fn func(R, R) bool) *AsyncAdjacentFilterSequence[R] {
+	a := &AsyncAdjacentFilterSequence[R]{
 		previousIterator: it.Iterator(),
-		predictorFn:      func(_, _ R) bool { return true },
+		predictorFn:      fn,
 	}
 	a.asyncSequence = NewAsyncSequence(a.Iterator())
 	return a
 }
 
-func (c *AsyncFilterSequence[R]) SetPredicator(fn func(R, R) bool) *AsyncFilterSequence[R] {
+func (c *AsyncAdjacentFilterSequence[R]) SetPredicator(fn func(R, R) bool) *AsyncAdjacentFilterSequence[R] {
 	c.predictorFn = fn
 	return c
 }
 
-func (c *AsyncFilterSequence[R]) Iterator() Iterator[R] {
-	it := &asyncFilterSequenceIterator[R]{
-		AsyncFilterSequence: c,
+func (c *AsyncAdjacentFilterSequence[R]) Iterator() Iterator[R] {
+	it := &asyncAdjacentFilterSequenceIterator[R]{
+		AsyncAdjacentFilterSequence: c,
 	}
 	it.asyncSequenceIterator = NewAsyncSequenceIterator[R](it)
 	return it
 }
 
-type asyncFilterSequenceIterator[R any] struct {
+type asyncAdjacentFilterSequenceIterator[R any] struct {
 	*asyncSequenceIterator[R]
 
-	*AsyncFilterSequence[R]
+	*AsyncAdjacentFilterSequence[R]
 
 	preProcessed bool
 	previousData *data[R]
 }
 
-func (it *asyncFilterSequenceIterator[R]) preflight() bool {
+func (it *asyncAdjacentFilterSequenceIterator[R]) preflight() bool {
 	defer func() { it.preProcessed = true }()
 
+	if it.previousData != nil {
+		return true
+	}
 	if it.previousData == nil && !it.previousIterator.preflight() {
 		return false
-	}
-	if it.previousData != nil && !it.previousIterator.preflight() {
-		return true
 	}
 	if it.previousData == nil && it.previousIterator.preflight() {
 		val, err := it.previousIterator.consume()
@@ -55,7 +55,7 @@ func (it *asyncFilterSequenceIterator[R]) preflight() bool {
 	return false
 }
 
-func (it *asyncFilterSequenceIterator[R]) consume() (R, error) {
+func (it *asyncAdjacentFilterSequenceIterator[R]) consume() (R, error) {
 	if !it.preProcessed {
 		it.preflight()
 	}
@@ -68,15 +68,10 @@ func (it *asyncFilterSequenceIterator[R]) consume() (R, error) {
 		if err != nil {
 			return val, err
 		}
-		if it.predictorFn(it.previousData.value, val) {
+		if it.predictorFn(rData.value, it.previousData.value) {
 			return rData.value, rData.err
 		}
 	}
 	it.previousData = nil
 	return rData.value, rData.err
-}
-
-func (it *asyncFilterSequenceIterator[R]) next() (R, error) {
-	it.preflight()
-	return it.consume()
 }
