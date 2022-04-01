@@ -1,24 +1,24 @@
 package co
 
-type CoExecutable[R any] struct {
+type AsyncExecutable[R any] struct {
 	executables *executablesList[R]
 	data        *determinedDataList[R]
 
 	_defaultIterator Iterator[R]
 }
 
-func NewCoExecutable[R any]() *CoExecutable[R] {
-	return &CoExecutable[R]{
+func NewAsyncExecutable[R any]() *AsyncExecutable[R] {
+	return &AsyncExecutable[R]{
 		executables: NewExecutablesList[R](),
 		data:        NewDeterminedDataList[R](),
 	}
 }
 
-func (c *CoExecutable[R]) len() int {
+func (c *AsyncExecutable[R]) len() int {
 	return c.executables.len()
 }
 
-func (c *CoExecutable[R]) exe(i int) (R, error) {
+func (c *AsyncExecutable[R]) exe(i int) (R, error) {
 	if c.executables.getAt(i).isExecuted() {
 		return c.data.getAt(i)
 	}
@@ -26,14 +26,14 @@ func (c *CoExecutable[R]) exe(i int) (R, error) {
 	return c.forceExeAt(i)
 }
 
-func (c *CoExecutable[R]) forceExeAt(i int) (R, error) {
+func (c *AsyncExecutable[R]) forceExeAt(i int) (R, error) {
 	val, err := c.executables.getAt(i).exe()
 	c.data.setAt(i, val, err)
 
 	return val, err
 }
 
-func (c *CoExecutable[R]) AddFn(fns ...func() (R, error)) *CoExecutable[R] {
+func (c *AsyncExecutable[R]) AddFn(fns ...func() (R, error)) *AsyncExecutable[R] {
 	for i := range fns {
 		c.data.List.add(NewData[R]())
 
@@ -44,7 +44,7 @@ func (c *CoExecutable[R]) AddFn(fns ...func() (R, error)) *CoExecutable[R] {
 	return c
 }
 
-func (c *CoExecutable[R]) defaultIterator() Iterator[R] {
+func (c *AsyncExecutable[R]) defaultIterator() Iterator[R] {
 	if c._defaultIterator != nil {
 		return c._defaultIterator
 	}
@@ -52,19 +52,19 @@ func (c *CoExecutable[R]) defaultIterator() Iterator[R] {
 	return c._defaultIterator
 }
 
-func (c *CoExecutable[R]) Iterator() Iterator[R] {
-	return &coExecutableSequenceIterator[R]{
-		CoExecutable:          c,
+func (c *AsyncExecutable[R]) Iterator() Iterator[R] {
+	return &asyncExecutableIterator[R]{
+		AsyncExecutable:       c,
 		iterativeListIterator: c.executables.iterativeList.Iterator(),
 	}
 }
 
-type coExecutableSequenceIterator[R any] struct {
-	*CoExecutable[R]
+type asyncExecutableIterator[R any] struct {
+	*AsyncExecutable[R]
 	iterativeListIterator[*executable[R]]
 }
 
-func (it *coExecutableSequenceIterator[R]) next() (R, error) {
+func (it *asyncExecutableIterator[R]) next() (R, error) {
 	defer func() { it.currentIndex++ }()
 	return it.exe(it.currentIndex)
 }

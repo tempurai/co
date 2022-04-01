@@ -34,9 +34,9 @@ func (a *actionPartition[R]) run() {
 	a.done()
 }
 
-func Partition[R any](width int, cos ...CoSequenceable[R]) *Action[[]*data[R]] {
+func Partition[R any](width int, cos ...AsyncSequenceable[R]) *Action[[]*data[R]] {
 	action := &actionPartition[R]{
-		its:   toConcurrentIterators(cos...),
+		its:   toAsyncIterators(cos...),
 		width: width,
 	}
 

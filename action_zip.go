@@ -86,7 +86,7 @@ func (a *actionZip[R]) run() {
 	a.done()
 }
 
-func Zip[T1, T2 any](fn func(T1, T2, error, bool), seq1 CoSequenceable[T1], seq2 CoSequenceable[T2]) *Action[ActionBulkResult[Type2[T1, T2]]] {
+func Zip[T1, T2 any](fn func(T1, T2, error, bool), seq1 AsyncSequenceable[T1], seq2 AsyncSequenceable[T2]) *Action[ActionBulkResult[Type2[T1, T2]]] {
 	action := NewActionZip[ActionBulkResult[Type2[T1, T2]]](castToIteratorAny(seq1.Iterator(), seq2.Iterator())).
 		setFn(func(a *actionZip[ActionBulkResult[Type2[T1, T2]]], v []any, err error, b bool) {
 			a.listenProgressive(ActionBulkResult[Type2[T1, T2]]{
@@ -100,7 +100,7 @@ func Zip[T1, T2 any](fn func(T1, T2, error, bool), seq1 CoSequenceable[T1], seq2
 	return action.Action
 }
 
-func Zip3[T1, T2, T3 any](fn func(T1, T2, T3, error, bool), seq1 CoSequenceable[T1], seq2 CoSequenceable[T2], seq3 CoSequenceable[T3]) *Action[ActionBulkResult[Type3[T1, T2, T3]]] {
+func Zip3[T1, T2, T3 any](fn func(T1, T2, T3, error, bool), seq1 AsyncSequenceable[T1], seq2 AsyncSequenceable[T2], seq3 AsyncSequenceable[T3]) *Action[ActionBulkResult[Type3[T1, T2, T3]]] {
 	action := NewActionZip[ActionBulkResult[Type3[T1, T2, T3]]](castToIteratorAny(seq1.Iterator(), seq2.Iterator())).
 		setFn(func(a *actionZip[ActionBulkResult[Type3[T1, T2, T3]]], v []any, err error, b bool) {
 			a.listenProgressive(ActionBulkResult[Type3[T1, T2, T3]]{

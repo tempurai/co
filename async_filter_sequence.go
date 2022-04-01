@@ -1,35 +1,35 @@
 package co
 
-type CoFilterSequence[R any] struct {
+type AsyncFilterSequence[R any] struct {
 	previousIterator Iterator[R]
 
 	predictorFn func(R, R) bool
 }
 
-func NewCoFilterSequence[R any](it Iterator[R]) *CoFilterSequence[R] {
-	return &CoFilterSequence[R]{
+func NewAsyncFilterSequence[R any](it Iterator[R]) *AsyncFilterSequence[R] {
+	return &AsyncFilterSequence[R]{
 		previousIterator: it,
 		predictorFn:      func(_, _ R) bool { return true },
 	}
 }
-func (c *CoFilterSequence[R]) SetPredicator(fn func(R, R) bool) *CoFilterSequence[R] {
+func (c *AsyncFilterSequence[R]) SetPredicator(fn func(R, R) bool) *AsyncFilterSequence[R] {
 	c.predictorFn = fn
 	return c
 }
 
-func (c *CoFilterSequence[R]) Iterator() *coFilterSequenceIterator[R] {
-	return &coFilterSequenceIterator[R]{
-		CoFilterSequence: c,
+func (c *AsyncFilterSequence[R]) Iterator() *asyncFilterSequenceIterator[R] {
+	return &asyncFilterSequenceIterator[R]{
+		AsyncFilterSequence: c,
 	}
 }
 
-type coFilterSequenceIterator[R any] struct {
-	*CoFilterSequence[R]
+type asyncFilterSequenceIterator[R any] struct {
+	*AsyncFilterSequence[R]
 
 	previousData *data[R]
 }
 
-func (it *coFilterSequenceIterator[R]) hasNext() bool {
+func (it *asyncFilterSequenceIterator[R]) hasNext() bool {
 	if it.previousData == nil && !it.previousIterator.hasNext() {
 		return false
 	}
@@ -44,7 +44,7 @@ func (it *coFilterSequenceIterator[R]) hasNext() bool {
 	return false
 }
 
-func (it *coFilterSequenceIterator[R]) next() (R, error) {
+func (it *asyncFilterSequenceIterator[R]) next() (R, error) {
 	for it.previousIterator.hasNext() {
 		for it.previousIterator.hasNext() {
 			val, err := it.previousIterator.next()
@@ -64,6 +64,6 @@ func (it *coFilterSequenceIterator[R]) next() (R, error) {
 	return rData.value, rData.err
 }
 
-func (it *coFilterSequenceIterator[R]) nextAny() (any, error) {
+func (it *asyncFilterSequenceIterator[R]) nextAny() (any, error) {
 	return it.next()
 }

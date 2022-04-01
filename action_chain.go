@@ -2,7 +2,7 @@ package co
 
 // type actionChain[R any] struct {
 // 	*Action[*data[R]]
-// 	cos []CoSequenceable[R]
+// 	cos []AsyncSequenceable[R]
 // }
 
 // func (a *actionChain[R]) run() {
@@ -12,7 +12,7 @@ package co
 // 	a.done()
 // }
 
-// func Chain[R any](cos ...CoSequenceable[R]) *Action[*data[R]] {
+// func Chain[R any](cos ...AsyncSequenceable[R]) *Action[*data[R]] {
 // 	action := &actionChain[R]{
 // 		Action: NewAction[*data[R]](),
 // 		cos:    cos,
