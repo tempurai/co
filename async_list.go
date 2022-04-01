@@ -8,6 +8,11 @@ func NewAsyncList[R any]() *AsyncList[R] {
 	return &AsyncList[R]{NewIterativeList[R]()}
 }
 
+func NewAsyncListWith[R any](val ...R) *AsyncList[R] {
+	list := &AsyncList[R]{NewIterativeList[R]()}
+	return list.Add(val...)
+}
+
 func (it *AsyncList[R]) Add(e ...R) *AsyncList[R] {
 	it.add(e...)
 	return it

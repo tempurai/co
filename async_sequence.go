@@ -1,6 +1,8 @@
 package co
 
-import "sync"
+import (
+	"sync"
+)
 
 type asyncSequenceIterator[R, T any] struct {
 	delegated Iterator[T]
@@ -38,19 +40,24 @@ func (it *asyncSequenceIterator[R, T]) emitIterator() {
 	}
 	it.isEmitRunning = true
 
-	go func() {
+	SafeGo(func() {
 		for it.delegated.preflight() {
 			val, err := it.delegated.consume()
-			it.emitData(NewDataWith[T](val, err))
+			it.emitData(NewDataWith(val, err))
 		}
-	}()
+		for _, ch := range it.emitCh {
+			SafeClose(ch)
+		}
+	})
 }
 
-func (it *asyncSequenceIterator[R, T]) Iterator() <-chan *data[T] {
+func (it *asyncSequenceIterator[R, T]) EmitIterator() <-chan *data[T] {
 	it.emitMux.Lock()
 	defer it.emitMux.Unlock()
 
 	eCh := make(chan *data[T])
 	it.emitCh = append(it.emitCh, eCh)
+
+	it.emitIterator()
 	return eCh
 }
