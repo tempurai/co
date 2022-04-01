@@ -1,15 +1,19 @@
 package co
 
 type AsyncList[R any] struct {
+	*asyncSequence[R]
+
 	*iterativeList[R]
 }
 
 func NewAsyncList[R any]() *AsyncList[R] {
-	return &AsyncList[R]{NewIterativeList[R]()}
+	a := &AsyncList[R]{iterativeList: NewIterativeList[R]()}
+	a.asyncSequence = NewAsyncSequence(a.Iterator())
+	return a
 }
 
 func NewAsyncListWith[R any](val ...R) *AsyncList[R] {
-	list := &AsyncList[R]{NewIterativeList[R]()}
+	list := NewAsyncList[R]()
 	return list.Add(val...)
 }
 
@@ -18,7 +22,7 @@ func (it *AsyncList[R]) Add(e ...R) *AsyncList[R] {
 	return it
 }
 
-func (it *AsyncList[R]) Iterator() asyncListIterator[R] {
+func (it *AsyncList[R]) Iterator() Iterator[R] {
 	return asyncListIterator[R]{iterativeListIterator: it.iterativeList.Iterator()}
 }
 

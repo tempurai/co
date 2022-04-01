@@ -1,16 +1,19 @@
 package co
 
 type AsyncCompactedSequence[R comparable] struct {
-	previousIterator Iterator[R]
+	*asyncSequence[R]
 
-	predictorFn func(R) bool
+	previousIterator Iterator[R]
+	predictorFn      func(R) bool
 }
 
-func NewAsyncCompactedSequence[R comparable](it Iterator[R]) *AsyncCompactedSequence[R] {
-	return &AsyncCompactedSequence[R]{
-		previousIterator: it,
+func NewAsyncCompactedSequence[R comparable](it AsyncSequenceable[R]) *AsyncCompactedSequence[R] {
+	a := &AsyncCompactedSequence[R]{
+		previousIterator: it.Iterator(),
 		predictorFn:      func(r R) bool { return r != *new(R) },
 	}
+	a.asyncSequence = NewAsyncSequence[R](a.Iterator())
+	return a
 }
 
 func (c *AsyncCompactedSequence[R]) Iterator() *asyncCompactedSequenceIterator[R] {

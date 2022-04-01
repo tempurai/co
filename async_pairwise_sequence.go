@@ -1,16 +1,20 @@
 package co
 
 type AsyncAdjacentPairsSequence[R any] struct {
+	*asyncSequence[[]R]
+
 	previousIterator Iterator[R]
 }
 
-func NewAsyncAdjacentPairsSequence[R any](it Iterator[R]) *AsyncAdjacentPairsSequence[R] {
-	return &AsyncAdjacentPairsSequence[R]{
-		previousIterator: it,
+func NewAsyncAdjacentPairsSequence[R any](it AsyncSequenceable[R]) *AsyncAdjacentPairsSequence[R] {
+	a := &AsyncAdjacentPairsSequence[R]{
+		previousIterator: it.Iterator(),
 	}
+	a.asyncSequence = NewAsyncSequence(a.Iterator())
+	return a
 }
 
-func (c *AsyncAdjacentPairsSequence[R]) Iterator() *asyncAdjacentPairsSequenceIterator[R] {
+func (c *AsyncAdjacentPairsSequence[R]) Iterator() Iterator[[]R] {
 	it := &asyncAdjacentPairsSequenceIterator[R]{
 		AsyncAdjacentPairsSequence: c,
 	}

@@ -1,16 +1,19 @@
 package co
 
 type AsyncMapSequence[R, T any] struct {
-	previousIterator Iterator[R]
+	*asyncSequence[T]
 
-	predictorFn func(R) T
+	previousIterator Iterator[R]
+	predictorFn      func(R) T
 }
 
-func NewAsyncMapSequence[R, T any](it Iterator[R]) *AsyncMapSequence[R, T] {
-	return &AsyncMapSequence[R, T]{
-		previousIterator: it,
+func NewAsyncMapSequence[R, T any](p AsyncSequenceable[R]) *AsyncMapSequence[R, T] {
+	a := &AsyncMapSequence[R, T]{
+		previousIterator: p.Iterator(),
 		predictorFn:      func(R) T { return *new(T) },
 	}
+	a.asyncSequence = NewAsyncSequence(a.Iterator())
+	return a
 }
 
 func (c *AsyncMapSequence[R, T]) SetPredicator(fn func(R) T) *AsyncMapSequence[R, T] {
@@ -18,7 +21,7 @@ func (c *AsyncMapSequence[R, T]) SetPredicator(fn func(R) T) *AsyncMapSequence[R
 	return c
 }
 
-func (a *AsyncMapSequence[R, T]) Iterator() *asyncMapSequenceIterator[R, T] {
+func (a *AsyncMapSequence[R, T]) Iterator() Iterator[T] {
 	it := &asyncMapSequenceIterator[R, T]{
 		AsyncMapSequence: a,
 	}

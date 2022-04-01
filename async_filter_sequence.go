@@ -1,16 +1,19 @@
 package co
 
 type AsyncFilterSequence[R any] struct {
-	previousIterator Iterator[R]
+	*asyncSequence[R]
 
-	predictorFn func(R, R) bool
+	previousIterator Iterator[R]
+	predictorFn      func(R, R) bool
 }
 
-func NewAsyncFilterSequence[R any](it Iterator[R]) *AsyncFilterSequence[R] {
-	return &AsyncFilterSequence[R]{
-		previousIterator: it,
+func NewAsyncFilterSequence[R any](it AsyncSequenceable[R]) *AsyncFilterSequence[R] {
+	a := &AsyncFilterSequence[R]{
+		previousIterator: it.Iterator(),
 		predictorFn:      func(_, _ R) bool { return true },
 	}
+	a.asyncSequence = NewAsyncSequence(a.Iterator())
+	return a
 }
 
 func (c *AsyncFilterSequence[R]) SetPredicator(fn func(R, R) bool) *AsyncFilterSequence[R] {
@@ -18,7 +21,7 @@ func (c *AsyncFilterSequence[R]) SetPredicator(fn func(R, R) bool) *AsyncFilterS
 	return c
 }
 
-func (c *AsyncFilterSequence[R]) Iterator() *asyncFilterSequenceIterator[R] {
+func (c *AsyncFilterSequence[R]) Iterator() Iterator[R] {
 	it := &asyncFilterSequenceIterator[R]{
 		AsyncFilterSequence: c,
 	}

@@ -1,15 +1,17 @@
 package co
 
 type AsyncExecutable[R any] struct {
-	executables *executablesList[R]
+	*asyncSequence[R]
 
-	_defaultIterator *asyncExecutableIterator[R]
+	executables *executablesList[R]
 }
 
 func NewAsyncExecutable[R any]() *AsyncExecutable[R] {
-	return &AsyncExecutable[R]{
+	a := &AsyncExecutable[R]{
 		executables: NewExecutablesList[R](),
 	}
+	a.asyncSequence = NewAsyncSequence(a.Iterator())
+	return a
 }
 
 func (c *AsyncExecutable[R]) len() int {
@@ -26,15 +28,7 @@ func (c *AsyncExecutable[R]) AddExecutable(fns ...func() (R, error)) *AsyncExecu
 	return c
 }
 
-func (c *AsyncExecutable[R]) defaultIterator() *asyncExecutableIterator[R] {
-	if c._defaultIterator != nil {
-		return c._defaultIterator
-	}
-	c._defaultIterator = c.Iterator()
-	return c._defaultIterator
-}
-
-func (c *AsyncExecutable[R]) Iterator() *asyncExecutableIterator[R] {
+func (c *AsyncExecutable[R]) Iterator() Iterator[R] {
 	it := &asyncExecutableIterator[R]{
 		AsyncExecutable: c,
 		underlying:      c.executables.iterativeList.Iterator(),

@@ -4,27 +4,21 @@ import (
 	"sync"
 )
 
-type asyncSequence[R, T any] struct {
-	delegated AsyncSequenceable[R]
-
-	_defaultIterator Iterator[T]
+type asyncSequence[R any] struct {
+	_defaultIterator Iterator[R]
 }
 
-func NewAsyncSequence[R, T any](it AsyncSequenceable[R]) *asyncSequence[R, T] {
-	return &asyncSequence[R, T]{delegated: it}
+func NewAsyncSequence[R any](it Iterator[R]) *asyncSequence[R] {
+	return &asyncSequence[R]{_defaultIterator: it}
 }
 
-// func (a *asyncSequence[R, T]) defaultIterator() Iterator[T] {
-// 	if a._defaultIterator != nil {
-// 		return a._defaultIterator
-// 	}
-// 	a._defaultIterator = a.delegated.Iterator().Emit()
-// 	return a._defaultIterator
-// }
+func (a *asyncSequence[R]) defaultIterator() Iterator[R] {
+	return a._defaultIterator
+}
 
-// func (a *asyncSequence[R, T]) Emitter() <-chan *data[T] {
-// 	return a.delegated.Iterator().Emit()
-// }
+func (a *asyncSequence[R]) Emitter() <-chan *data[R] {
+	return a._defaultIterator.Emitter()
+}
 
 type asyncSequenceIterator[T any] struct {
 	delegated Iterator[T]
