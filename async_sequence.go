@@ -26,6 +26,15 @@ func (a *asyncSequence[R]) Emitter() <-chan *data[R] {
 	return a._defaultIterator.Emitter()
 }
 
+func (a *asyncSequence[R]) AdjacentFilter(fn func(R, R) bool) *AsyncAdjacentFilterSequence[R] {
+	return NewAsyncAdjacentFilterSequence(a.async, fn)
+}
+
+func (a *asyncSequence[R]) Merge(its ...AsyncSequenceable[R]) *AsyncMergedSequence[R] {
+	its = append([]AsyncSequenceable[R]{a.async}, its...)
+	return NewAsyncMergedSequence(its...)
+}
+
 type asyncSequenceIterator[T any] struct {
 	delegated Iterator[T]
 

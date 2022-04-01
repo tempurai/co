@@ -1,37 +1,37 @@
 package co
 
-type AsyncPairwiseSequence[R any] struct {
-	*asyncSequence[[]R]
+type AsyncPairwiseSequence[R any, T []R] struct {
+	*asyncSequence[T]
 
 	previousIterator Iterator[R]
 }
 
-func NewAsyncPairwiseSequence[R any](it AsyncSequenceable[R]) *AsyncPairwiseSequence[R] {
-	a := &AsyncPairwiseSequence[R]{
+func NewAsyncPairwiseSequence[R any, T []R](it AsyncSequenceable[R]) *AsyncPairwiseSequence[R, T] {
+	a := &AsyncPairwiseSequence[R, T]{
 		previousIterator: it.Iterator(),
 	}
-	a.asyncSequence = NewAsyncSequence[[]R](a)
+	a.asyncSequence = NewAsyncSequence[T](a)
 	return a
 }
 
-func (c *AsyncPairwiseSequence[R]) Iterator() Iterator[[]R] {
-	it := &asyncPairwiseSequenceIterator[R]{
+func (c *AsyncPairwiseSequence[R, T]) Iterator() Iterator[T] {
+	it := &asyncPairwiseSequenceIterator[R, T]{
 		AsyncPairwiseSequence: c,
 	}
-	it.asyncSequenceIterator = NewAsyncSequenceIterator[[]R](it)
+	it.asyncSequenceIterator = NewAsyncSequenceIterator[T](it)
 	return it
 }
 
-type asyncPairwiseSequenceIterator[R any] struct {
-	*asyncSequenceIterator[[]R]
+type asyncPairwiseSequenceIterator[R any, T []R] struct {
+	*asyncSequenceIterator[T]
 
-	*AsyncPairwiseSequence[R]
+	*AsyncPairwiseSequence[R, T]
 
 	preProcessed bool
 	previousData *data[R]
 }
 
-func (it *asyncPairwiseSequenceIterator[R]) preflight() bool {
+func (it *asyncPairwiseSequenceIterator[R, T]) preflight() bool {
 	defer func() { it.preProcessed = true }()
 
 	if it.previousData != nil && it.previousIterator.preflight() {
@@ -46,7 +46,7 @@ func (it *asyncPairwiseSequenceIterator[R]) preflight() bool {
 	return false
 }
 
-func (it *asyncPairwiseSequenceIterator[R]) consume() ([]R, error) {
+func (it *asyncPairwiseSequenceIterator[R, T]) consume() (T, error) {
 	if !it.preProcessed {
 		it.preflight()
 	}
@@ -65,7 +65,7 @@ func (it *asyncPairwiseSequenceIterator[R]) consume() ([]R, error) {
 	return results, nil
 }
 
-func (it *asyncPairwiseSequenceIterator[R]) next() ([]R, error) {
+func (it *asyncPairwiseSequenceIterator[R, T]) next() (T, error) {
 	it.preflight()
 	return it.consume()
 }
