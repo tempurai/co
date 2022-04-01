@@ -30,7 +30,7 @@ func (a *actionAwait[R]) run() {
 	a.done()
 }
 
-func Await[R any](list *executablesList[R]) *Action[*data[R]] {
+func All[R any](list *executablesList[R]) *Action[*data[R]] {
 	action := &actionAwait[R]{
 		Action: NewAction[*data[R]](),
 		list:   list.Iterator(),
@@ -41,5 +41,5 @@ func Await[R any](list *executablesList[R]) *Action[*data[R]] {
 }
 
 func AwaitAll[R any](fns ...func() (R, error)) []*data[R] {
-	return Await(NewExecutablesList[R]().AddExecutable(fns...)).AsData().GetData()
+	return All(NewExecutablesList[R]().AddExecutable(fns...)).AsData().GetData()
 }
