@@ -39,12 +39,12 @@ func (c *AsyncExecutable[R]) Iterator() *asyncExecutableIterator[R] {
 		AsyncExecutable: c,
 		underlying:      c.executables.iterativeList.Iterator(),
 	}
-	it.asyncSequenceIterator = NewAsyncSequenceIterator[R](it)
+	it.asyncSequenceIterator = NewAsyncSequenceIterator[R, R](it)
 	return it
 }
 
 type asyncExecutableIterator[R any] struct {
-	*asyncSequenceIterator[R]
+	*asyncSequenceIterator[R, R]
 
 	*AsyncExecutable[R]
 	underlying *iterativeListIterator[*executable[R]]

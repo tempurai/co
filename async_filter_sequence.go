@@ -22,12 +22,12 @@ func (c *AsyncFilterSequence[R]) Iterator() *asyncFilterSequenceIterator[R] {
 	it := &asyncFilterSequenceIterator[R]{
 		AsyncFilterSequence: c,
 	}
-	it.asyncSequenceIterator = NewAsyncSequenceIterator[R](it)
+	it.asyncSequenceIterator = NewAsyncSequenceIterator[R, R](it)
 	return it
 }
 
 type asyncFilterSequenceIterator[R any] struct {
-	*asyncSequenceIterator[R]
+	*asyncSequenceIterator[R, R]
 
 	*AsyncFilterSequence[R]
 

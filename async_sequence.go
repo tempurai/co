@@ -1,18 +1,18 @@
 package co
 
-type asyncSequenceIterator[R any] struct {
-	delegated Iterator[R]
+type asyncSequenceIterator[R, T any] struct {
+	delegated Iterator[T]
 }
 
-func NewAsyncSequenceIterator[R any](it Iterator[R]) *asyncSequenceIterator[R] {
-	return &asyncSequenceIterator[R]{delegated: it}
+func NewAsyncSequenceIterator[R, T any](it Iterator[T]) *asyncSequenceIterator[R, T] {
+	return &asyncSequenceIterator[R, T]{delegated: it}
 }
 
-func (it *asyncSequenceIterator[R]) consumeAny() (any, error) {
+func (it *asyncSequenceIterator[R, T]) consumeAny() (any, error) {
 	return it.delegated.consume()
 }
 
-func (it *asyncSequenceIterator[R]) next() (R, error) {
+func (it *asyncSequenceIterator[R, T]) next() (T, error) {
 	it.delegated.preflight()
 	return it.delegated.consume()
 }
