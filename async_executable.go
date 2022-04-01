@@ -2,7 +2,6 @@ package co
 
 type AsyncExecutable[R any] struct {
 	executables *executablesList[R]
-	data        *determinedDataList[R]
 
 	_defaultIterator Iterator[R]
 }
@@ -10,7 +9,6 @@ type AsyncExecutable[R any] struct {
 func NewAsyncExecutable[R any]() *AsyncExecutable[R] {
 	return &AsyncExecutable[R]{
 		executables: NewExecutablesList[R](),
-		data:        NewDeterminedDataList[R](),
 	}
 }
 
@@ -18,29 +16,13 @@ func (c *AsyncExecutable[R]) len() int {
 	return c.executables.len()
 }
 
-func (c *AsyncExecutable[R]) exe(i int) (R, error) {
-	if c.executables.getAt(i).isExecuted() {
-		return c.data.getAt(i)
-	}
-
-	return c.forceExeAt(i)
-}
-
-func (c *AsyncExecutable[R]) forceExeAt(i int) (R, error) {
+func (c *AsyncExecutable[R]) executeAt(i int) (R, error) {
 	val, err := c.executables.getAt(i).exe()
-	c.data.setAt(i, val, err)
-
 	return val, err
 }
 
 func (c *AsyncExecutable[R]) AddFn(fns ...func() (R, error)) *AsyncExecutable[R] {
-	for i := range fns {
-		c.data.List.add(NewData[R]())
-
-		e := NewExecutor[R]()
-		e.fn = fns[i]
-		c.executables.add(e)
-	}
+	c.executables.AddFn(fns...)
 	return c
 }
 
@@ -66,5 +48,5 @@ type asyncExecutableIterator[R any] struct {
 
 func (it *asyncExecutableIterator[R]) next() (R, error) {
 	defer func() { it.currentIndex++ }()
-	return it.exe(it.currentIndex)
+	return it.executeAt(it.currentIndex)
 }
