@@ -1,9 +1,5 @@
 package co
 
-import (
-	"fmt"
-)
-
 type AsyncMergedSequence[R any] struct {
 	*asyncSequence[R]
 
@@ -32,34 +28,51 @@ type asyncMergedSequenceIterator[R any] struct {
 
 	its          []Iterator[R]
 	currentIndex int
+
+	previousData *data[R]
+	preProcessed bool
 }
 
 func (it *asyncMergedSequenceIterator[R]) nextIndex() int {
-	if it.currentIndex+1 >= len(it.its) {
-		it.currentIndex = 0
-	} else {
-		it.currentIndex++
-	}
+	defer func() {
+		if it.currentIndex+1 >= len(it.its) {
+			it.currentIndex = 0
+		} else {
+			it.currentIndex++
+		}
+	}()
 	return it.currentIndex
 }
 
-func (it *asyncMergedSequenceIterator[R]) preflight() bool {
-	for i := range it.its {
-		if it.its[i].preflight() {
-			return true
+func (it *asyncMergedSequenceIterator[R]) nextAvailableIndex() (int, bool) {
+	for range it.its {
+		idx := it.nextIndex()
+		if it.its[idx].preflight() {
+			return idx, true
 		}
 	}
-	return false
+	return 0, false
+}
+
+func (it *asyncMergedSequenceIterator[R]) preflight() bool {
+	defer func() { it.preProcessed = true }()
+
+	i, ok := it.nextAvailableIndex()
+	if !ok {
+		return false
+	}
+
+	val, err := it.its[i].consume()
+	it.previousData = NewDataWith(val, err)
+
+	return true
 }
 
 func (it *asyncMergedSequenceIterator[R]) consume() (R, error) {
-	for it.preflight() {
-		idx := it.nextIndex()
-
-		if !it.its[idx].preflight() {
-			continue
-		}
-		return it.its[idx].consume()
+	if !it.preProcessed {
+		it.preflight()
 	}
-	return *new(R), fmt.Errorf("sequence have no consume function to execute")
+	defer func() { it.preProcessed = false }()
+
+	return it.previousData.value, it.previousData.err
 }

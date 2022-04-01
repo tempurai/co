@@ -29,7 +29,7 @@ for i := 0; i < 10000; i++ {
 }
 
 // Wait doesn't indicate a Run, the job will run once added
-// So, you could ignore Wait() in some cases
+// convey.So, you could ignore Wait() in some cases
 vals := p.Wait()
 ```
 

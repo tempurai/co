@@ -4,12 +4,12 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"github.com/smartystreets/goconvey/convey"
 	"github.com/tempura-shrimp/co"
 )
 
 func TestParallel(t *testing.T) {
-	Convey("given a sequential tasks", t, func() {
+	convey.Convey("given a sequential tasks", t, func() {
 		markers := make([]bool, 10000)
 
 		p := co.NewParallel(10)
@@ -20,12 +20,12 @@ func TestParallel(t *testing.T) {
 				})
 			}(i)
 		}
-		Convey("On wait", func() {
+		convey.Convey("On wait", func() {
 			p.Wait()
 
-			Convey("Each markers should be marked", func() {
+			convey.Convey("Each markers should be marked", func() {
 				for i := 0; i < 10000; i++ {
-					So(markers[i], ShouldEqual, true)
+					convey.So(markers[i], convey.ShouldEqual, true)
 				}
 			})
 		})
@@ -33,7 +33,7 @@ func TestParallel(t *testing.T) {
 }
 
 func TestParallelWithResponse(t *testing.T) {
-	Convey("given a sequential tasks", t, func() {
+	convey.Convey("given a sequential tasks", t, func() {
 		p := co.NewParallelWithResponse[int](10)
 		for i := 0; i < 10000; i++ {
 			func(idx int) {
@@ -43,12 +43,12 @@ func TestParallelWithResponse(t *testing.T) {
 			}(i)
 		}
 
-		Convey("On wait", func() {
+		convey.Convey("On wait", func() {
 			vals := p.Wait()
 
-			Convey("Each response should be valid", func() {
+			convey.Convey("Each response should be valid", func() {
 				for i := 0; i < 10000; i++ {
-					So(vals[i], ShouldEqual, i+1)
+					convey.So(vals[i], convey.ShouldEqual, i+1)
 				}
 			})
 		})
@@ -56,7 +56,7 @@ func TestParallelWithResponse(t *testing.T) {
 }
 
 func TestParallelSeparatedAdd(t *testing.T) {
-	Convey("given a sequential tasks", t, func() {
+	convey.Convey("given a sequential tasks", t, func() {
 		markers := make([]bool, 10000)
 
 		p := co.NewParallel(10)
@@ -81,10 +81,10 @@ func TestParallelSeparatedAdd(t *testing.T) {
 			}(i)
 		}
 
-		Convey("On wait", func() {
-			Convey("Each markers should be marked", func() {
+		convey.Convey("On wait", func() {
+			convey.Convey("Each markers should be marked", func() {
 				for i := 0; i < 1000; i++ {
-					So(markers[i], ShouldEqual, true)
+					convey.So(markers[i], convey.ShouldEqual, true)
 				}
 			})
 		})
@@ -92,7 +92,7 @@ func TestParallelSeparatedAdd(t *testing.T) {
 }
 
 func TestParallelHungerWait(t *testing.T) {
-	Convey("given a sequential tasks", t, func() {
+	convey.Convey("given a sequential tasks", t, func() {
 		markers := make([]bool, 10000)
 
 		p := co.NewParallel(10)
@@ -109,12 +109,12 @@ func TestParallelHungerWait(t *testing.T) {
 			time.Sleep(1 * time.Second)
 		}
 
-		Convey("On wait", func() {
+		convey.Convey("On wait", func() {
 			p.Wait()
 
-			Convey("Each markers should be marked", func() {
+			convey.Convey("Each markers should be marked", func() {
 				for i := 0; i < 500; i++ {
-					So(markers[i], ShouldEqual, true)
+					convey.So(markers[i], convey.ShouldEqual, true)
 				}
 			})
 		})

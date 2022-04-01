@@ -6,12 +6,12 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"github.com/smartystreets/goconvey/convey"
 	"github.com/tempura-shrimp/co"
 )
 
 func TestAwaitAll(t *testing.T) {
-	Convey("given a sequential tasks", t, func() {
+	convey.Convey("given a sequential tasks", t, func() {
 		handlers := make([]func() (int, error), 0)
 		for i := 0; i < 1000; i++ {
 			i := i
@@ -20,12 +20,12 @@ func TestAwaitAll(t *testing.T) {
 			})
 		}
 
-		Convey("Run AwaitAll", func() {
+		convey.Convey("Run AwaitAll", func() {
 			responses := co.AwaitAll(handlers...)
 
-			Convey("The responded value should be valid", func() {
+			convey.Convey("The responded value should be valid", func() {
 				for i := 0; i < 1000; i++ {
-					So(responses[i].GetValue(), ShouldEqual, i+1)
+					convey.So(responses[i].GetValue(), convey.ShouldEqual, i+1)
 				}
 			})
 		})
@@ -35,7 +35,7 @@ func TestAwaitAll(t *testing.T) {
 func TestAwaitRace(t *testing.T) {
 	runtime.GOMAXPROCS(runtime.NumCPU() * 2)
 
-	Convey("given a sequential tasks", t, func() {
+	convey.Convey("given a sequential tasks", t, func() {
 		handlers := make([]func() (int, error), 0)
 		for i := 0; i < 100; i++ {
 			i := i
@@ -45,11 +45,11 @@ func TestAwaitRace(t *testing.T) {
 			})
 		}
 
-		Convey("Run AwaitAll", func() {
+		convey.Convey("Run AwaitAll", func() {
 			responses := co.AwaitRace(handlers...)
 
-			Convey("The responded value should be valid", func() {
-				So(responses, ShouldEqual, 1)
+			convey.Convey("The responded value should be valid", func() {
+				convey.So(responses, convey.ShouldEqual, 1)
 			})
 		})
 	})
@@ -58,7 +58,7 @@ func TestAwaitRace(t *testing.T) {
 func TestAwaitAny(t *testing.T) {
 	runtime.GOMAXPROCS(runtime.NumCPU() * 2)
 
-	Convey("given a sequential tasks", t, func() {
+	convey.Convey("given a sequential tasks", t, func() {
 		handlers := make([]func() (int, error), 0)
 		for i := 0; i < 100; i++ {
 			i := i
@@ -74,11 +74,11 @@ func TestAwaitAny(t *testing.T) {
 			})
 		}
 
-		Convey("Run AwaitAll", func() {
+		convey.Convey("Run AwaitAll", func() {
 			responses := co.AwaitAny(handlers...)
 
-			Convey("The responded value should be valid", func() {
-				So(responses.GetValue(), ShouldEqual, 12)
+			convey.Convey("The responded value should be valid", func() {
+				convey.So(responses.GetValue(), convey.ShouldEqual, 12)
 			})
 		})
 	})

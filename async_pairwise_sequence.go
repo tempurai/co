@@ -1,48 +1,52 @@
 package co
 
-type AsyncAdjacentPairsSequence[R any] struct {
+type AsyncPairwiseSequence[R any] struct {
 	*asyncSequence[[]R]
 
 	previousIterator Iterator[R]
 }
 
-func NewAsyncAdjacentPairsSequence[R any](it AsyncSequenceable[R]) *AsyncAdjacentPairsSequence[R] {
-	a := &AsyncAdjacentPairsSequence[R]{
+func NewAsyncPairwiseSequence[R any](it AsyncSequenceable[R]) *AsyncPairwiseSequence[R] {
+	a := &AsyncPairwiseSequence[R]{
 		previousIterator: it.Iterator(),
 	}
 	a.asyncSequence = NewAsyncSequence(a.Iterator())
 	return a
 }
 
-func (c *AsyncAdjacentPairsSequence[R]) Iterator() Iterator[[]R] {
-	it := &asyncAdjacentPairsSequenceIterator[R]{
-		AsyncAdjacentPairsSequence: c,
+func (c *AsyncPairwiseSequence[R]) Iterator() Iterator[[]R] {
+	it := &asyncPairwiseSequenceIterator[R]{
+		AsyncPairwiseSequence: c,
 	}
 	it.asyncSequenceIterator = NewAsyncSequenceIterator[[]R](it)
 	return it
 }
 
-type asyncAdjacentPairsSequenceIterator[R any] struct {
+type asyncPairwiseSequenceIterator[R any] struct {
 	*asyncSequenceIterator[[]R]
 
-	*AsyncAdjacentPairsSequence[R]
+	*AsyncPairwiseSequence[R]
 
 	preProcessed bool
 	previousData *data[R]
 }
 
-func (it *asyncAdjacentPairsSequenceIterator[R]) preflight() bool {
+func (it *asyncPairwiseSequenceIterator[R]) preflight() bool {
 	defer func() { it.preProcessed = true }()
 
+	if it.previousData != nil && it.previousIterator.preflight() {
+		return true
+	}
 	if it.previousData == nil && it.previousIterator.preflight() {
 		val, err := it.previousIterator.consume()
 		it.previousData = NewDataWith(val, err)
 		return true
 	}
+
 	return false
 }
 
-func (it *asyncAdjacentPairsSequenceIterator[R]) consume() ([]R, error) {
+func (it *asyncPairwiseSequenceIterator[R]) consume() ([]R, error) {
 	if !it.preProcessed {
 		it.preflight()
 	}
@@ -61,7 +65,7 @@ func (it *asyncAdjacentPairsSequenceIterator[R]) consume() ([]R, error) {
 	return results, nil
 }
 
-func (it *asyncAdjacentPairsSequenceIterator[R]) next() ([]R, error) {
+func (it *asyncPairwiseSequenceIterator[R]) next() ([]R, error) {
 	it.preflight()
 	return it.consume()
 }
