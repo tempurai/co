@@ -40,7 +40,7 @@ func (a *Action[E]) AsChan() (chan E, chan bool) {
 	return a.emitCh, a.emitCloseChan
 }
 
-func (a *Action[E]) Iterator() chan E {
+func (a *Action[E]) Emitter() chan E {
 	a.actionMode = ActionModeChan
 	return a.emitCh
 }
