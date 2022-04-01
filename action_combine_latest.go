@@ -82,7 +82,6 @@ func (a *actionCombineLatest[R]) run() {
 }
 
 func CombineLatest[T1, T2 any](seq1 AsyncSequenceable[T1], seq2 AsyncSequenceable[T2]) *Action[ActionBulkResult[Type2[T1, T2]]] {
-
 	action := NewActionCombineLatest[ActionBulkResult[Type2[T1, T2]]](castToIteratorAny(seq1.Iterator(), seq2.Iterator())).
 		setFn(func(a *actionCombineLatest[ActionBulkResult[Type2[T1, T2]]], v []any, err error, b bool) {
 			a.listenProgressive(ActionBulkResult[Type2[T1, T2]]{
