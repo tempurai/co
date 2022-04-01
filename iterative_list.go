@@ -80,7 +80,11 @@ func (it *iterativeListIterator[R]) hasNext() bool {
 	return it.currentIndex < it.len()
 }
 
-func (it *iterativeListIterator[R]) next() (R, error) {
+func (it *iterativeListIterator[R]) consume() (R, error) {
 	defer func() { it.currentIndex++ }()
 	return it.list[it.currentIndex], nil
+}
+
+func (it *iterativeListIterator[R]) next() (R, error) {
+	return it.consume()
 }

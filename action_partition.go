@@ -21,7 +21,7 @@ func (a *actionPartition[R]) run() {
 
 	for i := 0; a.ifHasNext(); i++ {
 		for j := range a.its {
-			val, err := a.its[j].next()
+			val, err := a.its[j].consume()
 			values = append(values, &data[R]{val, err})
 
 			if len(values) == a.width || !a.ifHasNext() {

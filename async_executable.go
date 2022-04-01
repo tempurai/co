@@ -46,7 +46,12 @@ type asyncExecutableIterator[R any] struct {
 	iterativeListIterator[*executable[R]]
 }
 
-func (it *asyncExecutableIterator[R]) next() (R, error) {
+func (it *asyncExecutableIterator[R]) consume() (R, error) {
 	defer func() { it.currentIndex++ }()
 	return it.executeAt(it.currentIndex)
+}
+
+func (it *asyncExecutableIterator[R]) next() (R, error) {
+	it.hasNext()
+	return it.consume()
 }

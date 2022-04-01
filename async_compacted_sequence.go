@@ -37,7 +37,7 @@ func (it *asyncCompactedSequenceIterator[R]) hasNext() bool {
 	}
 	if it.previousData == nil && it.previousIterator.hasNext() {
 		for it.previousIterator.hasNext() {
-			val, err := it.previousIterator.next()
+			val, err := it.previousIterator.consume()
 			if err != nil {
 				it.previousData = NewDataWith(val, err)
 				return true
@@ -54,7 +54,7 @@ func (it *asyncCompactedSequenceIterator[R]) hasNext() bool {
 	return false
 }
 
-func (it *asyncCompactedSequenceIterator[R]) next() (R, error) {
+func (it *asyncCompactedSequenceIterator[R]) consume() (R, error) {
 	if !it.preProcessed {
 		it.hasNext()
 	}
@@ -65,6 +65,11 @@ func (it *asyncCompactedSequenceIterator[R]) next() (R, error) {
 	return rData.value, rData.err
 }
 
-func (it *asyncCompactedSequenceIterator[R]) nextAny() (any, error) {
-	return it.next()
+func (it *asyncCompactedSequenceIterator[R]) consumeAny() (any, error) {
+	return it.consume()
+}
+
+func (it *asyncCompactedSequenceIterator[R]) next() (R, error) {
+	it.hasNext()
+	return it.consume()
 }

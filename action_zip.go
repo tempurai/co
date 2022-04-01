@@ -49,7 +49,7 @@ func (a *actionZip[R]) run() {
 			for i := 0; seq.hasNext(); i++ {
 				cond.Wait()
 
-				data, err := seq.nextAny()
+				data, err := seq.consumeAny()
 				SafeSend(resultChan, actionAnyResult{idx, data, err})
 			}
 		}(i, a.its[i])

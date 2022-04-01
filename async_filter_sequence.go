@@ -41,21 +41,21 @@ func (it *asyncFilterSequenceIterator[R]) hasNext() bool {
 		return true
 	}
 	if it.previousData == nil && it.previousIterator.hasNext() {
-		val, err := it.previousIterator.next()
+		val, err := it.previousIterator.consume()
 		it.previousData = NewDataWith(val, err)
 		return true
 	}
 	return false
 }
 
-func (it *asyncFilterSequenceIterator[R]) next() (R, error) {
+func (it *asyncFilterSequenceIterator[R]) consume() (R, error) {
 	if !it.preProcessed {
 		it.hasNext()
 	}
 	defer func() { it.preProcessed = false }()
 
 	for it.previousIterator.hasNext() {
-		val, err := it.previousIterator.next()
+		val, err := it.previousIterator.consume()
 		if err != nil {
 			it.previousData = NewDataWith(val, err)
 			return val, err
@@ -71,6 +71,11 @@ func (it *asyncFilterSequenceIterator[R]) next() (R, error) {
 	return rData.value, rData.err
 }
 
-func (it *asyncFilterSequenceIterator[R]) nextAny() (any, error) {
-	return it.next()
+func (it *asyncFilterSequenceIterator[R]) next() (R, error) {
+	it.hasNext()
+	return it.consume()
+}
+
+func (it *asyncFilterSequenceIterator[R]) consumeAny() (any, error) {
+	return it.consume()
 }

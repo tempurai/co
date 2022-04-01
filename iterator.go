@@ -1,15 +1,16 @@
 package co
 
 type IteratorAction[T any] interface {
+	consume() (T, error)
 	next() (T, error)
 }
 
 type IteratorAnyAction interface {
-	nextAny() (any, error)
+	consumeAny() (any, error)
 }
 
 type IteratorOperator interface {
-	hasNext() bool // A Sequence have next executable function
+	hasNext() bool // A Sequence have consume executable function
 }
 
 type Iterator[T any] interface {

@@ -28,7 +28,7 @@ type asyncMergedSequenceIterator[R any] struct {
 	currentIndex int
 }
 
-func (it *asyncMergedSequenceIterator[R]) nextIndex() int {
+func (it *asyncMergedSequenceIterator[R]) consumeIndex() int {
 	if it.currentIndex+1 >= len(it.its) {
 		it.currentIndex = 0
 	} else {
@@ -46,18 +46,23 @@ func (it *asyncMergedSequenceIterator[R]) hasNext() bool {
 	return false
 }
 
-func (it *asyncMergedSequenceIterator[R]) next() (R, error) {
+func (it *asyncMergedSequenceIterator[R]) consume() (R, error) {
 	for it.hasNext() {
-		idx := it.nextIndex()
+		idx := it.consumeIndex()
 
 		if !it.its[idx].hasNext() {
 			continue
 		}
-		return it.its[idx].next()
+		return it.its[idx].consume()
 	}
-	return *new(R), fmt.Errorf("sequence have no next function to execute")
+	return *new(R), fmt.Errorf("sequence have no consume function to execute")
 }
 
-func (it *asyncMergedSequenceIterator[R]) nextAny() (any, error) {
-	return it.next()
+func (it *asyncMergedSequenceIterator[R]) next() (R, error) {
+	it.hasNext()
+	return it.consume()
+}
+
+func (it *asyncMergedSequenceIterator[R]) consumeAny() (any, error) {
+	return it.consume()
 }
