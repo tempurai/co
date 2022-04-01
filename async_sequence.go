@@ -34,7 +34,7 @@ func (it *asyncSequenceIterator[R, T]) emitData(d *data[T]) {
 	}
 }
 
-func (it *asyncSequenceIterator[R, T]) emitIterator() {
+func (it *asyncSequenceIterator[R, T]) runEmit() {
 	if it.isEmitRunning {
 		return
 	}
@@ -51,13 +51,13 @@ func (it *asyncSequenceIterator[R, T]) emitIterator() {
 	})
 }
 
-func (it *asyncSequenceIterator[R, T]) EmitIterator() <-chan *data[T] {
+func (it *asyncSequenceIterator[R, T]) Emitter() <-chan *data[T] {
 	it.emitMux.Lock()
 	defer it.emitMux.Unlock()
 
 	eCh := make(chan *data[T])
 	it.emitCh = append(it.emitCh, eCh)
 
-	it.emitIterator()
+	it.runEmit()
 	return eCh
 }

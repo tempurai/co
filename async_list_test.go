@@ -14,7 +14,7 @@ func TestAsyncList(t *testing.T) {
 
 		Convey("expect resolved list to be identical with given values", func() {
 			idx := 0
-			for data := range aList.Iterator().EmitIterator() {
+			for data := range aList.Iterator().Emitter() {
 				So(data.GetValue(), ShouldEqual, numbers[idx])
 				idx++
 			}
