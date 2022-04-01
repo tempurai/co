@@ -58,9 +58,9 @@ func Any[R any](list *executablesList[R]) *Action[*data[R]] {
 }
 
 func AwaitRace[R any](fns ...func() (R, error)) R {
-	return Race(NewExecutablesList[R]().AddFn(fns...)).AsData().PeakData()
+	return Race(NewExecutablesList[R]().AddExecutable(fns...)).AsData().PeakData()
 }
 
 func AwaitAny[R any](fns ...func() (R, error)) *data[R] {
-	return Any(NewExecutablesList[R]().AddFn(fns...)).AsData().PeakData()
+	return Any(NewExecutablesList[R]().AddExecutable(fns...)).AsData().PeakData()
 }

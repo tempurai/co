@@ -43,5 +43,5 @@ func Await[R any](list *executablesList[R]) *Action[*data[R]] {
 }
 
 func AwaitAll[R any](fns ...func() (R, error)) []*data[R] {
-	return Await(NewExecutablesList[R]().AddFn(fns...)).AsData().GetData()
+	return Await(NewExecutablesList[R]().AddExecutable(fns...)).AsData().GetData()
 }

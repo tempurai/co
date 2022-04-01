@@ -55,6 +55,7 @@ func (a *Action[E]) AsData() *Action[E] {
 	a.actionMode = ActionModeData
 	return a
 }
+
 func (a *Action[E]) GetData() []E {
 	a.wait()
 
