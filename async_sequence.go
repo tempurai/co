@@ -23,7 +23,7 @@ func (a *asyncSequence[R]) defaultIterator() Iterator[R] {
 }
 
 func (a *asyncSequence[R]) Emitter() <-chan *data[R] {
-	return a._defaultIterator.Emitter()
+	return a.defaultIterator().Emitter()
 }
 
 func (a *asyncSequence[R]) AdjacentFilter(fn func(R, R) bool) *AsyncAdjacentFilterSequence[R] {
