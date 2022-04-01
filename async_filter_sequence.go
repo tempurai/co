@@ -12,6 +12,7 @@ func NewAsyncFilterSequence[R any](it Iterator[R]) *AsyncFilterSequence[R] {
 		predictorFn:      func(_, _ R) bool { return true },
 	}
 }
+
 func (c *AsyncFilterSequence[R]) SetPredicator(fn func(R, R) bool) *AsyncFilterSequence[R] {
 	c.predictorFn = fn
 	return c
@@ -46,17 +47,15 @@ func (it *asyncFilterSequenceIterator[R]) hasNext() bool {
 
 func (it *asyncFilterSequenceIterator[R]) next() (R, error) {
 	for it.previousIterator.hasNext() {
-		for it.previousIterator.hasNext() {
-			val, err := it.previousIterator.next()
-			if err != nil {
-				it.previousData = NewDataWith(val, err)
-				return val, err
-			}
-			if it.predictorFn(it.previousData.value, val) {
-				rData := it.previousData
-				it.previousData = NewDataWith(val, err)
-				return rData.value, rData.err
-			}
+		val, err := it.previousIterator.next()
+		if err != nil {
+			it.previousData = NewDataWith(val, err)
+			return val, err
+		}
+		if it.predictorFn(it.previousData.value, val) {
+			rData := it.previousData
+			it.previousData = NewDataWith(val, err)
+			return rData.value, rData.err
 		}
 	}
 	rData := it.previousData
