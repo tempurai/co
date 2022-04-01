@@ -18,5 +18,5 @@ func (it *AsyncList[R]) Iterator() asyncListIterator[R] {
 }
 
 type asyncListIterator[R any] struct {
-	iterativeListIterator[R]
+	*iterativeListIterator[R]
 }

@@ -14,12 +14,16 @@ func NewAsyncCompactedSequence[R comparable](it Iterator[R]) *AsyncCompactedSequ
 }
 
 func (c *AsyncCompactedSequence[R]) Iterator() *asyncCompactedSequenceIterator[R] {
-	return &asyncCompactedSequenceIterator[R]{
+	it := &asyncCompactedSequenceIterator[R]{
 		AsyncCompactedSequence: c,
 	}
+	it.asyncSequenceIterator = NewAsyncSequenceIterator[R](it)
+	return it
 }
 
 type asyncCompactedSequenceIterator[R comparable] struct {
+	*asyncSequenceIterator[R]
+
 	*AsyncCompactedSequence[R]
 
 	preProcessed bool
@@ -63,13 +67,4 @@ func (it *asyncCompactedSequenceIterator[R]) consume() (R, error) {
 	rData := it.previousData
 	it.previousData = nil
 	return rData.value, rData.err
-}
-
-func (it *asyncCompactedSequenceIterator[R]) consumeAny() (any, error) {
-	return it.consume()
-}
-
-func (it *asyncCompactedSequenceIterator[R]) next() (R, error) {
-	it.preflight()
-	return it.consume()
 }

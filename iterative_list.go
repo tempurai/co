@@ -26,6 +26,8 @@ func (l *List[R]) getAt(i int) R {
 }
 
 func (l *List[R]) setAt(i int, val R) {
+	l.resizeTo(i + 1)
+
 	l.rwmux.Lock()
 	defer l.rwmux.Unlock()
 
@@ -47,12 +49,12 @@ func (l *List[R]) swap(items []R) {
 }
 
 func (l *List[R]) resizeTo(len int) {
+	l.rwmux.Lock()
+	defer l.rwmux.Unlock()
+
 	if len <= l.len() {
 		return
 	}
-
-	l.rwmux.Lock()
-	defer l.rwmux.Unlock()
 
 	l.list = append(l.list, make([]R, len-l.len())...)
 }
@@ -67,11 +69,18 @@ func NewIterativeList[R any]() *iterativeList[R] {
 	}
 }
 
-func (it *iterativeList[R]) Iterator() iterativeListIterator[R] {
-	return iterativeListIterator[R]{iterativeList: it, currentIndex: 0}
+func (l *iterativeList[R]) Iterator() *iterativeListIterator[R] {
+	it := &iterativeListIterator[R]{
+		iterativeList: l,
+		currentIndex:  0,
+	}
+	it.asyncSequenceIterator = NewAsyncSequenceIterator[R](it)
+	return it
 }
 
 type iterativeListIterator[R any] struct {
+	*asyncSequenceIterator[R]
+
 	*iterativeList[R]
 	currentIndex int
 }
@@ -83,8 +92,4 @@ func (it *iterativeListIterator[R]) preflight() bool {
 func (it *iterativeListIterator[R]) consume() (R, error) {
 	defer func() { it.currentIndex++ }()
 	return it.list[it.currentIndex], nil
-}
-
-func (it *iterativeListIterator[R]) next() (R, error) {
-	return it.consume()
 }

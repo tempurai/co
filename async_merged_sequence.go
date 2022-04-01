@@ -16,6 +16,7 @@ func NewAsyncMergedSequence[R any](cos ...AsyncExecutable[R]) *AsyncMergedSequen
 
 func (c *AsyncMergedSequence[R]) Iterator() *asyncMergedSequenceIterator[R] {
 	it := &asyncMergedSequenceIterator[R]{}
+	it.asyncSequenceIterator = NewAsyncSequenceIterator[R](it)
 	for i := range c.concurrents {
 		it.its = append(it.its, c.concurrents[i].defaultIterator())
 	}
@@ -23,12 +24,13 @@ func (c *AsyncMergedSequence[R]) Iterator() *asyncMergedSequenceIterator[R] {
 }
 
 type asyncMergedSequenceIterator[R any] struct {
-	its []Iterator[R]
+	*asyncSequenceIterator[R]
 
+	its          []Iterator[R]
 	currentIndex int
 }
 
-func (it *asyncMergedSequenceIterator[R]) consumeIndex() int {
+func (it *asyncMergedSequenceIterator[R]) nextIndex() int {
 	if it.currentIndex+1 >= len(it.its) {
 		it.currentIndex = 0
 	} else {
@@ -48,7 +50,7 @@ func (it *asyncMergedSequenceIterator[R]) preflight() bool {
 
 func (it *asyncMergedSequenceIterator[R]) consume() (R, error) {
 	for it.preflight() {
-		idx := it.consumeIndex()
+		idx := it.nextIndex()
 
 		if !it.its[idx].preflight() {
 			continue
@@ -56,13 +58,4 @@ func (it *asyncMergedSequenceIterator[R]) consume() (R, error) {
 		return it.its[idx].consume()
 	}
 	return *new(R), fmt.Errorf("sequence have no consume function to execute")
-}
-
-func (it *asyncMergedSequenceIterator[R]) next() (R, error) {
-	it.preflight()
-	return it.consume()
-}
-
-func (it *asyncMergedSequenceIterator[R]) consumeAny() (any, error) {
-	return it.consume()
 }

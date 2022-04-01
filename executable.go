@@ -60,7 +60,7 @@ func (it *executablesList[R]) Iterator() executableListIterator[R] {
 
 type executableListIterator[R any] struct {
 	*executablesList[R]
-	iterativeListIterator[*executable[R]]
+	*iterativeListIterator[*executable[R]]
 }
 
 func (it *executableListIterator[R]) preflight() bool {

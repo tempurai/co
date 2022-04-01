@@ -19,12 +19,16 @@ func (c *AsyncFilterSequence[R]) SetPredicator(fn func(R, R) bool) *AsyncFilterS
 }
 
 func (c *AsyncFilterSequence[R]) Iterator() *asyncFilterSequenceIterator[R] {
-	return &asyncFilterSequenceIterator[R]{
+	it := &asyncFilterSequenceIterator[R]{
 		AsyncFilterSequence: c,
 	}
+	it.asyncSequenceIterator = NewAsyncSequenceIterator[R](it)
+	return it
 }
 
 type asyncFilterSequenceIterator[R any] struct {
+	*asyncSequenceIterator[R]
+
 	*AsyncFilterSequence[R]
 
 	preProcessed bool
@@ -73,9 +77,5 @@ func (it *asyncFilterSequenceIterator[R]) consume() (R, error) {
 
 func (it *asyncFilterSequenceIterator[R]) next() (R, error) {
 	it.preflight()
-	return it.consume()
-}
-
-func (it *asyncFilterSequenceIterator[R]) consumeAny() (any, error) {
 	return it.consume()
 }
