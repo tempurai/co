@@ -45,7 +45,7 @@ func NewExecutablesList[R any]() *executablesList[R] {
 	}
 }
 
-func (c *executablesList[R]) AddFn(fns ...func() (R, error)) *executablesList[R] {
+func (c *executablesList[R]) AddExecutable(fns ...func() (R, error)) *executablesList[R] {
 	for i := range fns {
 		e := NewExecutor[R]()
 		e.fn = fns[i]

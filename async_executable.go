@@ -21,8 +21,8 @@ func (c *AsyncExecutable[R]) executeAt(i int) (R, error) {
 	return val, err
 }
 
-func (c *AsyncExecutable[R]) AddFn(fns ...func() (R, error)) *AsyncExecutable[R] {
-	c.executables.AddFn(fns...)
+func (c *AsyncExecutable[R]) AddExecutable(fns ...func() (R, error)) *AsyncExecutable[R] {
+	c.executables.AddExecutable(fns...)
 	return c
 }
 
