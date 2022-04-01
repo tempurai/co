@@ -1,7 +1,6 @@
 package co
 
 import (
-	"log"
 	"sync"
 )
 
@@ -13,7 +12,7 @@ type actionAwait[R any] struct {
 
 func (a *actionAwait[R]) run() {
 	wg := sync.WaitGroup{}
-	sData := NewSequenceableData[R]()
+	dataList := NewList[*data[R]]()
 
 	for i := 0; a.list.hasNext(); i++ {
 		wg.Add(1)
@@ -22,13 +21,12 @@ func (a *actionAwait[R]) run() {
 			defer wg.Done()
 			val, err := a.list.exeAt(i)
 
-			log.Println("$$$$ DEBUG i val", i, val)
-			sData.setAt(i, val, err)
+			dataList.setAt(i, NewDataWith(val, err))
 		}(i)
 	}
 
 	wg.Wait()
-	a.listenBulk(sData.GetAll())
+	a.listenBulk(dataList.list)
 	a.done()
 }
 
