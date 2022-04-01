@@ -40,6 +40,11 @@ func (a *Action[E]) AsChan() (chan E, chan bool) {
 	return a.externalCh, a.externalCloseChan
 }
 
+func (a *Action[E]) Iterator() chan E {
+	a.actionMode = ActionModeChan
+	return a.externalCh
+}
+
 func (a *Action[E]) AsFn(fn func(E)) *Action[E] {
 	a.actionMode = ActionModeFn
 	a.externalFn = fn
