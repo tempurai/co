@@ -3,6 +3,7 @@ package co
 type IteratorAction[T any] interface {
 	consume() (T, error) // must be called wiht preflight
 	next() (T, error)
+	// Emit() <-chan *data[T]
 }
 
 type IteratorAnyAction interface {

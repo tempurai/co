@@ -22,12 +22,12 @@ func (c *AsyncFilterSequence[R]) Iterator() *asyncFilterSequenceIterator[R] {
 	it := &asyncFilterSequenceIterator[R]{
 		AsyncFilterSequence: c,
 	}
-	it.asyncSequenceIterator = NewAsyncSequenceIterator[R, R](it)
+	it.asyncSequenceIterator = NewAsyncSequenceIterator[R](it)
 	return it
 }
 
 type asyncFilterSequenceIterator[R any] struct {
-	*asyncSequenceIterator[R, R]
+	*asyncSequenceIterator[R]
 
 	*AsyncFilterSequence[R]
 
@@ -58,19 +58,17 @@ func (it *asyncFilterSequenceIterator[R]) consume() (R, error) {
 	}
 	defer func() { it.preProcessed = false }()
 
+	rData := it.previousData
 	for it.previousIterator.preflight() {
 		val, err := it.previousIterator.consume()
+		it.previousData = NewDataWith(val, err)
 		if err != nil {
-			it.previousData = NewDataWith(val, err)
 			return val, err
 		}
 		if it.predictorFn(it.previousData.value, val) {
-			rData := it.previousData
-			it.previousData = NewDataWith(val, err)
 			return rData.value, rData.err
 		}
 	}
-	rData := it.previousData
 	it.previousData = nil
 	return rData.value, rData.err
 }

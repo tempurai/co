@@ -17,12 +17,12 @@ func (c *AsyncCompactedSequence[R]) Iterator() *asyncCompactedSequenceIterator[R
 	it := &asyncCompactedSequenceIterator[R]{
 		AsyncCompactedSequence: c,
 	}
-	it.asyncSequenceIterator = NewAsyncSequenceIterator[R, R](it)
+	it.asyncSequenceIterator = NewAsyncSequenceIterator[R](it)
 	return it
 }
 
 type asyncCompactedSequenceIterator[R comparable] struct {
-	*asyncSequenceIterator[R, R]
+	*asyncSequenceIterator[R]
 
 	*AsyncCompactedSequence[R]
 

@@ -4,7 +4,29 @@ import (
 	"sync"
 )
 
-type asyncSequenceIterator[R, T any] struct {
+type asyncSequence[R, T any] struct {
+	delegated AsyncSequenceable[R]
+
+	_defaultIterator Iterator[T]
+}
+
+func NewAsyncSequence[R, T any](it AsyncSequenceable[R]) *asyncSequence[R, T] {
+	return &asyncSequence[R, T]{delegated: it}
+}
+
+// func (a *asyncSequence[R, T]) defaultIterator() Iterator[T] {
+// 	if a._defaultIterator != nil {
+// 		return a._defaultIterator
+// 	}
+// 	a._defaultIterator = a.delegated.Iterator().Emit()
+// 	return a._defaultIterator
+// }
+
+// func (a *asyncSequence[R, T]) Emitter() <-chan *data[T] {
+// 	return a.delegated.Iterator().Emit()
+// }
+
+type asyncSequenceIterator[T any] struct {
 	delegated Iterator[T]
 
 	emitCh        []chan *data[T]
@@ -12,20 +34,20 @@ type asyncSequenceIterator[R, T any] struct {
 	emitMux       sync.Mutex
 }
 
-func NewAsyncSequenceIterator[R, T any](it Iterator[T]) *asyncSequenceIterator[R, T] {
-	return &asyncSequenceIterator[R, T]{delegated: it, emitCh: make([]chan *data[T], 0)}
+func NewAsyncSequenceIterator[T any](it Iterator[T]) *asyncSequenceIterator[T] {
+	return &asyncSequenceIterator[T]{delegated: it, emitCh: make([]chan *data[T], 0)}
 }
 
-func (it *asyncSequenceIterator[R, T]) consumeAny() (any, error) {
+func (it *asyncSequenceIterator[T]) consumeAny() (any, error) {
 	return it.delegated.consume()
 }
 
-func (it *asyncSequenceIterator[R, T]) next() (T, error) {
+func (it *asyncSequenceIterator[T]) next() (T, error) {
 	it.delegated.preflight()
 	return it.delegated.consume()
 }
 
-func (it *asyncSequenceIterator[R, T]) emitData(d *data[T]) {
+func (it *asyncSequenceIterator[T]) emitData(d *data[T]) {
 	it.emitMux.Lock()
 	defer it.emitMux.Unlock()
 
@@ -34,7 +56,7 @@ func (it *asyncSequenceIterator[R, T]) emitData(d *data[T]) {
 	}
 }
 
-func (it *asyncSequenceIterator[R, T]) runEmit() {
+func (it *asyncSequenceIterator[T]) runEmit() {
 	if it.isEmitRunning {
 		return
 	}
@@ -51,7 +73,7 @@ func (it *asyncSequenceIterator[R, T]) runEmit() {
 	})
 }
 
-func (it *asyncSequenceIterator[R, T]) Emitter() <-chan *data[T] {
+func (it *asyncSequenceIterator[T]) Emitter() <-chan *data[T] {
 	it.emitMux.Lock()
 	defer it.emitMux.Unlock()
 

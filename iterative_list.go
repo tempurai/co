@@ -74,12 +74,12 @@ func (l *iterativeList[R]) Iterator() *iterativeListIterator[R] {
 		iterativeList: l,
 		currentIndex:  0,
 	}
-	it.asyncSequenceIterator = NewAsyncSequenceIterator[R, R](it)
+	it.asyncSequenceIterator = NewAsyncSequenceIterator[R](it)
 	return it
 }
 
 type iterativeListIterator[R any] struct {
-	*asyncSequenceIterator[R, R]
+	*asyncSequenceIterator[R]
 
 	*iterativeList[R]
 	currentIndex int

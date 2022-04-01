@@ -16,7 +16,7 @@ func NewAsyncMergedSequence[R any](cos ...AsyncExecutable[R]) *AsyncMergedSequen
 
 func (c *AsyncMergedSequence[R]) Iterator() *asyncMergedSequenceIterator[R] {
 	it := &asyncMergedSequenceIterator[R]{}
-	it.asyncSequenceIterator = NewAsyncSequenceIterator[R, R](it)
+	it.asyncSequenceIterator = NewAsyncSequenceIterator[R](it)
 	for i := range c.concurrents {
 		it.its = append(it.its, c.concurrents[i].defaultIterator())
 	}
@@ -24,7 +24,7 @@ func (c *AsyncMergedSequence[R]) Iterator() *asyncMergedSequenceIterator[R] {
 }
 
 type asyncMergedSequenceIterator[R any] struct {
-	*asyncSequenceIterator[R, R]
+	*asyncSequenceIterator[R]
 
 	its          []Iterator[R]
 	currentIndex int
