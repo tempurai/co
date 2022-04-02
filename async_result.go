@@ -6,7 +6,7 @@ type actionAnyResult struct {
 	err   error
 }
 
-type ActionBulkResult[R any] struct {
+type BulkResult[R any] struct {
 	Value        R
 	Err          error
 	ReachesToEnd bool

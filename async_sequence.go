@@ -37,58 +37,73 @@ func (a *asyncSequence[R]) Merge(its ...AsyncSequenceable[R]) *AsyncMergedSequen
 
 type asyncSequenceIterator[T any] struct {
 	delegated Iterator[T]
+	mux       sync.RWMutex
+	runOnce   sync.Once
 
-	emitCh        []chan *data[T]
-	isEmitRunning bool
-	emitMux       sync.Mutex
+	emitCh []chan *data[T]
+
+	successFn func(T)
+	failedFn  func(error)
 }
 
 func NewAsyncSequenceIterator[T any](it Iterator[T]) *asyncSequenceIterator[T] {
-	return &asyncSequenceIterator[T]{delegated: it, emitCh: make([]chan *data[T], 0)}
+	return &asyncSequenceIterator[T]{
+		delegated: it,
+		emitCh:    make([]chan *data[T], 0),
+
+		successFn: func(t T) {},
+		failedFn:  func(err error) {},
+	}
 }
 
-func (it *asyncSequenceIterator[T]) consumeAny() (any, error) {
-	return it.delegated.consume()
-}
-
-func (it *asyncSequenceIterator[T]) next() (T, error) {
-	it.delegated.preflight()
-	return it.delegated.consume()
+func (it *asyncSequenceIterator[T]) nextAny() (*Optional[any], error) {
+	oVal, err := it.delegated.next()
+	return oVal.AsOptional(), err
 }
 
 func (it *asyncSequenceIterator[T]) emitData(d *data[T]) {
-	it.emitMux.Lock()
-	defer it.emitMux.Unlock()
+	it.mux.RLock()
+	defer it.mux.RUnlock()
 
-	for _, ch := range it.emitCh {
-		SafeSend(ch, d)
+	for i := range it.emitCh {
+		SafeSend(it.emitCh[i], d)
 	}
 }
 
-func (it *asyncSequenceIterator[T]) runEmit() {
-	if it.isEmitRunning {
-		return
-	}
-	it.isEmitRunning = true
+func (it *asyncSequenceIterator[T]) run() {
+	it.runOnce.Do(func() {
+		SafeGo(func() {
+			for op, err := it.delegated.next(); op.valid; op, err = it.delegated.next() {
+				// Channel
+				it.emitData(NewDataWith(op.data, err))
 
-	SafeGo(func() {
-		for it.delegated.preflight() {
-			val, err := it.delegated.consume()
-			it.emitData(NewDataWith(val, err))
-		}
-		for _, ch := range it.emitCh {
-			SafeClose(ch)
-		}
+				// Function
+				if err == nil {
+					it.successFn(op.data)
+				} else {
+					it.failedFn(err)
+				}
+			}
+			for _, ch := range it.emitCh {
+				SafeClose(ch)
+			}
+		})
 	})
 }
 
 func (it *asyncSequenceIterator[T]) Emitter() <-chan *data[T] {
-	it.emitMux.Lock()
-	defer it.emitMux.Unlock()
+	it.mux.Lock()
+	defer it.mux.Unlock()
 
 	eCh := make(chan *data[T])
 	it.emitCh = append(it.emitCh, eCh)
 
-	it.runEmit()
+	it.run()
 	return eCh
+}
+
+func (it *asyncSequenceIterator[T]) ForEach(success func(T), failed func(error)) {
+	it.successFn = success
+	it.failedFn = failed
+	it.run()
 }

@@ -1,17 +1,15 @@
 package co
 
 type IteratorAction[T any] interface {
-	consume() (T, error) // must be called wiht preflight
-	next() (T, error)
+	next() (*Optional[T], error)
 	Emitter() <-chan *data[T]
 }
 
 type IteratorAnyAction interface {
-	consumeAny() (any, error)
+	nextAny() (*Optional[any], error)
 }
 
 type IteratorOperator interface {
-	preflight() bool // A Sequence have next consume executable function
 }
 
 type Iterator[T any] interface {

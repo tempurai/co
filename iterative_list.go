@@ -89,7 +89,11 @@ func (it *iterativeListIterator[R]) preflight() bool {
 	return it.currentIndex < it.len()
 }
 
-func (it *iterativeListIterator[R]) consume() (R, error) {
+func (it *iterativeListIterator[R]) next() (*Optional[R], error) {
+	if !it.preflight() {
+		return NewOptionalEmpty[R](), nil
+	}
+
 	defer func() { it.currentIndex++ }()
-	return it.list[it.currentIndex], nil
+	return OptionalOf(it.list[it.currentIndex]), nil
 }

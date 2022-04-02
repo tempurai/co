@@ -18,7 +18,7 @@ func (a *actionRace[R]) run() {
 			}
 
 			val, err := a.it.exeAt(i)
-			if err != nil && !a.ignoreErr {
+			if (err != nil && !a.ignoreErr) || aBool.Get() {
 				return
 			}
 
@@ -27,9 +27,8 @@ func (a *actionRace[R]) run() {
 		}(i)
 	}
 
-	a.listenProgressive(<-dataCh)
+	a.listen(<-dataCh)
 	close(dataCh)
-
 	a.done()
 }
 
@@ -46,7 +45,8 @@ func baseRace[R any](ignoreErr bool, list *executablesList[R]) *Action[*data[R]]
 
 func Race[R any](list *executablesList[R]) *Action[R] {
 	action := baseRace(true, list)
-	action.wait()
+	// wait first data to complete
+	action.PeakData()
 
 	return MapAction(action, func(t *data[R]) R {
 		return t.value
@@ -58,9 +58,9 @@ func Any[R any](list *executablesList[R]) *Action[*data[R]] {
 }
 
 func AwaitRace[R any](fns ...func() (R, error)) R {
-	return Race(NewExecutablesList[R]().AddExecutable(fns...)).WaitData().PeakData()
+	return Race(NewExecutablesList[R]().AddExecutable(fns...)).PeakData()
 }
 
 func AwaitAny[R any](fns ...func() (R, error)) *data[R] {
-	return Any(NewExecutablesList[R]().AddExecutable(fns...)).WaitData().PeakData()
+	return Any(NewExecutablesList[R]().AddExecutable(fns...)).PeakData()
 }

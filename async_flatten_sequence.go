@@ -27,40 +27,32 @@ type asyncFlattenSequenceIterator[R any, T []R] struct {
 	*asyncSequenceIterator[R]
 
 	*AsyncFlattenSequence[R, T]
-	preProcessed bool
 	bufferedData T // Should to optimze with linked list
 }
 
 func (it *asyncFlattenSequenceIterator[R, T]) preflight() bool {
-	defer func() { it.preProcessed = true }()
-	if len(it.bufferedData) > 0 {
-		return true
-	}
+	for op, err := it.previousIterator.next(); op.valid; op, err = it.previousIterator.next() {
+		if err != nil {
+			continue
+		}
 
-	for it.previousIterator.preflight() {
-		val, _ := it.previousIterator.consume()
-		if len(val) > 0 {
-			it.bufferedData = append(it.bufferedData, val...)
+		if len(op.data) > 0 {
+			it.bufferedData = append(it.bufferedData, op.data...)
 			return true
 		}
 	}
-
 	return false
 }
 
-func (it *asyncFlattenSequenceIterator[R, T]) consume() (R, error) {
-	if !it.preProcessed {
-		it.preflight()
+func (it *asyncFlattenSequenceIterator[R, T]) next() (*Optional[R], error) {
+	if len(it.bufferedData) == 0 {
+		if !it.preflight() {
+			return NewOptionalEmpty[R](), nil
+		}
 	}
-	defer func() { it.preProcessed = false }()
 
 	result, nextBuffer := it.bufferedData[0], it.bufferedData[1:]
 	it.bufferedData = nextBuffer
 
-	return result, nil
-}
-
-func (it *asyncFlattenSequenceIterator[R, T]) next() (R, error) {
-	it.preflight()
-	return it.consume()
+	return OptionalOf(result), nil
 }

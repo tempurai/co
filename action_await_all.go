@@ -20,13 +20,12 @@ func (a *actionAwait[R]) run() {
 		go func(i int) {
 			defer wg.Done()
 			val, err := a.list.exeAt(i)
-
 			dataList.setAt(i, NewDataWith(val, err))
 		}(i)
 	}
 
 	wg.Wait()
-	a.listenBulk(dataList.list)
+	a.listen(dataList.list...)
 	a.done()
 }
 
@@ -41,5 +40,5 @@ func All[R any](list *executablesList[R]) *Action[*data[R]] {
 }
 
 func AwaitAll[R any](fns ...func() (R, error)) []*data[R] {
-	return All(NewExecutablesList[R]().AddExecutable(fns...)).WaitData().GetData()
+	return All(NewExecutablesList[R]().AddExecutable(fns...)).GetData()
 }

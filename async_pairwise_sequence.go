@@ -27,45 +27,34 @@ type asyncPairwiseSequenceIterator[R any, T []R] struct {
 
 	*AsyncPairwiseSequence[R, T]
 
-	preProcessed bool
-	previousData *data[R]
+	previousData *R
 }
 
-func (it *asyncPairwiseSequenceIterator[R, T]) preflight() bool {
-	defer func() { it.preProcessed = true }()
-
-	if it.previousData != nil && it.previousIterator.preflight() {
-		return true
-	}
-	if it.previousData == nil && it.previousIterator.preflight() {
-		val, err := it.previousIterator.consume()
-		it.previousData = NewDataWith(val, err)
-		return true
+func (it *asyncPairwiseSequenceIterator[R, T]) preflight() {
+	if it.previousData != nil {
+		return
 	}
 
-	return false
+	for op, err := it.previousIterator.next(); op.valid; op, err = it.previousIterator.next() {
+		if err != nil {
+			continue
+		}
+		it.previousData = &op.data
+		break
+	}
 }
 
-func (it *asyncPairwiseSequenceIterator[R, T]) consume() (T, error) {
-	if !it.preProcessed {
-		it.preflight()
-	}
-	defer func() { it.preProcessed = false }()
-
-	previousData := it.previousData
-
-	val, err := it.previousIterator.next()
-	if err != nil {
-		it.previousData = nil
-		return []R{previousData.value}, err
-	}
-	results := []R{previousData.value, val}
-
-	it.previousData = NewDataWith(val, err)
-	return results, nil
-}
-
-func (it *asyncPairwiseSequenceIterator[R, T]) next() (T, error) {
+func (it *asyncPairwiseSequenceIterator[R, T]) next() (*Optional[T], error) {
 	it.preflight()
-	return it.consume()
+
+	previousData := *it.previousData
+	for op, err := it.previousIterator.next(); op.valid; op, err = it.previousIterator.next() {
+		if err != nil {
+			return NewOptionalEmpty[T](), nil
+		}
+		it.previousData = &op.data
+		return OptionalOf(T{previousData, op.data}), nil
+	}
+
+	return NewOptionalEmpty[T](), nil
 }

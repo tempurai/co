@@ -34,44 +34,41 @@ type asyncAdjacentFilterSequenceIterator[R any] struct {
 
 	*AsyncAdjacentFilterSequence[R]
 
-	preProcessed bool
-	previousData *data[R]
+	previousData *R
 }
 
-func (it *asyncAdjacentFilterSequenceIterator[R]) preflight() bool {
-	defer func() { it.preProcessed = true }()
-
+func (it *asyncAdjacentFilterSequenceIterator[R]) preflight() {
 	if it.previousData != nil {
-		return true
+		return
 	}
-	if it.previousData == nil && !it.previousIterator.preflight() {
-		return false
+
+	for op, err := it.previousIterator.next(); op.valid; op, err = it.previousIterator.next() {
+		if err != nil {
+			continue
+		}
+		it.previousData = &op.data
+		break
 	}
-	if it.previousData == nil && it.previousIterator.preflight() {
-		val, err := it.previousIterator.consume()
-		it.previousData = NewDataWith(val, err)
-		return true
-	}
-	return false
 }
 
-func (it *asyncAdjacentFilterSequenceIterator[R]) consume() (R, error) {
-	if !it.preProcessed {
-		it.preflight()
-	}
-	defer func() { it.preProcessed = false }()
+func (it *asyncAdjacentFilterSequenceIterator[R]) next() (*Optional[R], error) {
+	it.preflight()
 
-	rData := it.previousData
-	for it.previousIterator.preflight() {
-		val, err := it.previousIterator.consume()
-		it.previousData = NewDataWith(val, err)
+	if it.previousData == nil {
+		return NewOptionalEmpty[R](), nil
+	}
+
+	previousData := *it.previousData
+	for op, err := it.previousIterator.next(); op.valid; op, err = it.previousIterator.next() {
 		if err != nil {
-			return val, err
+			continue
 		}
-		if it.predictorFn(rData.value, it.previousData.value) {
-			return rData.value, rData.err
+		it.previousData = &op.data
+		if it.predictorFn(previousData, op.data) {
+			return OptionalOf(previousData), nil
 		}
 	}
+
 	it.previousData = nil
-	return rData.value, rData.err
+	return OptionalOf(previousData), nil
 }

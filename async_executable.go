@@ -44,11 +44,12 @@ type asyncExecutableIterator[R any] struct {
 	underlying *iterativeListIterator[*executable[R]]
 }
 
-func (it *asyncExecutableIterator[R]) preflight() bool {
-	return it.underlying.preflight()
-}
+func (it *asyncExecutableIterator[R]) next() (*Optional[R], error) {
+	if !it.underlying.preflight() {
+		return NewOptionalEmpty[R](), nil
+	}
 
-func (it *asyncExecutableIterator[R]) consume() (R, error) {
 	defer func() { it.underlying.currentIndex++ }()
-	return it.executeAt(it.underlying.currentIndex)
+	val, err := it.executeAt(it.underlying.currentIndex)
+	return OptionalOf(val), err
 }

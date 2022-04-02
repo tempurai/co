@@ -1,6 +1,7 @@
 package co
 
 import (
+	"fmt"
 	"sync"
 
 	"golang.org/x/exp/constraints"
@@ -29,6 +30,7 @@ func SafeSend[T any](ch chan T, value T) (closed bool) {
 	defer func() {
 		if recover() != nil {
 			closed = true
+			fmt.Printf("channel %+v send out %+v failed\n", ch, value)
 		}
 	}()
 
@@ -77,7 +79,7 @@ func EvertGET[T constraints.Ordered](ele []T, target T) bool {
 	return true
 }
 
-func EvertET[T constraints.Ordered](ele []T, target T) bool {
+func EvertET[T comparable](ele []T, target T) bool {
 	for _, e := range ele {
 		if e == target {
 			return false

@@ -14,11 +14,11 @@ func NewAsyncMergedSequence[R any](as ...AsyncSequenceable[R]) *AsyncMergedSeque
 	return a
 }
 
-func (c *AsyncMergedSequence[R]) Iterator() Iterator[R] {
+func (a *AsyncMergedSequence[R]) Iterator() Iterator[R] {
 	it := &asyncMergedSequenceIterator[R]{}
 	it.asyncSequenceIterator = NewAsyncSequenceIterator[R](it)
-	for i := range c.aSequenceables {
-		it.its = append(it.its, c.aSequenceables[i].Iterator())
+	for i := range a.aSequenceables {
+		it.its = append(it.its, a.aSequenceables[i].Iterator())
 	}
 	return it
 }
@@ -44,35 +44,16 @@ func (it *asyncMergedSequenceIterator[R]) nextIndex() int {
 	return it.currentIndex
 }
 
-func (it *asyncMergedSequenceIterator[R]) nextAvailableIndex() (int, bool) {
+func (it *asyncMergedSequenceIterator[R]) next() (*Optional[R], error) {
 	for range it.its {
-		idx := it.nextIndex()
-		if it.its[idx].preflight() {
-			return idx, true
+		op, err := it.its[it.nextIndex()].next()
+		if err != nil {
+			return nil, err
 		}
+		if !op.valid {
+			continue
+		}
+		return op, nil
 	}
-	return 0, false
-}
-
-func (it *asyncMergedSequenceIterator[R]) preflight() bool {
-	defer func() { it.preProcessed = true }()
-
-	i, ok := it.nextAvailableIndex()
-	if !ok {
-		return false
-	}
-
-	val, err := it.its[i].consume()
-	it.previousData = NewDataWith(val, err)
-
-	return true
-}
-
-func (it *asyncMergedSequenceIterator[R]) consume() (R, error) {
-	if !it.preProcessed {
-		it.preflight()
-	}
-	defer func() { it.preProcessed = false }()
-
-	return it.previousData.value, it.previousData.err
+	return NewOptionalEmpty[R](), nil
 }

@@ -28,46 +28,17 @@ type asyncCompactedSequenceIterator[R comparable] struct {
 	*asyncSequenceIterator[R]
 
 	*AsyncCompactedSequence[R]
-
-	preProcessed bool
-	previousData *data[R]
 }
 
-func (it *asyncCompactedSequenceIterator[R]) preflight() bool {
-	defer func() { it.preProcessed = true }()
-
-	if it.previousData == nil && !it.previousIterator.preflight() {
-		return false
-	}
-	if it.previousData != nil && !it.previousIterator.preflight() {
-		return true
-	}
-	if it.previousData == nil && it.previousIterator.preflight() {
-		for it.previousIterator.preflight() {
-			val, err := it.previousIterator.consume()
-			if err != nil {
-				it.previousData = NewDataWith(val, err)
-				return true
-			}
-
-			if !it.predictorFn(val) {
-				continue
-			}
-
-			it.previousData = NewDataWith(val, err)
-			return true
+func (it *asyncCompactedSequenceIterator[R]) next() (*Optional[R], error) {
+	for op, err := it.previousIterator.next(); op.valid; op, err = it.previousIterator.next() {
+		if err != nil {
+			return nil, err
 		}
+		if !it.predictorFn(op.data) {
+			continue
+		}
+		return op, nil
 	}
-	return false
-}
-
-func (it *asyncCompactedSequenceIterator[R]) consume() (R, error) {
-	if !it.preProcessed {
-		it.preflight()
-	}
-	defer func() { it.preProcessed = false }()
-
-	rData := it.previousData
-	it.previousData = nil
-	return rData.value, rData.err
+	return NewOptionalEmpty[R](), nil
 }

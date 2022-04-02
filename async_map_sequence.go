@@ -36,26 +36,12 @@ type asyncMapSequenceIterator[R, T any] struct {
 	preProcessed bool
 }
 
-func (it *asyncMapSequenceIterator[R, T]) preflight() bool {
-	defer func() { it.preProcessed = true }()
-	return it.previousIterator.preflight()
-}
-
-func (it *asyncMapSequenceIterator[R, T]) consume() (T, error) {
-	if !it.preProcessed {
-		it.preflight()
+func (it *asyncMapSequenceIterator[R, T]) next() (*Optional[T], error) {
+	for op, err := it.previousIterator.next(); op.valid; op, err = it.previousIterator.next() {
+		if err != nil {
+			return nil, err
+		}
+		return OptionalOf(it.predictorFn(op.data)), nil
 	}
-	defer func() { it.preProcessed = false }()
-
-	val, err := it.previousIterator.consume()
-	if err != nil {
-		return *new(T), err
-	}
-
-	return it.predictorFn(val), err
-}
-
-func (it *asyncMapSequenceIterator[R, T]) next() (T, error) {
-	it.preflight()
-	return it.consume()
+	return NewOptionalEmpty[T](), nil
 }
