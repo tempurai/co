@@ -6,7 +6,7 @@ type AsyncExecutable[R any] struct {
 	executables *executablesList[R]
 }
 
-func NewAsyncExecutable[R any]() *AsyncExecutable[R] {
+func OfExecutable[R any]() *AsyncExecutable[R] {
 	a := &AsyncExecutable[R]{
 		executables: NewExecutablesList[R](),
 	}

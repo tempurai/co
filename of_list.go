@@ -6,14 +6,14 @@ type AsyncList[R any] struct {
 	*iterativeList[R]
 }
 
-func NewAsyncList[R any]() *AsyncList[R] {
+func OfList[R any]() *AsyncList[R] {
 	a := &AsyncList[R]{iterativeList: NewIterativeList[R]()}
 	a.asyncSequence = NewAsyncSequence[R](a)
 	return a
 }
 
-func NewAsyncListWith[R any](val ...R) *AsyncList[R] {
-	list := NewAsyncList[R]()
+func OfListWith[R any](val ...R) *AsyncList[R] {
+	list := OfList[R]()
 	return list.Add(val...)
 }
 

@@ -11,7 +11,7 @@ import (
 func TestAsyncPairwiseSequence(t *testing.T) {
 	convey.Convey("given a sequential int", t, func() {
 		numbers := []int{1, 4, 5, 6, 7}
-		aList := co.NewAsyncListWith(numbers...)
+		aList := co.OfListWith(numbers...)
 		mList := co.NewAsyncMapSequence[int](aList, func(v int) string {
 			return strconv.Itoa(v)
 		})

@@ -10,10 +10,10 @@ import (
 func TestAsyncMergedSequence(t *testing.T) {
 	convey.Convey("given a sequential int", t, func() {
 		numbers := []int{1, 4, 5, 6, 7}
-		aList := co.NewAsyncListWith(numbers...)
+		aList := co.OfListWith(numbers...)
 
 		numbers2 := []int{2, 4, 7, 0, 21}
-		aList2 := co.NewAsyncListWith(numbers2...)
+		aList2 := co.OfListWith(numbers2...)
 		mList := co.NewAsyncMapSequence[int](aList, func(v int) int {
 			return v + 1
 		})

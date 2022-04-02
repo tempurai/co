@@ -12,7 +12,7 @@ type vData struct{ v int }
 func TestAsyncCompactedSequence(t *testing.T) {
 	convey.Convey("given a sequential int", t, func() {
 		dataList := []*vData{{1}, nil, {4}, {3245}, {6}, nil, nil, {7}, nil, nil, nil, {32}, {4}}
-		aList := co.NewAsyncListWith(dataList...)
+		aList := co.OfListWith(dataList...)
 		pList := co.NewAsyncCompactedSequence[*vData](aList)
 
 		convey.Convey("expect resolved list to be identical with given values", func() {
@@ -30,7 +30,7 @@ func TestAsyncCompactedSequence(t *testing.T) {
 func TestAsyncCompactedSequenceStruct(t *testing.T) {
 	convey.Convey("given a sequential int", t, func() {
 		dataList := []vData{{1}, {}, {4}, {3245}, {6}, {}, {}, {7}, {}, {}, {}, {32}, {4}}
-		aList := co.NewAsyncListWith(dataList...)
+		aList := co.OfListWith(dataList...)
 		pList := co.NewAsyncCompactedSequence[vData](aList)
 
 		convey.Convey("expect resolved list to be identical with given values", func() {
@@ -48,7 +48,7 @@ func TestAsyncCompactedSequenceStruct(t *testing.T) {
 func TestAsyncCompactedSequencePrimitiveTypes(t *testing.T) {
 	convey.Convey("given a sequential int", t, func() {
 		dataList := []int{1, 23, 0, 5, 8, 0, 1, 3, 40, 0, 73, 12, 32345, 0, 123, 0, 123, 0, 0, 0, 0, 324, 1, 5, 6}
-		aList := co.NewAsyncListWith(dataList...)
+		aList := co.OfListWith(dataList...)
 		pList := co.NewAsyncCompactedSequence[int](aList)
 
 		convey.Convey("expect resolved list to be identical with given values", func() {

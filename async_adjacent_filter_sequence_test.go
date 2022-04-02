@@ -10,7 +10,7 @@ import (
 func TestAsyncAdjacentFilterSequence(t *testing.T) {
 	convey.Convey("given a sequential int", t, func() {
 		numbers := []int{1, 4, 5, 6, 7, 3, 5, 6, 2, 4, 6, 7, 8, 9, 3}
-		aList := co.NewAsyncListWith(numbers...)
+		aList := co.OfListWith(numbers...)
 		mList := co.NewAsyncMapSequence[int](aList, func(v int) int {
 			return v
 		})
