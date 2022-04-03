@@ -4,7 +4,7 @@ import (
 	"sync"
 )
 
-type AsyncPersistentChannel[R any] struct {
+type AsyncBufferedChan[R any] struct {
 	*asyncSequence[R]
 
 	sourceCh    chan R
@@ -15,8 +15,8 @@ type AsyncPersistentChannel[R any] struct {
 	bufferWait   *sync.Cond
 }
 
-func OfPersistentChannel[R any](ch chan R) *AsyncPersistentChannel[R] {
-	a := &AsyncPersistentChannel[R]{
+func FromChanBuffered[R any](ch chan R) *AsyncBufferedChan[R] {
+	a := &AsyncBufferedChan[R]{
 		sourceCh:     ch,
 		bufferedData: NewList[R](),
 		bufferWait:   sync.NewCond(&sync.Mutex{}),
@@ -26,7 +26,7 @@ func OfPersistentChannel[R any](ch chan R) *AsyncPersistentChannel[R] {
 	return a
 }
 
-func (a *AsyncPersistentChannel[T]) startListening() {
+func (a *AsyncBufferedChan[T]) startListening() {
 	a.runOnce.Do(func() {
 		SafeGo(func() {
 			for val := range a.sourceCh {
@@ -39,27 +39,27 @@ func (a *AsyncPersistentChannel[T]) startListening() {
 	})
 }
 
-func (a *AsyncPersistentChannel[R]) Done() *AsyncPersistentChannel[R] {
+func (a *AsyncBufferedChan[R]) Done() *AsyncBufferedChan[R] {
 	SafeClose(a.sourceCh)
 	return a
 }
 
-func (a *AsyncPersistentChannel[R]) Iterator() Iterator[R] {
-	it := &asyncPersistentChannelIterator[R]{
-		AsyncPersistentChannel: a,
+func (a *AsyncBufferedChan[R]) Iterator() Iterator[R] {
+	it := &asyncBufferedChanIterator[R]{
+		AsyncBufferedChan: a,
 	}
 	it.asyncSequenceIterator = NewAsyncSequenceIterator[R](it)
 	return it
 }
 
-type asyncPersistentChannelIterator[R any] struct {
+type asyncBufferedChanIterator[R any] struct {
 	*asyncSequenceIterator[R]
 
-	*AsyncPersistentChannel[R]
+	*AsyncBufferedChan[R]
 	currentIndex int
 }
 
-func (it *asyncPersistentChannelIterator[R]) next() (*Optional[R], error) {
+func (it *asyncBufferedChanIterator[R]) next() (*Optional[R], error) {
 	if it.sourceEnded && it.currentIndex >= it.bufferedData.len() {
 		return NewOptionalEmpty[R](), nil
 	}

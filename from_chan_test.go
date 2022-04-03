@@ -12,7 +12,7 @@ func TestAsyncChannel(t *testing.T) {
 	convey.Convey("given a sequential int", t, func() {
 		expected := []int{1, 4, 5, 6, 7, 2, 2, 3, 4, 5, 12, 4, 2, 3, 43, 127, 37598, 34, 34, 123, 123}
 		sourceCh := make(chan int)
-		oChannel := co.OfChannel(sourceCh)
+		oChannel := co.FromChan(sourceCh)
 
 		go func() {
 			for i, val := range expected {

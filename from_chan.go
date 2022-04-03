@@ -10,7 +10,7 @@ type AsyncChannel[R any] struct {
 	runOnce     sync.Once
 }
 
-func OfChannel[R any](ch chan R) *AsyncChannel[R] {
+func FromChan[R any](ch chan R) *AsyncChannel[R] {
 	a := &AsyncChannel[R]{
 		sourceCh:    ch,
 		listenerChs: make([]chan R, 0),
