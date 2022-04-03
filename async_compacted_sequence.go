@@ -16,6 +16,11 @@ func NewAsyncCompactedSequence[R comparable](it AsyncSequenceable[R]) *AsyncComp
 	return a
 }
 
+func (c *AsyncCompactedSequence[R]) SetPredicator(fn func(R) bool) *AsyncCompactedSequence[R] {
+	c.predictorFn = fn
+	return c
+}
+
 func (c *AsyncCompactedSequence[R]) Iterator() Iterator[R] {
 	it := &asyncCompactedSequenceIterator[R]{
 		AsyncCompactedSequence: c,
