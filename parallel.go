@@ -23,7 +23,7 @@ func createBaseParallel[K any](workers int) *parallelDispatcher[K] {
 
 		maxWorkers: workers,
 
-		queueCond: sync.Cond{L: NewLockedMutex()},
+		queueCond: sync.NewCond(&sync.Mutex{}),
 		queue:     list.New(),
 
 		wg: &sync.WaitGroup{},
@@ -52,7 +52,7 @@ type parallelDispatcher[K any] struct {
 	workers    []parallelWorker[K]
 
 	mux       sync.Mutex // mutex of queue
-	queueCond sync.Cond  // condition variable for queue
+	queueCond *sync.Cond // condition variable for queue
 	queue     *list.List
 
 	wg *sync.WaitGroup
@@ -70,9 +70,9 @@ func (d *parallelDispatcher[K]) listen() {
 				return
 
 			case jobChannel := <-d.workerPool:
-				if d.queue.Len() == 0 { // if no data available, wait
-					d.queueCond.Wait()
-				}
+				CondWait(d.queueCond, func() bool {
+					return d.queue.Len() == 0 // if no data available, wait
+				})
 				if d.queue.Len() == 0 { // which means unlock but still no data
 					if quit, ok := ReadBoolChan(d.quit); quit && ok {
 						return
@@ -109,10 +109,10 @@ func (d *parallelDispatcher[K]) AddWithResponse(job func() K) {
 	}
 
 	d.mux.Lock()
-	d.queue.PushBack(payload[K]{job: job, seq: len(d.responses) - 1})
+	CondSignal(d.queueCond, func() {
+		d.queue.PushBack(payload[K]{job: job, seq: len(d.responses) - 1})
+	})
 	d.mux.Unlock()
-
-	d.queueCond.Signal()
 }
 
 func (d *parallelDispatcher[K]) Wait() []K {

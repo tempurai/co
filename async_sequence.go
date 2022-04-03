@@ -70,7 +70,7 @@ func (it *asyncSequenceIterator[T]) emitData(d *data[T]) {
 	}
 }
 
-func (it *asyncSequenceIterator[T]) run() {
+func (it *asyncSequenceIterator[T]) startListening() {
 	it.runOnce.Do(func() {
 		SafeGo(func() {
 			for op, err := it.delegated.next(); op.valid; op, err = it.delegated.next() {
@@ -98,12 +98,12 @@ func (it *asyncSequenceIterator[T]) Emitter() <-chan *data[T] {
 	eCh := make(chan *data[T])
 	it.emitCh = append(it.emitCh, eCh)
 
-	it.run()
+	it.startListening()
 	return eCh
 }
 
 func (it *asyncSequenceIterator[T]) ForEach(success func(T), failed func(error)) {
 	it.successFn = success
 	it.failedFn = failed
-	it.run()
+	it.startListening()
 }

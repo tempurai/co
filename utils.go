@@ -2,6 +2,7 @@ package co
 
 import (
 	"fmt"
+	"runtime/debug"
 	"sync"
 
 	"golang.org/x/exp/constraints"
@@ -52,10 +53,34 @@ func SafeClose[T any](ch chan T) (closed bool) {
 func SafeGo(fn func()) {
 	go func() {
 		defer func() {
-			recover()
+			if r := recover(); r != nil {
+				fmt.Printf("go func panic: %+v, stacktrace: %+v \n", r, string(debug.Stack()))
+			}
 		}()
 		fn()
 	}()
+}
+
+func CondSignal(cond *sync.Cond, fn func()) {
+	cond.L.Lock()
+	fn()
+	cond.Signal()
+	cond.L.Unlock()
+}
+
+func CondBoardcast(cond *sync.Cond, fn func()) {
+	cond.L.Lock()
+	fn()
+	cond.Broadcast()
+	cond.L.Unlock()
+}
+
+func CondWait(cond *sync.Cond, fn func() bool) {
+	cond.L.Lock()
+	for fn() {
+		cond.Wait()
+	}
+	cond.L.Unlock()
 }
 
 func Copy[T any](v *T) *T {
