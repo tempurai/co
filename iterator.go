@@ -1,31 +1,31 @@
 package co
 
-type IteratorAction[T any] interface {
+type iteratorAction[T any] interface {
 	next() (*Optional[T], error)
 	Emitter() <-chan *data[T]
 }
 
-type IteratorAnyAction interface {
+type iteratorAnyAction interface {
 	nextAny() (*Optional[any], error)
 }
 
-type IteratorOperator interface {
+type iteratorOperator interface {
 }
 
 type Iterator[T any] interface {
-	IteratorAction[T]
-	IteratorOperator
+	iteratorAction[T]
+	iteratorOperator
 }
 
-type IteratorAny interface {
-	IteratorAnyAction
-	IteratorOperator
+type iteratorAny interface {
+	iteratorAnyAction
+	iteratorOperator
 }
 
-func castToIteratorAny(vals ...any) []IteratorAny {
-	casted := make([]IteratorAny, len(vals))
+func castToIteratorAny(vals ...any) []iteratorAny {
+	casted := make([]iteratorAny, len(vals))
 	for i := range vals {
-		casted[i] = vals[i].(IteratorAny)
+		casted[i] = vals[i].(iteratorAny)
 	}
 	return casted
 }

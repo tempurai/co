@@ -7,11 +7,11 @@ import (
 type asyncZipFn[R any] func([]any, error) (R, error)
 
 type AsyncZipSequence[R any] struct {
-	its         []IteratorAny
+	its         []iteratorAny
 	converterFn asyncZipFn[R]
 }
 
-func NewAsyncZipSequence[R any](its []IteratorAny) *AsyncZipSequence[R] {
+func NewAsyncZipSequence[R any](its []iteratorAny) *AsyncZipSequence[R] {
 	return &AsyncZipSequence[R]{
 		its: its,
 	}
@@ -63,7 +63,7 @@ func (a *asyncZipSequenceIterator[R]) next() (*Optional[R], error) {
 	wg.Add(len(a.its))
 
 	for i, it := range a.its {
-		go func(idx int, it IteratorAny) {
+		go func(idx int, it iteratorAny) {
 			defer wg.Done()
 			for op, err := it.nextAny(); op.valid && err != nil; {
 				results[idx] = op.data

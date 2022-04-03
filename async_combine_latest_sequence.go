@@ -7,11 +7,11 @@ import (
 type asyncCombineLatestFn[R any] func([]any, error) (R, error)
 
 type AsyncCombineLatestSequence[R any] struct {
-	its         []IteratorAny
+	its         []iteratorAny
 	converterFn asyncCombineLatestFn[R]
 }
 
-func NewAsyncCombineLatestSequence[R any](its []IteratorAny) *AsyncCombineLatestSequence[R] {
+func NewAsyncCombineLatestSequence[R any](its []iteratorAny) *AsyncCombineLatestSequence[R] {
 	return &AsyncCombineLatestSequence[R]{
 		its: its,
 	}
@@ -66,7 +66,7 @@ func (a *asyncCombineLatestSequenceIterator[R]) pass() {
 
 	a.updated = make([]bool, len(a.its))
 	for i, it := range a.its {
-		go func(idx int, it IteratorAny) {
+		go func(idx int, it iteratorAny) {
 			defer wg.Done()
 			for op, err := it.nextAny(); op.valid && err != nil; op, err = it.nextAny() {
 				a.dataStore[idx] = op.data
