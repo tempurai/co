@@ -17,6 +17,7 @@ func TestAsyncBufferTimeSequence(t *testing.T) {
 		bList := co.NewAsyncBufferTimeSequence[int](oChannel, time.Second)
 
 		go func() {
+			time.Sleep(time.Second)
 			for i, val := range queued {
 				sourceCh <- val
 				time.Sleep(time.Millisecond * (100 + time.Duration(i)*10))
