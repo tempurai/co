@@ -9,17 +9,12 @@ type iteratorAnyAction interface {
 	nextAny() (*Optional[any], error)
 }
 
-type iteratorOperator interface {
-}
-
 type Iterator[T any] interface {
 	iteratorAction[T]
-	iteratorOperator
 }
 
 type iteratorAny interface {
 	iteratorAnyAction
-	iteratorOperator
 }
 
 func castToIteratorAny(vals ...any) []iteratorAny {
