@@ -27,11 +27,11 @@ type asyncPairwiseSequenceIterator[R any, T []R] struct {
 
 	*AsyncPairwiseSequence[R, T]
 
-	previousData *R
+	previousData Optional[R]
 }
 
 func (it *asyncPairwiseSequenceIterator[R, T]) preflight() {
-	if it.previousData != nil {
+	if it.previousData.valid {
 		return
 	}
 
@@ -39,7 +39,7 @@ func (it *asyncPairwiseSequenceIterator[R, T]) preflight() {
 		if err != nil {
 			continue
 		}
-		it.previousData = &op.data
+		it.previousData = *op
 		break
 	}
 }
@@ -47,12 +47,12 @@ func (it *asyncPairwiseSequenceIterator[R, T]) preflight() {
 func (it *asyncPairwiseSequenceIterator[R, T]) next() (*Optional[T], error) {
 	it.preflight()
 
-	previousData := *it.previousData
+	previousData := it.previousData.data
 	for op, err := it.previousIterator.next(); op.valid; op, err = it.previousIterator.next() {
 		if err != nil {
 			return NewOptionalEmpty[T](), nil
 		}
-		it.previousData = &op.data
+		it.previousData = *op
 		return OptionalOf(T{previousData, op.data}), nil
 	}
 

@@ -33,12 +33,11 @@ type asyncAdjacentFilterSequenceIterator[R any] struct {
 	*asyncSequenceIterator[R]
 
 	*AsyncAdjacentFilterSequence[R]
-
-	previousData *R
+	previousData Optional[R]
 }
 
 func (it *asyncAdjacentFilterSequenceIterator[R]) preflight() {
-	if it.previousData != nil {
+	if it.previousData.valid {
 		return
 	}
 
@@ -46,7 +45,7 @@ func (it *asyncAdjacentFilterSequenceIterator[R]) preflight() {
 		if err != nil {
 			continue
 		}
-		it.previousData = &op.data
+		it.previousData = *op
 		break
 	}
 }
@@ -54,21 +53,21 @@ func (it *asyncAdjacentFilterSequenceIterator[R]) preflight() {
 func (it *asyncAdjacentFilterSequenceIterator[R]) next() (*Optional[R], error) {
 	it.preflight()
 
-	if it.previousData == nil {
+	if !it.previousData.valid {
 		return NewOptionalEmpty[R](), nil
 	}
 
-	previousData := *it.previousData
+	previousValue := it.previousData.data
 	for op, err := it.previousIterator.next(); op.valid; op, err = it.previousIterator.next() {
 		if err != nil {
 			continue
 		}
-		it.previousData = &op.data
-		if it.predictorFn(previousData, op.data) {
-			return OptionalOf(previousData), nil
+		it.previousData = *op
+		if it.predictorFn(previousValue, op.data) {
+			return OptionalOf(previousValue), nil
 		}
 	}
 
-	it.previousData = nil
-	return OptionalOf(previousData), nil
+	it.previousData = *NewOptionalEmpty[R]()
+	return OptionalOf(previousValue), nil
 }
