@@ -25,7 +25,7 @@ func (a *AsyncChannel[T]) startListening() {
 		SafeGo(func() {
 			for val := range a.sourceCh {
 				for _, iCh := range a.listenerChs {
-					iCh <- val
+					SafeSend(iCh, val)
 				}
 			}
 		})
