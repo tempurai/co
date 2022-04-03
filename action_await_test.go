@@ -64,7 +64,7 @@ func TestAwaitAny(t *testing.T) {
 			i := i
 
 			err := fmt.Errorf("Determined value")
-			if i > 10 {
+			if i > 3 {
 				err = nil
 			}
 
@@ -78,7 +78,7 @@ func TestAwaitAny(t *testing.T) {
 			responses := co.AwaitAny(handlers...)
 
 			convey.Convey("The responded value should be valid", func() {
-				convey.So(responses.GetValue(), convey.ShouldEqual, 12)
+				convey.So(responses.GetValue(), convey.ShouldEqual, 5)
 			})
 		})
 	})
