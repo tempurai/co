@@ -1,18 +1,17 @@
-package co_test
+package pool_test
 
 import (
 	"testing"
 
-	"github.com/Jeffail/tunny"
 	"github.com/smartystreets/goconvey/convey"
-	"github.com/tempura-shrimp/co"
+	"github.com/tempura-shrimp/co/pool"
 )
 
-func TestWorkerPool(t *testing.T) {
+func TestHeavyWorkerPool(t *testing.T) {
 	convey.Convey("given a sequential tasks", t, func() {
-		markers := make([]bool, 100)
+		markers := make([]bool, 1000)
 
-		p := co.NewHeavyWorkerPool[any](10)
+		p := pool.NewHeavyWorkerPool[any](10)
 
 		for i := 0; i < 1000; i++ {
 			func(idx int) {
@@ -34,8 +33,8 @@ func TestWorkerPool(t *testing.T) {
 	})
 }
 
-func BenchmarkWorkPoolWithFib(b *testing.B) {
-	p := co.NewHeavyWorkerPool[int](256)
+func BenchmarkHeavyWorkPoolWithFib(b *testing.B) {
+	p := pool.NewHeavyWorkerPool[int](256)
 
 	b.ResetTimer()
 	for i := 1; i < b.N; i++ {
@@ -47,18 +46,4 @@ func BenchmarkWorkPoolWithFib(b *testing.B) {
 	}
 
 	p.Wait()
-}
-
-func BenchmarkTunnyWithFib(b *testing.B) {
-	pool := tunny.NewFunc(256, func(payload interface{}) interface{} {
-		return memoizeFib(payload.(int))
-	})
-	defer pool.Close()
-
-	b.ResetTimer()
-	for i := 1; i < b.N; i++ {
-		func(idx int) {
-			pool.Process(idx)
-		}(i)
-	}
 }

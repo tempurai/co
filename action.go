@@ -2,6 +2,8 @@ package co
 
 import (
 	"sync"
+
+	co_sync "github.com/tempura-shrimp/co/sync"
 )
 
 type Action[E any] struct {
@@ -69,7 +71,7 @@ func (a *Action[E]) listen(el ...E) {
 
 	for _, e := range el {
 		for _, ch := range a.emitChs {
-			SafeSend(ch, e)
+			co_sync.SafeSend(ch, e)
 		}
 	}
 
@@ -79,18 +81,18 @@ func (a *Action[E]) listen(el ...E) {
 	}
 	if sendFirstCh {
 		go func() {
-			SafeSend(a.firstChan, true)
-			SafeClose(a.firstChan)
+			co_sync.SafeSend(a.firstChan, true)
+			co_sync.SafeClose(a.firstChan)
 		}()
 	}
 }
 
 func (a *Action[E]) done() {
 	for i := range a.emitChs {
-		SafeClose(a.emitChs[i])
+		co_sync.SafeClose(a.emitChs[i])
 	}
-	SafeSend(a.lastChan, true)
-	SafeClose(a.lastChan)
+	co_sync.SafeSend(a.lastChan, true)
+	co_sync.SafeClose(a.lastChan)
 }
 
 func MapAction[T1, T2 any](a1 *Action[T1], fn func(T1) T2) *Action[T2] {

@@ -1,165 +1,78 @@
 package co
 
 import (
-	"container/list"
 	"sync"
+	"sync/atomic"
+
+	"github.com/tempura-shrimp/co/pool"
+	co_sync "github.com/tempura-shrimp/co/sync"
 )
 
-func NewParallel(workers int) *parallelDispatcher[int] {
-	d := createBaseParallel[int](workers)
-	return d
+type parallel[R any] struct {
+	workerPool *pool.HeavyWorkerPool[R]
+	seqFnMap   sync.Map
+
+	ifPersistentData bool
+	storedData       *List[R]
+
+	sent         uint64
+	finished     uint64
+	recieverCond *sync.Cond
 }
 
-func NewParallelWithResponse[K any](workers int) *parallelDispatcher[K] {
-	d := createBaseParallel[K](workers)
-	d.ifResponse = true
-	return d
-}
-
-func createBaseParallel[K any](maxWorkers int) *parallelDispatcher[K] {
-	d := &parallelDispatcher[K]{
-		workerPool: make(chan chan payload[K], maxWorkers),
-		quit:       make(chan bool),
-
-		queueCond: sync.NewCond(&sync.Mutex{}),
-		queue:     list.New(),
-
-		wg: &sync.WaitGroup{},
+func NewParallel[R any](maxWorkers int) *parallel[R] {
+	d := &parallel[R]{
+		workerPool:   pool.NewHeavyWorkerPool[R](maxWorkers),
+		storedData:   NewList[R](),
+		recieverCond: sync.NewCond(&sync.Mutex{}),
 	}
 
-	for i := 0; i < maxWorkers; i++ {
-		worker := newParallelWorker(d)
-		d.workers = append(d.workers, worker)
-		worker.start()
-	}
-
-	d.listen()
+	d.workerPool.SetCallbackFn(d.receiveValue)
 	return d
 }
 
-type payload[K any] struct {
-	job func() K
-	seq int
+func (d *parallel[R]) SetPersistentData(b bool) *parallel[R] {
+	d.ifPersistentData = b
+	return d
 }
 
-type parallelDispatcher[K any] struct {
-	workerPool chan chan payload[K] // received empty job queue
-	quit       chan bool
+func (d *parallel[R]) Process(fn func() R) chan R {
+	atomic.AddUint64(&d.sent, 1)
+	seq := d.workerPool.AddJob(fn)
 
-	workers []parallelWorker[K]
-
-	mux       sync.Mutex // mutex of queue
-	queueCond *sync.Cond // condition variable for queue
-	queue     *list.List
-
-	wg *sync.WaitGroup
-
-	ifResponse   bool
-	responses    []K        // record response
-	responsesMux sync.Mutex // prevent concurrent write since no idea size of job
+	ch := make(chan R)
+	d.seqFnMap.Store(seq, ch)
+	return ch
 }
 
-func (d *parallelDispatcher[K]) listen() {
-	go func() {
-		for {
-			select {
-			case <-d.quit:
-				return
+func (d *parallel[R]) receiveValue(seq uint64, val R) {
+	//TODO: check if seq is in map, if not then use cond
+	ch, _ := d.seqFnMap.Load(seq)
+	co_sync.SafeGo(func() {
+		co_sync.SafeSend(ch.(chan R), val)
+	})
+	d.seqFnMap.Delete(seq)
 
-			case jobChannel := <-d.workerPool:
-				CondWait(d.queueCond, func() bool {
-					return d.queue.Len() == 0 // if no data available, wait
-				})
+	if d.ifPersistentData {
+		d.storedData.setAt(int(seq)-1, val)
+	}
 
-				d.mux.Lock()
-
-				el := d.queue.Front()
-				jobChannel <- el.Value.(payload[K])
-				d.queue.Remove(el)
-
-				d.mux.Unlock()
-			}
-		}
-	}()
-}
-
-func (d *parallelDispatcher[K]) Add(job func()) {
-	d.AddWithResponse(func() K {
-		job()
-		return *new(K)
+	co_sync.CondBoardcast(d.recieverCond, func() {
+		atomic.AddUint64(&d.finished, 1)
 	})
 }
 
-func (d *parallelDispatcher[K]) AddWithResponse(job func() K) {
-	d.wg.Add(1)
-
-	if d.ifResponse {
-		d.responsesMux.Lock()
-		d.responses = append(d.responses, *new(K))
-		d.responsesMux.Unlock()
+func (d *parallel[R]) GetData() []R {
+	if !d.ifPersistentData {
+		panic("co/paralle error when get data: persistent data mode is not set")
 	}
+	return d.storedData.list
+}
 
-	d.mux.Lock()
-	CondSignal(d.queueCond, func() {
-		d.queue.PushBack(payload[K]{job: job, seq: len(d.responses) - 1})
+func (d *parallel[R]) Wait() *parallel[R] {
+	d.workerPool.Wait()
+	co_sync.CondWait(d.recieverCond, func() bool {
+		return d.finished != d.sent
 	})
-	d.mux.Unlock()
-}
-
-func (d *parallelDispatcher[K]) Wait() []K {
-	d.wg.Wait()
-	d.Stop()
-	return d.responses
-}
-
-func (d *parallelDispatcher[K]) Stop() {
-	for _, worker := range d.workers {
-		worker.stop()
-	}
-	go func() {
-		d.quit <- true
-	}()
-	d.queueCond.Broadcast()
-}
-
-type parallelWorker[K any] struct {
-	dispatcher *parallelDispatcher[K]
-	jobChannel chan payload[K]
-	quit       chan bool
-}
-
-func newParallelWorker[K any](d *parallelDispatcher[K]) parallelWorker[K] {
-	return parallelWorker[K]{
-		dispatcher: d,
-		jobChannel: make(chan payload[K]),
-		quit:       make(chan bool),
-	}
-}
-
-func (w parallelWorker[K]) start() {
-	go func() {
-		for {
-			w.dispatcher.workerPool <- w.jobChannel
-
-			select {
-			case <-w.quit:
-				return
-
-			case load := <-w.jobChannel:
-				resp := load.job() // fire
-
-				if w.dispatcher.ifResponse {
-					w.dispatcher.responsesMux.Lock()
-					w.dispatcher.responses[load.seq] = resp
-					w.dispatcher.responsesMux.Unlock()
-				}
-
-				w.dispatcher.wg.Done()
-			}
-		}
-	}()
-}
-
-func (w parallelWorker[K]) stop() {
-	w.quit <- true
+	return d
 }

@@ -1,8 +1,10 @@
-package co
+package pool
 
 import (
 	"sync"
 	"sync/atomic"
+
+	co_sync "github.com/tempura-shrimp/co/sync"
 )
 
 func NewHeavyWorkerPool[K any](maxWorkers int) *HeavyWorkerPool[K] {
@@ -27,7 +29,6 @@ func NewHeavyWorkerPool[K any](maxWorkers int) *HeavyWorkerPool[K] {
 }
 
 type HeavyWorkerPool[K any] struct {
-	workers     []*Worker[K] // for shutting down
 	workerCond  *sync.Cond
 	idleWorkers *Queue[*Worker[K]]
 
@@ -36,8 +37,9 @@ type HeavyWorkerPool[K any] struct {
 
 	callbackFn func(id uint64, val K)
 
-	quit   bool
-	quitCh chan bool
+	workers []*Worker[K] // for shutting down
+	quit    bool
+	quitCh  chan bool
 
 	jobQueue *Queue[*job[K]]
 
@@ -45,19 +47,19 @@ type HeavyWorkerPool[K any] struct {
 }
 
 func (p *HeavyWorkerPool[K]) startListening() {
-	SafeGo(func() {
+	co_sync.SafeGo(func() {
 		for {
 			select {
 			case <-p.quitCh:
 				return
 
 			case done := <-p.doneCh:
-				CondSignal(p.workerCond, func() {
-					p.idleWorkers.Enqueue(done.workerRef)
+				co_sync.CondSignal(p.workerCond, func() {
+					p.idleWorkers.Enqueue(done.workerRef.(*Worker[K]))
 				})
 
 				if p.callbackFn != nil {
-					SafeGo(func() {
+					co_sync.SafeGo(func() {
 						p.callbackFn(done.seq, done.val)
 					})
 				}
@@ -66,10 +68,10 @@ func (p *HeavyWorkerPool[K]) startListening() {
 		}
 	})
 
-	SafeGo(func() {
+	co_sync.SafeGo(func() {
 		for {
-			CondWait(p.workerCond, func() bool {
-				return p.quit || p.jobQueue.Len() == 0 || p.idleWorkers.Len() == 0
+			co_sync.CondWait(p.workerCond, func() bool {
+				return !p.quit && (p.jobQueue.Len() == 0 || p.idleWorkers.Len() == 0)
 			})
 			if p.quit {
 				return
@@ -81,10 +83,15 @@ func (p *HeavyWorkerPool[K]) startListening() {
 	})
 }
 
+func (p *HeavyWorkerPool[K]) SetCallbackFn(fn func(uint64, K)) *HeavyWorkerPool[K] {
+	p.callbackFn = fn
+	return p
+}
+
 func (p *HeavyWorkerPool[K]) AddJob(fn func() K) uint64 {
 	id := atomic.AddUint64(&p.seq, 1)
 
-	CondSignal(p.workerCond, func() {
+	co_sync.CondSignal(p.workerCond, func() {
 		p.jobQueue.Enqueue(&job[K]{fn: fn, seq: id})
 	})
 
@@ -103,17 +110,6 @@ func (p *HeavyWorkerPool[K]) Stop() {
 	p.quitCh <- true
 	p.quit = true
 	p.workerCond.Broadcast()
-}
-
-type job[K any] struct {
-	fn  func() K
-	seq uint64
-}
-
-type jobDone[K any] struct {
-	val       K
-	seq       uint64
-	workerRef *Worker[K]
 }
 
 type Worker[K any] struct {
@@ -135,7 +131,7 @@ func NewWorker[K any](ID uint16, doneCh *chan *jobDone[K]) *Worker[K] {
 }
 
 func (w *Worker[K]) startListening() {
-	SafeGo(func() {
+	co_sync.SafeGo(func() {
 		for {
 			select {
 			case <-w.quitCh:

@@ -3,6 +3,8 @@ package co
 import (
 	"sync"
 	"time"
+
+	co_sync "github.com/tempura-shrimp/co/sync"
 )
 
 type AsyncBufferTimeSequence[R any, T []R] struct {
@@ -57,7 +59,7 @@ func (it *asyncBufferTimeSequenceIterator[R, T]) startBuffer() {
 	it.runOnce.Do(func() {
 		it.previousTime = time.Now()
 
-		SafeGo(func() {
+		co_sync.SafeGo(func() {
 			for op, err := it.previousIterator.next(); op.valid; op, err = it.previousIterator.next() {
 				if err != nil {
 					continue
@@ -72,10 +74,10 @@ func (it *asyncBufferTimeSequenceIterator[R, T]) startBuffer() {
 				it.bufferedData[lIdx] = append(it.bufferedData[lIdx], op.data)
 
 				if reachedInterval {
-					CondBoardcast(it.bufferWait, func() { it.previousTime = time.Now() })
+					co_sync.CondBoardcast(it.bufferWait, func() { it.previousTime = time.Now() })
 				}
 			}
-			CondBoardcast(it.bufferWait, func() { it.sourceEnded = true })
+			co_sync.CondBoardcast(it.bufferWait, func() { it.sourceEnded = true })
 		})
 	})
 }
@@ -87,7 +89,7 @@ func (it *asyncBufferTimeSequenceIterator[R, T]) next() (*Optional[T], error) {
 		return NewOptionalEmpty[T](), nil
 	}
 
-	CondWait(it.bufferWait, func() bool {
+	co_sync.CondWait(it.bufferWait, func() bool {
 		return !it.sourceEnded && (len(it.bufferedData) == 0 || !it.intervalPassed())
 	})
 

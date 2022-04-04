@@ -1,5 +1,7 @@
 package co
 
+import co_sync "github.com/tempura-shrimp/co/sync"
+
 type actionRace[R any] struct {
 	*Action[*data[R]]
 
@@ -22,7 +24,7 @@ func (a *actionRace[R]) run() {
 				return
 			}
 
-			SafeSend(dataCh, NewDataWith(val, err))
+			co_sync.SafeSend(dataCh, NewDataWith(val, err))
 			aBool.Set(true)
 		}(i)
 	}
@@ -39,7 +41,7 @@ func baseRace[R any](ignoreErr bool, list *executablesList[R]) *Action[*data[R]]
 		ignoreErr: ignoreErr,
 	}
 
-	SafeGo(action.run)
+	co_sync.SafeGo(action.run)
 	return action.Action
 }
 

@@ -2,6 +2,8 @@ package co
 
 import (
 	"sync"
+
+	co_sync "github.com/tempura-shrimp/co/sync"
 )
 
 type asyncSequence[R any] struct {
@@ -66,13 +68,13 @@ func (it *asyncSequenceIterator[T]) emitData(d *data[T]) {
 	defer it.mux.RUnlock()
 
 	for i := range it.emitCh {
-		SafeSend(it.emitCh[i], d)
+		co_sync.SafeSend(it.emitCh[i], d)
 	}
 }
 
 func (it *asyncSequenceIterator[T]) startListening() {
 	it.runOnce.Do(func() {
-		SafeGo(func() {
+		co_sync.SafeGo(func() {
 			for op, err := it.delegated.next(); op.valid; op, err = it.delegated.next() {
 				// Channel
 				it.emitData(NewDataWith(op.data, err))
@@ -85,7 +87,7 @@ func (it *asyncSequenceIterator[T]) startListening() {
 				}
 			}
 			for _, ch := range it.emitCh {
-				SafeClose(ch)
+				co_sync.SafeClose(ch)
 			}
 		})
 	})

@@ -2,6 +2,8 @@ package co
 
 import (
 	"sync"
+
+	co_sync "github.com/tempura-shrimp/co/sync"
 )
 
 type actionAwait[R any] struct {
@@ -35,7 +37,7 @@ func All[R any](list *executablesList[R]) *Action[*data[R]] {
 		list:   list.iterator(),
 	}
 
-	SafeGo(action.run)
+	co_sync.SafeGo(action.run)
 	return action.Action
 }
 

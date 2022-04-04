@@ -1,5 +1,5 @@
 // source: https://colobu.com/2020/08/14/lock-free-queue-in-go/
-package co
+package pool
 
 import (
 	"sync/atomic"

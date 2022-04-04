@@ -2,6 +2,8 @@ package co
 
 import (
 	"sync"
+
+	co_sync "github.com/tempura-shrimp/co/sync"
 )
 
 type asyncCombineLatestFn[R any] func([]any, error) (R, error)
@@ -84,7 +86,7 @@ func (a *asyncCombineLatestSequenceIterator[R]) pass() {
 
 func (a *asyncCombineLatestSequenceIterator[R]) next() (*Optional[R], error) {
 	if !a.firstpassCompleted {
-		SafeGo(a.pass)
+		co_sync.SafeGo(a.pass)
 		<-a.normalPassCompletedCh
 	} else {
 		a.pass()

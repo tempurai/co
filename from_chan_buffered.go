@@ -2,6 +2,8 @@ package co
 
 import (
 	"sync"
+
+	co_sync "github.com/tempura-shrimp/co/sync"
 )
 
 type AsyncBufferedChan[R any] struct {
@@ -28,19 +30,19 @@ func FromChanBuffered[R any](ch chan R) *AsyncBufferedChan[R] {
 
 func (a *AsyncBufferedChan[T]) startListening() {
 	a.runOnce.Do(func() {
-		SafeGo(func() {
+		co_sync.SafeGo(func() {
 			for val := range a.sourceCh {
-				CondBoardcast(a.bufferWait, func() {
+				co_sync.CondBoardcast(a.bufferWait, func() {
 					a.bufferedData.add(val)
 				})
 			}
-			CondBoardcast(a.bufferWait, func() { a.sourceEnded = true })
+			co_sync.CondBoardcast(a.bufferWait, func() { a.sourceEnded = true })
 		})
 	})
 }
 
 func (a *AsyncBufferedChan[R]) Done() *AsyncBufferedChan[R] {
-	SafeClose(a.sourceCh)
+	co_sync.SafeClose(a.sourceCh)
 	return a
 }
 
@@ -63,7 +65,7 @@ func (it *asyncBufferedChanIterator[R]) next() (*Optional[R], error) {
 	if it.sourceEnded && it.currentIndex >= it.bufferedData.len() {
 		return NewOptionalEmpty[R](), nil
 	}
-	CondWait(it.bufferWait, func() bool {
+	co_sync.CondWait(it.bufferWait, func() bool {
 		return !it.sourceEnded || it.currentIndex >= it.bufferedData.len()
 	})
 

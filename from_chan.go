@@ -1,6 +1,10 @@
 package co
 
-import "sync"
+import (
+	"sync"
+
+	co_sync "github.com/tempura-shrimp/co/sync"
+)
 
 type AsyncChannel[R any] struct {
 	*asyncSequence[R]
@@ -22,10 +26,10 @@ func FromChan[R any](ch chan R) *AsyncChannel[R] {
 
 func (a *AsyncChannel[T]) startListening() {
 	a.runOnce.Do(func() {
-		SafeGo(func() {
+		co_sync.SafeGo(func() {
 			for val := range a.sourceCh {
 				for _, iCh := range a.listenerChs {
-					SafeSend(iCh, val)
+					co_sync.SafeSend(iCh, val)
 				}
 			}
 		})
@@ -33,9 +37,9 @@ func (a *AsyncChannel[T]) startListening() {
 }
 
 func (a *AsyncChannel[R]) Done() *AsyncChannel[R] {
-	SafeClose(a.sourceCh)
+	co_sync.SafeClose(a.sourceCh)
 	for i := range a.listenerChs {
-		SafeClose(a.listenerChs[i])
+		co_sync.SafeClose(a.listenerChs[i])
 	}
 	return a
 }

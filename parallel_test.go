@@ -12,11 +12,12 @@ func TestParallel(t *testing.T) {
 	convey.Convey("given a sequential tasks", t, func() {
 		markers := make([]bool, 10000)
 
-		p := co.NewParallel(10)
+		p := co.NewParallel[bool](10)
 		for i := 0; i < 10000; i++ {
 			func(idx int) {
-				p.Add(func() {
+				p.Process(func() bool {
 					markers[idx] = true
+					return true
 				})
 			}(i)
 		}
@@ -34,20 +35,20 @@ func TestParallel(t *testing.T) {
 
 func TestParallelWithResponse(t *testing.T) {
 	convey.Convey("given a sequential tasks", t, func() {
-		p := co.NewParallelWithResponse[int](10)
-		for i := 0; i < 10000; i++ {
+		p := co.NewParallel[int](10).SetPersistentData(true)
+		for i := 0; i < 1000; i++ {
 			func(idx int) {
-				p.AddWithResponse(func() int {
+				p.Process(func() int {
 					return idx + 1
 				})
 			}(i)
 		}
 
 		convey.Convey("On wait", func() {
-			vals := p.Wait()
+			vals := p.Wait().GetData()
 
 			convey.Convey("Each response should be valid", func() {
-				for i := 0; i < 10000; i++ {
+				for i := 0; i < 1000; i++ {
 					convey.So(vals[i], convey.ShouldEqual, i+1)
 				}
 			})
@@ -59,11 +60,12 @@ func TestParallelSeparatedAdd(t *testing.T) {
 	convey.Convey("given a sequential tasks", t, func() {
 		markers := make([]bool, 10000)
 
-		p := co.NewParallel(10)
+		p := co.NewParallel[bool](10)
 		for i := 0; i < 500; i++ {
 			func(idx int) {
-				p.Add(func() {
+				p.Process(func() bool {
 					markers[idx] = true
+					return true
 				})
 			}(i)
 		}
@@ -75,8 +77,9 @@ func TestParallelSeparatedAdd(t *testing.T) {
 
 		for i := 500; i < 1000; i++ {
 			func(idx int) {
-				p.Add(func() {
+				p.Process(func() bool {
 					markers[idx] = true
+					return true
 				})
 			}(i)
 		}
@@ -95,11 +98,12 @@ func TestParallelHungerWait(t *testing.T) {
 	convey.Convey("given a sequential tasks", t, func() {
 		markers := make([]bool, 10000)
 
-		p := co.NewParallel(10)
+		p := co.NewParallel[bool](10)
 		for i := 0; i < 500; i++ {
 			func(idx int) {
-				p.Add(func() {
+				p.Process(func() bool {
 					markers[idx] = true
+					return true
 				})
 			}(i)
 		}
@@ -119,19 +123,4 @@ func TestParallelHungerWait(t *testing.T) {
 			})
 		})
 	})
-}
-
-func BenchmarkParallelWithFib(b *testing.B) {
-	p := co.NewParallel(256)
-
-	b.ResetTimer()
-	for i := 1; i < b.N; i++ {
-		func(idx int) {
-			p.Add(func() {
-				memoizeFib(idx)
-			})
-		}(i)
-	}
-
-	p.Wait()
 }
