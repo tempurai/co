@@ -121,9 +121,10 @@ func TestParallelHungerWait(t *testing.T) {
 	})
 }
 
-func BenchmarkParallel(b *testing.B) {
-	p := co.NewParallel(15)
+func BenchmarkParallelWithFib(b *testing.B) {
+	p := co.NewParallel(256)
 
+	b.ResetTimer()
 	for i := 1; i < b.N; i++ {
 		func(idx int) {
 			p.Add(func() {

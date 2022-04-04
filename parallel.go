@@ -16,12 +16,10 @@ func NewParallelWithResponse[K any](workers int) *parallelDispatcher[K] {
 	return d
 }
 
-func createBaseParallel[K any](workers int) *parallelDispatcher[K] {
+func createBaseParallel[K any](maxWorkers int) *parallelDispatcher[K] {
 	d := &parallelDispatcher[K]{
-		workerPool: make(chan chan payload[K], workers),
+		workerPool: make(chan chan payload[K], maxWorkers),
 		quit:       make(chan bool),
-
-		maxWorkers: workers,
 
 		queueCond: sync.NewCond(&sync.Mutex{}),
 		queue:     list.New(),
@@ -29,7 +27,7 @@ func createBaseParallel[K any](workers int) *parallelDispatcher[K] {
 		wg: &sync.WaitGroup{},
 	}
 
-	for i := 0; i < d.maxWorkers; i++ {
+	for i := 0; i < maxWorkers; i++ {
 		worker := newParallelWorker(d)
 		d.workers = append(d.workers, worker)
 		worker.start()
@@ -48,8 +46,7 @@ type parallelDispatcher[K any] struct {
 	workerPool chan chan payload[K] // received empty job queue
 	quit       chan bool
 
-	maxWorkers int
-	workers    []parallelWorker[K]
+	workers []parallelWorker[K]
 
 	mux       sync.Mutex // mutex of queue
 	queueCond *sync.Cond // condition variable for queue
@@ -73,12 +70,6 @@ func (d *parallelDispatcher[K]) listen() {
 				CondWait(d.queueCond, func() bool {
 					return d.queue.Len() == 0 // if no data available, wait
 				})
-				if d.queue.Len() == 0 { // which means unlock but still no data
-					if quit, ok := ReadBoolChan(d.quit); quit && ok {
-						return
-					}
-					continue
-				}
 
 				d.mux.Lock()
 
