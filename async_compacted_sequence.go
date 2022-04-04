@@ -9,7 +9,7 @@ type AsyncCompactedSequence[R comparable] struct {
 
 func NewAsyncCompactedSequence[R comparable](it AsyncSequenceable[R]) *AsyncCompactedSequence[R] {
 	a := &AsyncCompactedSequence[R]{
-		previousIterator: it.Iterator(),
+		previousIterator: it.iterator(),
 		predictorFn:      func(r R) bool { return r != *new(R) },
 	}
 	a.asyncSequence = NewAsyncSequence[R](a)
@@ -21,7 +21,7 @@ func (c *AsyncCompactedSequence[R]) SetPredicator(fn func(R) bool) *AsyncCompact
 	return c
 }
 
-func (c *AsyncCompactedSequence[R]) Iterator() Iterator[R] {
+func (c *AsyncCompactedSequence[R]) iterator() Iterator[R] {
 	it := &asyncCompactedSequenceIterator[R]{
 		AsyncCompactedSequence: c,
 	}

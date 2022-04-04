@@ -8,13 +8,13 @@ type AsyncPairwiseSequence[R any, T []R] struct {
 
 func NewAsyncPairwiseSequence[R any, T []R](it AsyncSequenceable[R]) *AsyncPairwiseSequence[R, T] {
 	a := &AsyncPairwiseSequence[R, T]{
-		previousIterator: it.Iterator(),
+		previousIterator: it.iterator(),
 	}
 	a.asyncSequence = NewAsyncSequence[T](a)
 	return a
 }
 
-func (c *AsyncPairwiseSequence[R, T]) Iterator() Iterator[T] {
+func (c *AsyncPairwiseSequence[R, T]) iterator() Iterator[T] {
 	it := &asyncPairwiseSequenceIterator[R, T]{
 		AsyncPairwiseSequence: c,
 	}

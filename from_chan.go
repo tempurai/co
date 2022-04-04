@@ -40,7 +40,7 @@ func (a *AsyncChannel[R]) Done() *AsyncChannel[R] {
 	return a
 }
 
-func (a *AsyncChannel[R]) Iterator() Iterator[R] {
+func (a *AsyncChannel[R]) iterator() Iterator[R] {
 	listenerCh := make(chan R)
 	a.listenerChs = append(a.listenerChs, listenerCh)
 

@@ -54,8 +54,8 @@ func (c *executablesList[R]) AddExecutable(fns ...func() (R, error)) *executable
 	return c
 }
 
-func (it *executablesList[R]) Iterator() executableListIterator[R] {
-	return executableListIterator[R]{iterativeListIterator: it.iterativeList.Iterator(), executablesList: it}
+func (it *executablesList[R]) iterator() executableListIterator[R] {
+	return executableListIterator[R]{iterativeListIterator: it.iterativeList.iterator(), executablesList: it}
 }
 
 type executableListIterator[R any] struct {

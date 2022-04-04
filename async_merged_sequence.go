@@ -14,11 +14,11 @@ func NewAsyncMergedSequence[R any](as ...AsyncSequenceable[R]) *AsyncMergedSeque
 	return a
 }
 
-func (a *AsyncMergedSequence[R]) Iterator() Iterator[R] {
+func (a *AsyncMergedSequence[R]) iterator() Iterator[R] {
 	it := &asyncMergedSequenceIterator[R]{}
 	it.asyncSequenceIterator = NewAsyncSequenceIterator[R](it)
 	for i := range a.aSequenceables {
-		it.its = append(it.its, a.aSequenceables[i].Iterator())
+		it.its = append(it.its, a.aSequenceables[i].iterator())
 	}
 	return it
 }

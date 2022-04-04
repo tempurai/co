@@ -23,7 +23,7 @@ func TestAsyncMergedSequence(t *testing.T) {
 		convey.Convey("expect resolved list to be identical with given values", func() {
 			expected := []int{2, 2, 5, 4, 6, 7, 7, 0, 8, 21}
 			actual := []int{}
-			for data := range pList.Emitter() {
+			for data := range pList.Emit() {
 				actual = append(actual, data.GetValue())
 			}
 			convey.So(actual, convey.ShouldResemble, expected)

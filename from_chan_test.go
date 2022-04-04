@@ -26,7 +26,7 @@ func TestAsyncChannel(t *testing.T) {
 
 		convey.Convey("expect resolved list to be identical with given values", func() {
 			actual, pre, intervals := []int{}, time.Now(), []time.Duration{}
-			for data := range oChannel.Emitter() {
+			for data := range oChannel.Emit() {
 				actual = append(actual, data.GetValue())
 				intervals = append(intervals, time.Now().Sub(pre))
 				pre = time.Now()

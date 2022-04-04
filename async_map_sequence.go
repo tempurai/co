@@ -9,7 +9,7 @@ type AsyncMapSequence[R, T any] struct {
 
 func NewAsyncMapSequence[R, T any](p AsyncSequenceable[R], fn func(R) T) *AsyncMapSequence[R, T] {
 	a := &AsyncMapSequence[R, T]{
-		previousIterator: p.Iterator(),
+		previousIterator: p.iterator(),
 		predictorFn:      fn,
 	}
 	a.asyncSequence = NewAsyncSequence[T](a)
@@ -21,7 +21,7 @@ func (c *AsyncMapSequence[R, T]) SetPredicator(fn func(R) T) *AsyncMapSequence[R
 	return c
 }
 
-func (a *AsyncMapSequence[R, T]) Iterator() Iterator[T] {
+func (a *AsyncMapSequence[R, T]) iterator() Iterator[T] {
 	it := &asyncMapSequenceIterator[R, T]{
 		AsyncMapSequence: a,
 	}

@@ -28,10 +28,10 @@ func (c *AsyncExecutable[R]) AddExecutable(fns ...func() (R, error)) *AsyncExecu
 	return c
 }
 
-func (c *AsyncExecutable[R]) Iterator() Iterator[R] {
+func (c *AsyncExecutable[R]) iterator() Iterator[R] {
 	it := &asyncExecutableIterator[R]{
 		AsyncExecutable: c,
-		underlying:      c.executables.iterativeList.Iterator(),
+		underlying:      c.executables.iterativeList.iterator(),
 	}
 	it.asyncSequenceIterator = NewAsyncSequenceIterator[R](it)
 	return it

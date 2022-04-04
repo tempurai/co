@@ -32,7 +32,7 @@ func (a *actionAwait[R]) run() {
 func All[R any](list *executablesList[R]) *Action[*data[R]] {
 	action := &actionAwait[R]{
 		Action: NewAction[*data[R]](),
-		list:   list.Iterator(),
+		list:   list.iterator(),
 	}
 
 	SafeGo(action.run)

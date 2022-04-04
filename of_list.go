@@ -22,8 +22,8 @@ func (it *AsyncList[R]) Add(e ...R) *AsyncList[R] {
 	return it
 }
 
-func (it *AsyncList[R]) Iterator() Iterator[R] {
-	return asyncListIterator[R]{iterativeListIterator: it.iterativeList.Iterator()}
+func (it *AsyncList[R]) iterator() Iterator[R] {
+	return asyncListIterator[R]{iterativeListIterator: it.iterativeList.iterator()}
 }
 
 type asyncListIterator[R any] struct {

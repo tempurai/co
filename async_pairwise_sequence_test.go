@@ -21,7 +21,7 @@ func TestAsyncPairwiseSequence(t *testing.T) {
 			expected := [][]string{{"1", "4"}, {"4", "5"}, {"5", "6"}, {"6", "7"}}
 
 			actual := [][]string{}
-			for data := range pList.Emitter() {
+			for data := range pList.Emit() {
 				actual = append(actual, data.GetValue())
 			}
 			convey.So(actual, convey.ShouldResemble, expected)

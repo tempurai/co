@@ -24,7 +24,7 @@ func NewAction[E any]() *Action[E] {
 		ifWaitData:   true,
 	}
 }
-func (a *Action[E]) Emitter() chan E {
+func (a *Action[E]) Emit() chan E {
 	ch := make(chan E)
 	a.emitChs = append(a.emitChs, ch)
 	return ch

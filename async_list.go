@@ -69,7 +69,7 @@ func NewIterativeList[R any]() *iterativeList[R] {
 	}
 }
 
-func (l *iterativeList[R]) Iterator() *iterativeListIterator[R] {
+func (l *iterativeList[R]) iterator() *iterativeListIterator[R] {
 	it := &iterativeListIterator[R]{
 		iterativeList: l,
 		currentIndex:  0,

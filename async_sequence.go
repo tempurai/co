@@ -18,12 +18,12 @@ func (a *asyncSequence[R]) defaultIterator() Iterator[R] {
 	if a._defaultIterator != nil {
 		return a._defaultIterator
 	}
-	a._defaultIterator = a.async.Iterator()
+	a._defaultIterator = a.async.iterator()
 	return a._defaultIterator
 }
 
-func (a *asyncSequence[R]) Emitter() <-chan *data[R] {
-	return a.defaultIterator().Emitter()
+func (a *asyncSequence[R]) Emit() <-chan *data[R] {
+	return a.defaultIterator().Emit()
 }
 
 func (a *asyncSequence[R]) AdjacentFilter(fn func(R, R) bool) *AsyncAdjacentFilterSequence[R] {
@@ -91,7 +91,7 @@ func (it *asyncSequenceIterator[T]) startListening() {
 	})
 }
 
-func (it *asyncSequenceIterator[T]) Emitter() <-chan *data[T] {
+func (it *asyncSequenceIterator[T]) Emit() <-chan *data[T] {
 	it.mux.Lock()
 	defer it.mux.Unlock()
 

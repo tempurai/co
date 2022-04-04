@@ -14,7 +14,7 @@ type AsyncBufferTimeSequence[R any, T []R] struct {
 
 func NewAsyncBufferTimeSequence[R any, T []R](it AsyncSequenceable[R], interval time.Duration) *AsyncBufferTimeSequence[R, T] {
 	a := &AsyncBufferTimeSequence[R, T]{
-		previousIterator: it.Iterator(),
+		previousIterator: it.iterator(),
 		interval:         interval,
 	}
 	a.asyncSequence = NewAsyncSequence[T](a)
@@ -26,7 +26,7 @@ func (a *AsyncBufferTimeSequence[R, T]) SetInterval(interval time.Duration) *Asy
 	return a
 }
 
-func (c *AsyncBufferTimeSequence[R, T]) Iterator() Iterator[T] {
+func (c *AsyncBufferTimeSequence[R, T]) iterator() Iterator[T] {
 	it := &asyncBufferTimeSequenceIterator[R, T]{
 		AsyncBufferTimeSequence: c,
 		bufferedData:            []T{},

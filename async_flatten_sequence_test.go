@@ -16,7 +16,7 @@ func TestAsyncFlattenSequence(t *testing.T) {
 		convey.Convey("expect resolved list to be identical with given values", func() {
 			expected := []int{1, 4, 5, 6, 7, 3, 5, 6, 2, 4, 6, 7, 8, 9, 3}
 			actual := []int{}
-			for data := range pList.Emitter() {
+			for data := range pList.Emit() {
 				actual = append(actual, data.GetValue())
 			}
 			convey.So(actual, convey.ShouldResemble, expected)

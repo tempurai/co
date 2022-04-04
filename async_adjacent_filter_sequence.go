@@ -9,7 +9,7 @@ type AsyncAdjacentFilterSequence[R any] struct {
 
 func NewAsyncAdjacentFilterSequence[R any](it AsyncSequenceable[R], fn func(R, R) bool) *AsyncAdjacentFilterSequence[R] {
 	a := &AsyncAdjacentFilterSequence[R]{
-		previousIterator: it.Iterator(),
+		previousIterator: it.iterator(),
 		predictorFn:      fn,
 	}
 	a.asyncSequence = NewAsyncSequence[R](a)
@@ -21,7 +21,7 @@ func (c *AsyncAdjacentFilterSequence[R]) SetPredicator(fn func(R, R) bool) *Asyn
 	return c
 }
 
-func (c *AsyncAdjacentFilterSequence[R]) Iterator() Iterator[R] {
+func (c *AsyncAdjacentFilterSequence[R]) iterator() Iterator[R] {
 	it := &asyncAdjacentFilterSequenceIterator[R]{
 		AsyncAdjacentFilterSequence: c,
 	}

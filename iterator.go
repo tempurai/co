@@ -2,7 +2,7 @@ package co
 
 type iteratorAction[T any] interface {
 	next() (*Optional[T], error)
-	Emitter() <-chan *data[T]
+	Emit() <-chan *data[T]
 }
 
 type iteratorAnyAction interface {

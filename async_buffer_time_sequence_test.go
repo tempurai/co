@@ -28,7 +28,7 @@ func TestAsyncBufferTimeSequence(t *testing.T) {
 		convey.Convey("expect resolved list to be identical with given values", func() {
 			expected := [][]int{{1, 4, 5, 6, 7, 2, 2, 3}, {4, 5, 12, 4, 2}, {3, 43, 127, 37598, 34}, {34, 123, 123}}
 			actual := [][]int{}
-			for data := range bList.Emitter() {
+			for data := range bList.Emit() {
 				actual = append(actual, data.GetValue())
 			}
 			convey.So(actual, convey.ShouldResemble, expected)

@@ -21,7 +21,7 @@ func (a *AsyncPartitionSequence[R]) SetSize(size int) *AsyncPartitionSequence[R]
 	return a
 }
 
-func (c *AsyncPartitionSequence[R]) Iterator() Iterator[[]R] {
+func (c *AsyncPartitionSequence[R]) iterator() Iterator[[]R] {
 	it := &asyncPartitionSequenceIterator[R, []R]{
 		AsyncPartitionSequence: c,
 	}

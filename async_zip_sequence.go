@@ -22,7 +22,7 @@ func (a *AsyncZipSequence[R]) setConverterFn(fn asyncZipFn[R]) *AsyncZipSequence
 	return a
 }
 
-func (a *AsyncZipSequence[R]) Iterator() Iterator[R] {
+func (a *AsyncZipSequence[R]) iterator() Iterator[R] {
 	it := &asyncZipSequenceIterator[R]{
 		AsyncZipSequence: a,
 	}
@@ -31,7 +31,7 @@ func (a *AsyncZipSequence[R]) Iterator() Iterator[R] {
 }
 
 func Zip[T1, T2 any](seq1 AsyncSequenceable[T1], seq2 AsyncSequenceable[T2]) *AsyncZipSequence[Type2[T1, T2]] {
-	anyIterators := castToIteratorAny(seq1.Iterator(), seq2.Iterator())
+	anyIterators := castToIteratorAny(seq1.iterator(), seq2.iterator())
 	converterFn := func(v []any, err error) (Type2[T1, T2], error) {
 		return Type2[T1, T2]{CastOrNil[T1](v[0]), CastOrNil[T2](v[1])}, err
 	}
@@ -41,7 +41,7 @@ func Zip[T1, T2 any](seq1 AsyncSequenceable[T1], seq2 AsyncSequenceable[T2]) *As
 }
 
 func Zip3[T1, T2, T3 any](seq1 AsyncSequenceable[T1], seq2 AsyncSequenceable[T2], seq3 AsyncSequenceable[T3]) *AsyncZipSequence[Type3[T1, T2, T3]] {
-	anyIterators := castToIteratorAny(seq1.Iterator(), seq2.Iterator())
+	anyIterators := castToIteratorAny(seq1.iterator(), seq2.iterator())
 	converterFn := func(v []any, err error) (Type3[T1, T2, T3], error) {
 		return Type3[T1, T2, T3]{CastOrNil[T1](v[0]), CastOrNil[T2](v[1]), CastOrNil[T3](v[2])}, err
 	}

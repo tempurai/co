@@ -8,13 +8,13 @@ type AsyncFlattenSequence[R any, T []R] struct {
 
 func NewAsyncFlattenSequence[R any, T []R](it AsyncSequenceable[T]) *AsyncFlattenSequence[R, T] {
 	a := &AsyncFlattenSequence[R, T]{
-		previousIterator: it.Iterator(),
+		previousIterator: it.iterator(),
 	}
 	a.asyncSequence = NewAsyncSequence[R](a)
 	return a
 }
 
-func (c *AsyncFlattenSequence[R, T]) Iterator() Iterator[R] {
+func (c *AsyncFlattenSequence[R, T]) iterator() Iterator[R] {
 	it := &asyncFlattenSequenceIterator[R, T]{
 		AsyncFlattenSequence: c,
 		bufferedData:         make(T, 0),

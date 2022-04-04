@@ -35,7 +35,7 @@ func (a *actionRace[R]) run() {
 func baseRace[R any](ignoreErr bool, list *executablesList[R]) *Action[*data[R]] {
 	action := &actionRace[R]{
 		Action:    NewAction[*data[R]](),
-		it:        list.Iterator(),
+		it:        list.iterator(),
 		ignoreErr: ignoreErr,
 	}
 

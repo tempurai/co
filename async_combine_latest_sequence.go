@@ -22,7 +22,7 @@ func (a *AsyncCombineLatestSequence[R]) setConverterFn(fn asyncCombineLatestFn[R
 	return a
 }
 
-func (a *AsyncCombineLatestSequence[R]) Iterator() Iterator[R] {
+func (a *AsyncCombineLatestSequence[R]) iterator() Iterator[R] {
 	it := &asyncCombineLatestSequenceIterator[R]{
 		AsyncCombineLatestSequence: a,
 		dataStore:                  make([]any, len(a.its)),
@@ -32,7 +32,7 @@ func (a *AsyncCombineLatestSequence[R]) Iterator() Iterator[R] {
 }
 
 func CombineLatest[T1, T2 any](seq1 AsyncSequenceable[T1], seq2 AsyncSequenceable[T2]) *AsyncCombineLatestSequence[Type2[T1, T2]] {
-	anyIterators := castToIteratorAny(seq1.Iterator(), seq2.Iterator())
+	anyIterators := castToIteratorAny(seq1.iterator(), seq2.iterator())
 	converterFn := func(v []any, err error) (Type2[T1, T2], error) {
 		return Type2[T1, T2]{CastOrNil[T1](v[0]), CastOrNil[T2](v[1])}, err
 	}
@@ -42,7 +42,7 @@ func CombineLatest[T1, T2 any](seq1 AsyncSequenceable[T1], seq2 AsyncSequenceabl
 }
 
 func CombineLatest3[T1, T2, T3 any](seq1 AsyncSequenceable[T1], seq2 AsyncSequenceable[T2], seq3 AsyncSequenceable[T3]) *AsyncCombineLatestSequence[Type3[T1, T2, T3]] {
-	anyIterators := castToIteratorAny(seq1.Iterator(), seq2.Iterator())
+	anyIterators := castToIteratorAny(seq1.iterator(), seq2.iterator())
 	converterFn := func(v []any, err error) (Type3[T1, T2, T3], error) {
 		return Type3[T1, T2, T3]{CastOrNil[T1](v[0]), CastOrNil[T2](v[1]), CastOrNil[T3](v[2])}, err
 	}

@@ -44,7 +44,7 @@ func (a *AsyncBufferedChan[R]) Done() *AsyncBufferedChan[R] {
 	return a
 }
 
-func (a *AsyncBufferedChan[R]) Iterator() Iterator[R] {
+func (a *AsyncBufferedChan[R]) iterator() Iterator[R] {
 	it := &asyncBufferedChanIterator[R]{
 		AsyncBufferedChan: a,
 	}
