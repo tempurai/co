@@ -71,7 +71,7 @@ func (a *Action[E]) listen(el ...E) {
 
 	for _, e := range el {
 		for _, ch := range a.emitChs {
-			co_sync.SafeSend(ch, e)
+			co_sync.SafeNSend(ch, e)
 		}
 	}
 

@@ -18,6 +18,22 @@ func SafeSend[T any](ch chan T, value T) (closed bool) {
 	return false
 }
 
+func SafeNSend[T any](ch chan T, value T) (closed bool) {
+	defer func() {
+		if recover() != nil {
+			closed = true
+			fmt.Printf("channel %+v send out %+v failed\n", ch, value)
+		}
+	}()
+
+	select {
+	case ch <- value:
+	default:
+		fmt.Printf("channel %+v send out %+v blocked omitted\n", ch, value)
+	}
+	return false
+}
+
 func SafeClose[T any](ch chan T) (closed bool) {
 	defer func() {
 		if recover() != nil {
