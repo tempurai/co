@@ -51,7 +51,7 @@ func (p *DispatcherPool[K]) startListening() {
 				return
 
 			case data := <-p.doneCh:
-				co_sync.CondBoardcast(p.workerCond, func() {
+				co_sync.CondSignal(p.workerCond, func() {
 					p.pool.Put(data.workerRef)
 					atomic.AddInt32(&p.idleDispatcher, 1)
 				})
@@ -91,7 +91,7 @@ func (p *DispatcherPool[K]) SetCallbackFn(fn func(uint64, K)) *DispatcherPool[K]
 func (p *DispatcherPool[K]) AddJob(fn func() K) uint64 {
 	id := atomic.AddUint64(&p.seq, 1)
 
-	co_sync.CondBoardcast(p.workerCond, func() {
+	co_sync.CondSignal(p.workerCond, func() {
 		p.jobQueue.Enqueue(&job[K]{fn: fn, seq: id})
 	})
 
@@ -106,6 +106,7 @@ func (p *DispatcherPool[K]) Wait() {
 func (p *DispatcherPool[K]) Stop() {
 	p.quitCh <- true
 	p.quit = true
+	p.workerCond.Broadcast()
 }
 
 type Dispatcher[K any] struct {
