@@ -102,6 +102,10 @@ func (q *MultiReceiverQueue[K]) dequeue(r *QueueReceiver[K]) K {
 	}
 }
 
+func (r *QueueReceiver[K]) Enqueue(v K) {
+	r.MultiReceiverQueue.enqueue(v)
+}
+
 func (r *QueueReceiver[K]) Dequeue() K {
 	return r.MultiReceiverQueue.dequeue(r)
 }
