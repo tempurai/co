@@ -44,7 +44,7 @@ func TestMultiReceiverQueueWith2Receiver(t *testing.T) {
 		expected := make([]int, 0)
 		for i := 0; i < l; i++ {
 			expected = append(expected, i)
-			r1.Enqueue(i)
+			q.Enqueue(i)
 		}
 
 		convey.Convey("On wait", func() {
@@ -83,7 +83,7 @@ func TestMultiReceiverQueueWith2ReceiverConcurrently(t *testing.T) {
 		expected := make([]int, 0)
 		for i := 1; i <= l; i++ {
 			expected = append(expected, i)
-			r[0].Enqueue(i)
+			q.Enqueue(i)
 		}
 
 		type result struct {

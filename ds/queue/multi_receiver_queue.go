@@ -43,7 +43,7 @@ func (q *MultiReceiverQueue[K]) len() int {
 }
 
 // Enqueue puts the given value v at the tail of the queue.
-func (q *MultiReceiverQueue[K]) enqueue(v K) {
+func (q *MultiReceiverQueue[K]) Enqueue(v K) {
 	n := &node[K]{value: v}
 	for {
 		tail := load[K](&q.tail)
@@ -103,7 +103,7 @@ func (q *MultiReceiverQueue[K]) dequeue(r *QueueReceiver[K]) K {
 }
 
 func (r *QueueReceiver[K]) Enqueue(v K) {
-	r.MultiReceiverQueue.enqueue(v)
+	r.MultiReceiverQueue.Enqueue(v)
 }
 
 func (r *QueueReceiver[K]) Dequeue() K {

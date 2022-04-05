@@ -13,7 +13,7 @@ func (q *Queue[K]) Len() int {
 }
 
 func (q *Queue[K]) Enqueue(v K) {
-	q.r.enqueue(v)
+	q.r.Enqueue(v)
 }
 
 func (q *Queue[K]) Dequeue() K {
