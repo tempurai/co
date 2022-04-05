@@ -9,7 +9,7 @@ import (
 )
 
 type parallel[R any] struct {
-	workerPool *pool.HeavyWorkerPool[R]
+	workerPool *pool.WorkerPool[R]
 	seqFnMap   sync.Map
 
 	ifPersistentData bool
@@ -22,7 +22,7 @@ type parallel[R any] struct {
 
 func NewParallel[R any](maxWorkers int) *parallel[R] {
 	d := &parallel[R]{
-		workerPool:   pool.NewHeavyWorkerPool[R](maxWorkers),
+		workerPool:   pool.NewWorkerPool[R](maxWorkers),
 		storedData:   NewList[R](),
 		recieverCond: sync.NewCond(&sync.Mutex{}),
 	}

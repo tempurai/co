@@ -7,8 +7,8 @@ import (
 	co_sync "github.com/tempura-shrimp/co/sync"
 )
 
-func NewHeavyWorkerPool[K any](maxWorkers int) *HeavyWorkerPool[K] {
-	p := &HeavyWorkerPool[K]{
+func NewWorkerPool[K any](maxWorkers int) *WorkerPool[K] {
+	p := &WorkerPool[K]{
 		workers:     make([]*Worker[K], maxWorkers),
 		quitCh:      make(chan bool),
 		doneCh:      make(chan *jobDone[K]),
@@ -28,7 +28,7 @@ func NewHeavyWorkerPool[K any](maxWorkers int) *HeavyWorkerPool[K] {
 	return p
 }
 
-type HeavyWorkerPool[K any] struct {
+type WorkerPool[K any] struct {
 	workerCond  *sync.Cond
 	idleWorkers *Queue[*Worker[K]]
 
@@ -46,7 +46,7 @@ type HeavyWorkerPool[K any] struct {
 	seq uint64
 }
 
-func (p *HeavyWorkerPool[K]) startListening() {
+func (p *WorkerPool[K]) startListening() {
 	co_sync.SafeGo(func() {
 		for {
 			select {
@@ -83,12 +83,12 @@ func (p *HeavyWorkerPool[K]) startListening() {
 	})
 }
 
-func (p *HeavyWorkerPool[K]) SetCallbackFn(fn func(uint64, K)) *HeavyWorkerPool[K] {
+func (p *WorkerPool[K]) SetCallbackFn(fn func(uint64, K)) *WorkerPool[K] {
 	p.callbackFn = fn
 	return p
 }
 
-func (p *HeavyWorkerPool[K]) AddJob(fn func() K) uint64 {
+func (p *WorkerPool[K]) AddJob(fn func() K) uint64 {
 	id := atomic.AddUint64(&p.seq, 1)
 
 	co_sync.CondSignal(p.workerCond, func() {
@@ -99,11 +99,11 @@ func (p *HeavyWorkerPool[K]) AddJob(fn func() K) uint64 {
 	return id
 }
 
-func (p *HeavyWorkerPool[K]) Wait() {
+func (p *WorkerPool[K]) Wait() {
 	p.doneWG.Wait()
 }
 
-func (p *HeavyWorkerPool[K]) Stop() {
+func (p *WorkerPool[K]) Stop() {
 	for _, worker := range p.workers {
 		worker.stop()
 	}

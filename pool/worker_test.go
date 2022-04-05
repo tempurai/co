@@ -7,11 +7,11 @@ import (
 	"github.com/tempura-shrimp/co/pool"
 )
 
-func TestHeavyWorkerPool(t *testing.T) {
+func TestWorkerPool(t *testing.T) {
 	convey.Convey("given a sequential tasks", t, func() {
 		markers := make([]bool, 1000)
 
-		p := pool.NewHeavyWorkerPool[any](10)
+		p := pool.NewWorkerPool[any](10)
 
 		for i := 0; i < 1000; i++ {
 			func(idx int) {
@@ -34,7 +34,7 @@ func TestHeavyWorkerPool(t *testing.T) {
 }
 
 func BenchmarkHeavyWorkPoolWithFib(b *testing.B) {
-	p := pool.NewHeavyWorkerPool[int](256)
+	p := pool.NewWorkerPool[int](256)
 
 	b.ResetTimer()
 	for i := 1; i < b.N; i++ {
