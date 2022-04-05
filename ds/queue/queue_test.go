@@ -1,15 +1,15 @@
-package pool_test
+package queue_test
 
 import (
 	"testing"
 
 	"github.com/smartystreets/goconvey/convey"
-	"github.com/tempura-shrimp/co/pool"
+	"github.com/tempura-shrimp/co/ds/queue"
 )
 
 func TestQueue(t *testing.T) {
 	convey.Convey("given a sequential int to enqueue", t, func() {
-		q := pool.NewQueue[int]()
+		q := queue.NewQueue[int]()
 		l := 1000
 
 		for i := 1; i <= l; i++ {

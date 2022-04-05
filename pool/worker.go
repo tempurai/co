@@ -4,6 +4,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/tempura-shrimp/co/ds/queue"
 	co_sync "github.com/tempura-shrimp/co/sync"
 )
 
@@ -12,10 +13,10 @@ func NewWorkerPool[K any](maxWorkers int) *WorkerPool[K] {
 		workers:     make([]*Worker[K], maxWorkers),
 		quitCh:      make(chan bool),
 		doneCh:      make(chan *jobDone[K]),
-		idleWorkers: NewQueue[*Worker[K]](),
+		idleWorkers: queue.NewQueue[*Worker[K]](),
 
 		workerCond: sync.NewCond(&sync.Mutex{}),
-		jobQueue:   NewQueue[*job[K]](),
+		jobQueue:   queue.NewQueue[*job[K]](),
 	}
 
 	for i := 0; i < maxWorkers; i++ {
@@ -30,7 +31,7 @@ func NewWorkerPool[K any](maxWorkers int) *WorkerPool[K] {
 
 type WorkerPool[K any] struct {
 	workerCond  *sync.Cond
-	idleWorkers *Queue[*Worker[K]]
+	idleWorkers *queue.Queue[*Worker[K]]
 
 	doneCh chan *jobDone[K]
 	doneWG sync.WaitGroup
@@ -41,7 +42,7 @@ type WorkerPool[K any] struct {
 	quit    bool
 	quitCh  chan bool
 
-	jobQueue *Queue[*job[K]]
+	jobQueue *queue.Queue[*job[K]]
 
 	seq uint64
 }

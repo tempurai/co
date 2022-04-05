@@ -1,4 +1,4 @@
-package pool_test
+package queue_test
 
 import (
 	"fmt"
@@ -6,12 +6,12 @@ import (
 	"testing"
 
 	"github.com/smartystreets/goconvey/convey"
-	"github.com/tempura-shrimp/co/pool"
+	"github.com/tempura-shrimp/co/ds/queue"
 )
 
 func TestMultiReceiverQueue(t *testing.T) {
 	convey.Convey("given a sequential int to enqueue", t, func() {
-		q := pool.NewMultiReceiverQueue[int]().Receiver()
+		q := queue.NewMultiReceiverQueue[int]().Receiver()
 		l := 1000
 
 		expected := make([]int, 0)
@@ -36,7 +36,7 @@ func TestMultiReceiverQueue(t *testing.T) {
 
 func TestMultiReceiverQueueWith2Receiver(t *testing.T) {
 	convey.Convey("given a sequential int to enqueue", t, func() {
-		q := pool.NewMultiReceiverQueue[int]()
+		q := queue.NewMultiReceiverQueue[int]()
 		r1 := q.Receiver()
 		r2 := q.Receiver()
 		l := 5000
@@ -72,10 +72,10 @@ func TestMultiReceiverQueueWith2Receiver(t *testing.T) {
 
 func TestMultiReceiverQueueWith2ReceiverConcurrently(t *testing.T) {
 	convey.Convey("given a sequential int to enqueue", t, func(c convey.C) {
-		q := pool.NewMultiReceiverQueue[int]()
+		q := queue.NewMultiReceiverQueue[int]()
 		rl, l := 50, 10000
 
-		r := make([]*pool.QueueReceiver[int], 0)
+		r := make([]*queue.QueueReceiver[int], 0)
 		for i := 0; i < rl; i++ {
 			r = append(r, q.Receiver())
 		}
@@ -95,7 +95,7 @@ func TestMultiReceiverQueueWith2ReceiverConcurrently(t *testing.T) {
 		actualCount := (int32)(0)
 
 		for i := 0; i < rl; i++ {
-			go func(i int, re *pool.QueueReceiver[int]) {
+			go func(i int, re *queue.QueueReceiver[int]) {
 				actual := make([]int, 0)
 				for i := 1; i <= l; i++ {
 					actual = append(actual, re.Dequeue())

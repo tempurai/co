@@ -3,7 +3,7 @@ package co
 import (
 	"sync"
 
-	"github.com/tempura-shrimp/co/pool"
+	"github.com/tempura-shrimp/co/ds/queue"
 	co_sync "github.com/tempura-shrimp/co/sync"
 )
 
@@ -14,14 +14,14 @@ type AsyncBufferedChan[R any] struct {
 	sourceEnded bool
 	runOnce     sync.Once
 
-	bufferedData *pool.Queue[R]
+	bufferedData *queue.Queue[R]
 	bufferWait   *sync.Cond
 }
 
 func FromChanBuffered[R any](ch chan R) *AsyncBufferedChan[R] {
 	a := &AsyncBufferedChan[R]{
 		sourceCh:     ch,
-		bufferedData: pool.NewQueue[R](),
+		bufferedData: queue.NewQueue[R](),
 		bufferWait:   sync.NewCond(&sync.Mutex{}),
 	}
 	a.asyncSequence = NewAsyncSequence[R](a)

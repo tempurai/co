@@ -4,6 +4,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/tempura-shrimp/co/ds/queue"
 	co_sync "github.com/tempura-shrimp/co/sync"
 )
 
@@ -14,7 +15,7 @@ func NewDispatchPool[K any](maxWorkers int) *DispatcherPool[K] {
 		idleDispatcher: int32(maxWorkers),
 
 		workerCond: sync.NewCond(&sync.Mutex{}),
-		jobQueue:   NewQueue[*job[K]](),
+		jobQueue:   queue.NewQueue[*job[K]](),
 	}
 
 	p.pool.New = func() any {
@@ -38,7 +39,7 @@ type DispatcherPool[K any] struct {
 	quit   bool
 	quitCh chan bool
 
-	jobQueue *Queue[*job[K]]
+	jobQueue *queue.Queue[*job[K]]
 
 	seq uint64
 }

@@ -1,4 +1,4 @@
-package pool
+package queue
 
 import (
 	"sync/atomic"
@@ -10,7 +10,7 @@ type MultiReceiverQueue[K any] struct {
 	head unsafe.Pointer
 	tail unsafe.Pointer
 
-	len      int32
+	size     int32
 	receiver uint32
 }
 
@@ -38,12 +38,12 @@ func (q *MultiReceiverQueue[K]) Receiver() *QueueReceiver[K] {
 	return &QueueReceiver[K]{MultiReceiverQueue: q, node: nil}
 }
 
-func (q *MultiReceiverQueue[K]) Len() int {
-	return int(q.len)
+func (q *MultiReceiverQueue[K]) len() int {
+	return int(q.size)
 }
 
 // Enqueue puts the given value v at the tail of the queue.
-func (q *MultiReceiverQueue[K]) Enqueue(v K) {
+func (q *MultiReceiverQueue[K]) enqueue(v K) {
 	n := &node[K]{value: v}
 	for {
 		tail := load[K](&q.tail)
@@ -51,7 +51,7 @@ func (q *MultiReceiverQueue[K]) Enqueue(v K) {
 		if tail == load[K](&q.tail) { // are tail and next consistent?
 			if next == nil {
 				if cas(&tail.next, next, n) {
-					atomic.AddInt32(&q.len, 1)
+					atomic.AddInt32(&q.size, 1)
 					cas(&q.tail, tail, n) // Enqueue is done.  try to swing tail to the inserted node
 					return
 				}
@@ -65,7 +65,7 @@ func (q *MultiReceiverQueue[K]) Enqueue(v K) {
 
 // Dequeue removes and returns the value at the head of the queue.
 // It returns nil if the queue is empty.
-func (q *MultiReceiverQueue[K]) Dequeue(r *QueueReceiver[K]) K {
+func (q *MultiReceiverQueue[K]) dequeue(r *QueueReceiver[K]) K {
 	for {
 		head := load[K](&q.head)
 		tail := load[K](&q.tail)
@@ -90,10 +90,11 @@ func (q *MultiReceiverQueue[K]) Dequeue(r *QueueReceiver[K]) K {
 
 				v := unext.value
 				if atomic.AddUint32(&un.dequeued, 1) != q.receiver {
+					atomic.AddInt32(&q.size, -1)
 					return v
 				}
 				if cas(&q.head, head, next) {
-					atomic.AddInt32(&q.len, -1)
+					atomic.AddInt32(&q.size, -1)
 					return v // Dequeue is done.  return
 				}
 			}
@@ -101,8 +102,8 @@ func (q *MultiReceiverQueue[K]) Dequeue(r *QueueReceiver[K]) K {
 	}
 }
 
-func (q *QueueReceiver[K]) Dequeue() K {
-	return q.MultiReceiverQueue.Dequeue(q)
+func (r *QueueReceiver[K]) Dequeue() K {
+	return r.MultiReceiverQueue.dequeue(r)
 }
 
 func load[K any](p *unsafe.Pointer) (n *node[K]) {
