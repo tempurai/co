@@ -3,6 +3,7 @@ package co
 import (
 	"sync"
 
+	"github.com/tempura-shrimp/co/pool"
 	co_sync "github.com/tempura-shrimp/co/sync"
 )
 
@@ -13,14 +14,14 @@ type AsyncBufferedChan[R any] struct {
 	sourceEnded bool
 	runOnce     sync.Once
 
-	bufferedData *List[R]
+	bufferedData *pool.Queue[R]
 	bufferWait   *sync.Cond
 }
 
 func FromChanBuffered[R any](ch chan R) *AsyncBufferedChan[R] {
 	a := &AsyncBufferedChan[R]{
 		sourceCh:     ch,
-		bufferedData: NewList[R](),
+		bufferedData: pool.NewQueue[R](),
 		bufferWait:   sync.NewCond(&sync.Mutex{}),
 	}
 	a.asyncSequence = NewAsyncSequence[R](a)
@@ -33,7 +34,7 @@ func (a *AsyncBufferedChan[T]) startListening() {
 		co_sync.SafeGo(func() {
 			for val := range a.sourceCh {
 				co_sync.CondBoardcast(a.bufferWait, func() {
-					a.bufferedData.add(val)
+					a.bufferedData.Enqueue(val)
 				})
 			}
 			co_sync.CondBoardcast(a.bufferWait, func() { a.sourceEnded = true })
@@ -58,17 +59,15 @@ type asyncBufferedChanIterator[R any] struct {
 	*asyncSequenceIterator[R]
 
 	*AsyncBufferedChan[R]
-	currentIndex int
 }
 
 func (it *asyncBufferedChanIterator[R]) next() (*Optional[R], error) {
-	if it.sourceEnded && it.currentIndex >= it.bufferedData.len() {
+	if it.sourceEnded && it.bufferedData.Len() == 0 {
 		return NewOptionalEmpty[R](), nil
 	}
 	co_sync.CondWait(it.bufferWait, func() bool {
-		return !it.sourceEnded || it.currentIndex >= it.bufferedData.len()
+		return !it.sourceEnded || it.bufferedData.Len() == 0
 	})
 
-	defer func() { it.currentIndex++ }()
-	return OptionalOf(it.bufferedData.getAt(it.currentIndex)), nil
+	return OptionalOf(it.bufferedData.Dequeue()), nil
 }
