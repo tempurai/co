@@ -10,9 +10,10 @@ import (
 
 func NewWorkerPool[K any](maxWorkers int) *WorkerPool[K] {
 	p := &WorkerPool[K]{
+		poolBasic: newPoolBasic[K](),
+
 		workers:     make([]*Worker[K], maxWorkers),
 		quitCh:      make(chan bool),
-		doneCh:      make(chan *jobDone[K]),
 		idleWorkers: queue.NewQueue[*Worker[K]](),
 
 		workerCond: sync.NewCond(&sync.Mutex{}),
@@ -30,11 +31,10 @@ func NewWorkerPool[K any](maxWorkers int) *WorkerPool[K] {
 }
 
 type WorkerPool[K any] struct {
+	*poolBasic[K]
+
 	workerCond  *sync.Cond
 	idleWorkers *queue.Queue[*Worker[K]]
-
-	doneCh chan *jobDone[K]
-	doneWG sync.WaitGroup
 
 	callbackFn func(id uint64, val K)
 
@@ -43,8 +43,6 @@ type WorkerPool[K any] struct {
 	quitCh  chan bool
 
 	jobQueue *queue.Queue[*job[K]]
-
-	seq uint64
 }
 
 func (p *WorkerPool[K]) startListening() {

@@ -10,8 +10,8 @@ import (
 
 func NewDispatchPool[K any](maxWorkers int) *DispatcherPool[K] {
 	p := &DispatcherPool[K]{
+		poolBasic:      newPoolBasic[K](),
 		quitCh:         make(chan bool),
-		doneCh:         make(chan *jobDone[K]),
 		idleDispatcher: int32(maxWorkers),
 
 		workerCond: sync.NewCond(&sync.Mutex{}),
@@ -27,12 +27,11 @@ func NewDispatchPool[K any](maxWorkers int) *DispatcherPool[K] {
 }
 
 type DispatcherPool[K any] struct {
+	*poolBasic[K]
+
 	pool           sync.Pool
 	workerCond     *sync.Cond
 	idleDispatcher int32
-
-	doneCh chan *jobDone[K]
-	doneWG sync.WaitGroup
 
 	callbackFn func(id uint64, val K)
 
@@ -40,8 +39,6 @@ type DispatcherPool[K any] struct {
 	quitCh chan bool
 
 	jobQueue *queue.Queue[*job[K]]
-
-	seq uint64
 }
 
 func (p *DispatcherPool[K]) startListening() {
@@ -87,10 +84,6 @@ func (p *DispatcherPool[K]) startListening() {
 func (p *DispatcherPool[K]) SetCallbackFn(fn func(uint64, K)) *DispatcherPool[K] {
 	p.callbackFn = fn
 	return p
-}
-
-func (p *DispatcherPool[K]) ReserveSeq() uint64 {
-	return atomic.AddUint64(&p.seq, 1)
 }
 
 func (p *DispatcherPool[K]) AddJobAt(seq uint64, fn func() K) uint64 {
