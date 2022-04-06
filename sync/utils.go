@@ -29,7 +29,7 @@ func SafeNSend[T any](ch chan T, value T) (closed bool) {
 	select {
 	case ch <- value:
 	default:
-		fmt.Printf("channel %+v send out %+v blocked omitted\n", ch, value)
+		fmt.Printf("channel %+v send out %+v blocked omitted, stacktrace: %+v \n", ch, value, string(debug.Stack()))
 	}
 	return false
 }

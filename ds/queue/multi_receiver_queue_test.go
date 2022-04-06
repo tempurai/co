@@ -41,6 +41,11 @@ func TestMultiReceiverQueueWith2Receiver(t *testing.T) {
 		r2 := q.Receiver()
 		l := 5000
 
+		convey.Convey("Queue should be empty at initial", func() {
+			convey.So(r1.IsEmpty(), convey.ShouldEqual, true)
+			convey.So(r2.IsEmpty(), convey.ShouldEqual, true)
+		})
+
 		expected := make([]int, 0)
 		for i := 0; i < l; i++ {
 			expected = append(expected, i)
@@ -49,6 +54,7 @@ func TestMultiReceiverQueueWith2Receiver(t *testing.T) {
 
 		convey.Convey("On wait", func() {
 			convey.Convey("Dequeue 1 should be indentical to enqueued", func() {
+				convey.So(r1.IsEmpty(), convey.ShouldEqual, false)
 				actual := make([]int, 0)
 				for i := 0; i < l; i++ {
 					v := r1.Dequeue()
@@ -56,8 +62,10 @@ func TestMultiReceiverQueueWith2Receiver(t *testing.T) {
 
 				}
 				convey.So(actual, convey.ShouldResemble, expected)
+				convey.So(r1.IsEmpty(), convey.ShouldEqual, true)
 			})
 			convey.Convey("Dequeue 2 should be indentical to enqueued", func() {
+				convey.So(r2.IsEmpty(), convey.ShouldEqual, false)
 				actual := make([]int, 0)
 				for i := 0; i < l; i++ {
 					v := r2.Dequeue()
@@ -65,6 +73,7 @@ func TestMultiReceiverQueueWith2Receiver(t *testing.T) {
 
 				}
 				convey.So(actual, convey.ShouldResemble, expected)
+				convey.So(r2.IsEmpty(), convey.ShouldEqual, true)
 			})
 		})
 	})
@@ -79,6 +88,12 @@ func TestMultiReceiverQueueWith2ReceiverConcurrently(t *testing.T) {
 		for i := 0; i < rl; i++ {
 			r = append(r, q.Receiver())
 		}
+
+		convey.Convey("Queue should be empty at initial", func() {
+			for i := 0; i < rl; i++ {
+				convey.So(r[i].IsEmpty(), convey.ShouldEqual, true)
+			}
+		})
 
 		expected := make([]int, 0)
 		for i := 1; i <= l; i++ {
@@ -111,6 +126,7 @@ func TestMultiReceiverQueueWith2ReceiverConcurrently(t *testing.T) {
 		for val := range actualCh {
 			c.Convey(fmt.Sprintf("Dequeue %d should be indentical to enqueued", val.i+1), func() {
 				c.So(val.v, convey.ShouldResemble, expected)
+				c.So(r[val.i].IsEmpty(), convey.ShouldEqual, true)
 			})
 		}
 	})

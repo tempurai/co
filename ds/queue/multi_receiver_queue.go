@@ -35,7 +35,7 @@ func NewMultiReceiverQueue[K any]() *MultiReceiverQueue[K] {
 
 func (q *MultiReceiverQueue[K]) Receiver() *QueueReceiver[K] {
 	atomic.AddUint32(&q.receiver, 1)
-	return &QueueReceiver[K]{MultiReceiverQueue: q, node: nil}
+	return &QueueReceiver[K]{MultiReceiverQueue: q, node: q.head}
 }
 
 func (q *MultiReceiverQueue[K]) len() int {
@@ -64,7 +64,7 @@ func (q *MultiReceiverQueue[K]) Enqueue(v K) {
 }
 
 // Dequeue removes and returns the value at the head of the queue.
-// It returns nil if the queue is empty.
+// It returns false if the queue is empty.
 func (q *MultiReceiverQueue[K]) dequeue(r *QueueReceiver[K]) K {
 	for {
 		head := load[K](&q.head)
@@ -78,9 +78,6 @@ func (q *MultiReceiverQueue[K]) dequeue(r *QueueReceiver[K]) K {
 				// tail is falling behind.  try to advance it
 				cas(&q.tail, tail, next)
 			} else {
-				if r.node == nil {
-					r.node = q.head
-				}
 				un := load[K](&r.node)
 				unext := load[K](&un.next)
 				if unext == nil {
@@ -108,6 +105,10 @@ func (r *QueueReceiver[K]) Enqueue(v K) {
 
 func (r *QueueReceiver[K]) Dequeue() K {
 	return r.MultiReceiverQueue.dequeue(r)
+}
+
+func (r *QueueReceiver[K]) IsEmpty() bool {
+	return r.node == r.tail
 }
 
 func load[K any](p *unsafe.Pointer) (n *node[K]) {

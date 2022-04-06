@@ -33,7 +33,6 @@ type asyncMapSequenceIterator[R, T any] struct {
 	*asyncSequenceIterator[T]
 
 	*AsyncMapSequence[R, T]
-	preProcessed bool
 }
 
 func (it *asyncMapSequenceIterator[R, T]) next() (*Optional[T], error) {

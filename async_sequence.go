@@ -68,7 +68,7 @@ func (it *asyncSequenceIterator[T]) emitData(d *data[T]) {
 	defer it.mux.RUnlock()
 
 	for i := range it.emitCh {
-		co_sync.SafeNSend(it.emitCh[i], d)
+		co_sync.SafeSend(it.emitCh[i], d)
 	}
 }
 
