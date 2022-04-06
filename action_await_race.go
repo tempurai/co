@@ -11,21 +11,21 @@ type actionRace[R any] struct {
 
 func (a *actionRace[R]) run() {
 	dataCh := make(chan *data[R])
-	aBool := &AtomicBool{}
+	ifData := false
 
 	for i := 0; a.it.preflight(); i++ {
 		go func(i int) {
-			if aBool.Get() {
+			if ifData {
 				return
 			}
 
 			val, err := a.it.exeAt(i)
-			if (err != nil && !a.ignoreErr) || aBool.Get() {
+			if (err != nil && !a.ignoreErr) || ifData {
 				return
 			}
 
 			co_sync.SafeSend(dataCh, NewDataWith(val, err))
-			aBool.Set(true)
+			ifData = true
 		}(i)
 	}
 
