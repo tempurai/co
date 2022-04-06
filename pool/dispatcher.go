@@ -89,19 +89,27 @@ func (p *DispatcherPool[K]) SetCallbackFn(fn func(uint64, K)) *DispatcherPool[K]
 	return p
 }
 
-func (p *DispatcherPool[K]) AddJob(fn func() K) uint64 {
-	id := atomic.AddUint64(&p.seq, 1)
+func (p *DispatcherPool[K]) ReserveSeq() uint64 {
+	return atomic.AddUint64(&p.seq, 1)
+}
 
+func (p *DispatcherPool[K]) AddJobAt(seq uint64, fn func() K) uint64 {
 	co_sync.CondSignal(p.workerCond, func() {
-		p.jobQueue.Enqueue(&job[K]{fn: fn, seq: id})
+		p.jobQueue.Enqueue(&job[K]{fn: fn, seq: seq})
 	})
 
 	p.doneWG.Add(1)
-	return id
+	return seq
 }
 
-func (p *DispatcherPool[K]) Wait() {
+func (p *DispatcherPool[K]) AddJob(fn func() K) uint64 {
+	id := atomic.AddUint64(&p.seq, 1)
+	return p.AddJobAt(id, fn)
+}
+
+func (p *DispatcherPool[K]) Wait() *DispatcherPool[K] {
 	p.doneWG.Wait()
+	return p
 }
 
 func (p *DispatcherPool[K]) Stop() {

@@ -66,8 +66,10 @@ func (it *asyncBufferedChanIterator[R]) next() (*Optional[R], error) {
 		return NewOptionalEmpty[R](), nil
 	}
 	co_sync.CondWait(it.bufferWait, func() bool {
-		return !it.sourceEnded || it.bufferedData.Len() == 0
+		return !it.sourceEnded && it.bufferedData.Len() == 0
 	})
-
+	if it.sourceEnded {
+		return NewOptionalEmpty[R](), nil
+	}
 	return OptionalOf(it.bufferedData.Dequeue()), nil
 }

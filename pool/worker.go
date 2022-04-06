@@ -89,6 +89,19 @@ func (p *WorkerPool[K]) SetCallbackFn(fn func(uint64, K)) *WorkerPool[K] {
 	return p
 }
 
+func (p *WorkerPool[K]) ReserveSeq() uint64 {
+	return atomic.AddUint64(&p.seq, 1)
+}
+
+func (p *WorkerPool[K]) AddJobAt(seq uint64, fn func() K) uint64 {
+	co_sync.CondSignal(p.workerCond, func() {
+		p.jobQueue.Enqueue(&job[K]{fn: fn, seq: seq})
+	})
+
+	p.doneWG.Add(1)
+	return seq
+}
+
 func (p *WorkerPool[K]) AddJob(fn func() K) uint64 {
 	id := atomic.AddUint64(&p.seq, 1)
 
