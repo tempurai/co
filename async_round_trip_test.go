@@ -1,3 +1,5 @@
+//go:build !race
+
 package co_test
 
 import (
@@ -12,6 +14,7 @@ func TestAsyncRoundTrip(t *testing.T) {
 	convey.Convey("given a sequential int to enqueue", t, func(c convey.C) {
 		source := []int{1, 4, 5, 6, 7, 2, 2, 3, 4, 5, 12, 4, 2, 3, 43, 127, 37598, 34, 34, 123, 123}
 		actual := []int{}
+
 		callbackFn := func(v int) {
 			actual = append(actual, v)
 		}
