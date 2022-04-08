@@ -27,7 +27,7 @@ func TestAsyncInterval(t *testing.T) {
 			intervals = intervals[1:]
 			convey.Printf("We have a list of interval %+v\n", intervals)
 			for i := range intervals {
-				convey.So(intervals[i], convey.ShouldBeBetweenOrEqual, 99, 101)
+				convey.So(intervals[i], convey.ShouldBeBetweenOrEqual, 95, 105)
 			}
 			convey.So(len(intervals), convey.ShouldEqual, 19)
 		})

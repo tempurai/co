@@ -11,7 +11,7 @@ type AsyncBufferedChan[R any] struct {
 	*asyncSequence[R]
 
 	sourceCh    chan R
-	sourceEnded bool
+	sourceEnded co_sync.AtomicBool
 	runOnce     sync.Once
 
 	bufferedData *queue.Queue[R]
@@ -37,7 +37,7 @@ func (a *AsyncBufferedChan[T]) startListening() {
 					a.bufferedData.Enqueue(val)
 				})
 			}
-			co_sync.CondBoardcast(a.bufferWait, func() { a.sourceEnded = true })
+			co_sync.CondBoardcast(a.bufferWait, func() { a.sourceEnded.Set(true) })
 		})
 	})
 }
@@ -62,13 +62,13 @@ type asyncBufferedChanIterator[R any] struct {
 }
 
 func (it *asyncBufferedChanIterator[R]) next() (*Optional[R], error) {
-	if it.sourceEnded && it.bufferedData.Len() == 0 {
+	if it.sourceEnded.Get() && it.bufferedData.Len() == 0 {
 		return NewOptionalEmpty[R](), nil
 	}
 	co_sync.CondWait(it.bufferWait, func() bool {
-		return !it.sourceEnded && it.bufferedData.Len() == 0
+		return !it.sourceEnded.Get() && it.bufferedData.Len() == 0
 	})
-	if it.sourceEnded && it.bufferedData.Len() == 0 {
+	if it.sourceEnded.Get() && it.bufferedData.Len() == 0 {
 		return NewOptionalEmpty[R](), nil
 	}
 	return OptionalOf(it.bufferedData.Dequeue()), nil

@@ -2,13 +2,15 @@ package co
 
 import (
 	"time"
+
+	co_sync "github.com/tempura-shrimp/co/sync"
 )
 
 type AsyncInterval[R any] struct {
 	*asyncSequence[R]
 
 	period int
-	ended  bool
+	ended  co_sync.AtomicBool
 }
 
 func Interval(period int) *AsyncInterval[int] {
@@ -20,7 +22,7 @@ func Interval(period int) *AsyncInterval[int] {
 }
 
 func (a *AsyncInterval[R]) Done() *AsyncInterval[R] {
-	a.ended = true
+	a.ended.Set(true)
 	return a
 }
 
@@ -47,7 +49,7 @@ func (it *asyncIntervalIterator[R]) cleanUp() (*Optional[R], error) {
 }
 
 func (it *asyncIntervalIterator[R]) next() (*Optional[R], error) {
-	if it.ended {
+	if it.ended.Get() {
 		return it.cleanUp()
 	}
 
