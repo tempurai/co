@@ -28,7 +28,7 @@ func TestAsyncChannel(t *testing.T) {
 			actual, pre, intervals := []int{}, time.Now(), []time.Duration{}
 			for data := range oChannel.Emit() {
 				actual = append(actual, data.GetValue())
-				intervals = append(intervals, time.Now().Sub(pre))
+				intervals = append(intervals, time.Since(pre))
 				pre = time.Now()
 			}
 

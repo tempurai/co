@@ -1,8 +1,6 @@
 package co
 
 import (
-	"sync"
-
 	co_sync "github.com/tempura-shrimp/co/sync"
 )
 
@@ -10,7 +8,6 @@ type AsyncChannel[R any] struct {
 	*asyncSequence[R]
 
 	sourceCh chan R
-	runOnce  sync.Once
 }
 
 func FromChan[R any](ch chan R) *AsyncChannel[R] {
