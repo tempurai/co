@@ -8,7 +8,7 @@ import (
 
 type Action[E any] struct {
 	emitChs      []chan E
-	bufferedData []E
+	bufferedData *List[E]
 
 	ifWaitData bool
 	firstChan  chan bool
@@ -20,7 +20,7 @@ type Action[E any] struct {
 func NewAction[E any]() *Action[E] {
 	return &Action[E]{
 		emitChs:      make([]chan E, 0),
-		bufferedData: make([]E, 0),
+		bufferedData: NewList[E](),
 		firstChan:    make(chan bool),
 		lastChan:     make(chan bool),
 		ifWaitData:   true,
@@ -47,22 +47,22 @@ func (a *Action[E]) GetData() []E {
 	a.rwmux.RLock()
 	defer a.rwmux.RUnlock()
 
-	return a.bufferedData
+	return a.bufferedData.list
 }
 
 func (a *Action[E]) PeakData() E {
-	if len(a.bufferedData) == 0 {
+	if a.bufferedData.len() == 0 {
 		<-a.firstChan
 	}
 
 	a.rwmux.RLock()
 	defer a.rwmux.RUnlock()
 
-	if len(a.bufferedData) == 0 {
+	if a.bufferedData.len() == 0 {
 		return *new(E)
 	}
 
-	return a.bufferedData[0]
+	return a.bufferedData.getAt(0)
 }
 
 func (a *Action[E]) listen(el ...E) {
@@ -75,9 +75,9 @@ func (a *Action[E]) listen(el ...E) {
 		}
 	}
 
-	sendFirstCh := len(a.bufferedData) == 0
+	sendFirstCh := a.bufferedData.len() == 0
 	if a.ifWaitData {
-		a.bufferedData = append(a.bufferedData, el...)
+		a.bufferedData.add(el...)
 	}
 	if sendFirstCh {
 		go func() {
@@ -100,9 +100,10 @@ func MapAction[T1, T2 any](a1 *Action[T1], fn func(T1) T2) *Action[T2] {
 	a2.firstChan = a1.firstChan
 	a2.lastChan = a1.lastChan
 
-	a2.bufferedData = make([]T2, len(a1.bufferedData))
-	for i := range a1.bufferedData {
-		a2.bufferedData[i] = fn(a1.bufferedData[i])
+	a2.bufferedData = NewList[T2]()
+	a2.bufferedData.resizeTo(a1.bufferedData.len())
+	for i := range a1.bufferedData.list {
+		a2.bufferedData.list[i] = fn(a1.bufferedData.list[i])
 	}
 	return a2
 }
