@@ -15,7 +15,19 @@ func NewList[R any]() *List[R] {
 }
 
 func (l *List[R]) len() int {
+	l.rwmux.RLock()
+	defer l.rwmux.RUnlock()
+
 	return len(l.list)
+}
+
+func (l *List[R]) popFirst() R {
+	l.rwmux.Lock()
+	defer l.rwmux.Unlock()
+
+	var result R
+	result, l.list = l.list[0], l.list[1:]
+	return result
 }
 
 func (l *List[R]) getAt(i int) R {
@@ -26,11 +38,10 @@ func (l *List[R]) getAt(i int) R {
 }
 
 func (l *List[R]) setAt(i int, val R) {
-	l.resizeTo(i + 1)
-
 	l.rwmux.Lock()
 	defer l.rwmux.Unlock()
 
+	l.resizeToInternal(i + 1)
 	l.list[i] = val
 }
 
@@ -48,15 +59,18 @@ func (l *List[R]) swap(items []R) {
 	l.list = items
 }
 
-func (l *List[R]) resizeTo(len int) {
+func (l *List[R]) resizeTo(size int) {
 	l.rwmux.Lock()
 	defer l.rwmux.Unlock()
 
-	if len <= l.len() {
+	l.resizeToInternal(size)
+}
+
+func (l *List[R]) resizeToInternal(size int) {
+	if size <= len(l.list) {
 		return
 	}
-
-	l.list = append(l.list, make([]R, len-l.len())...)
+	l.list = append(l.list, make([]R, size-len(l.list))...)
 }
 
 type iterativeList[R any] struct {

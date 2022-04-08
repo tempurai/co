@@ -31,7 +31,7 @@ func (a *AsyncBufferTimeSequence[R, T]) SetInterval(interval time.Duration) *Asy
 func (c *AsyncBufferTimeSequence[R, T]) iterator() Iterator[T] {
 	it := &asyncBufferTimeSequenceIterator[R, T]{
 		AsyncBufferTimeSequence: c,
-		bufferedData:            []T{},
+		bufferedData:            NewList[T](),
 		bufferWait:              sync.NewCond(&sync.Mutex{}),
 	}
 	it.asyncSequenceIterator = NewAsyncSequenceIterator[T](it)
@@ -44,7 +44,7 @@ type asyncBufferTimeSequenceIterator[R any, T []R] struct {
 	*AsyncBufferTimeSequence[R, T]
 
 	previousTime time.Time
-	bufferedData []T
+	bufferedData *List[T]
 
 	runOnce     sync.Once
 	sourceEnded bool
@@ -52,7 +52,7 @@ type asyncBufferTimeSequenceIterator[R any, T []R] struct {
 }
 
 func (it *asyncBufferTimeSequenceIterator[R, T]) intervalPassed() bool {
-	return time.Now().Sub(it.previousTime) > it.interval
+	return time.Since(it.previousTime) > it.interval
 }
 
 func (it *asyncBufferTimeSequenceIterator[R, T]) startBuffer() {
@@ -66,12 +66,12 @@ func (it *asyncBufferTimeSequenceIterator[R, T]) startBuffer() {
 				}
 
 				reachedInterval := it.intervalPassed()
-				if len(it.bufferedData) == 0 || reachedInterval {
-					it.bufferedData = append(it.bufferedData, T{})
+				if it.bufferedData.len() == 0 || reachedInterval {
+					it.bufferedData.add(T{})
 				}
 
-				lIdx := len(it.bufferedData) - 1
-				it.bufferedData[lIdx] = append(it.bufferedData[lIdx], op.data)
+				lIdx := it.bufferedData.len() - 1
+				it.bufferedData.setAt(lIdx, append(it.bufferedData.getAt(lIdx), op.data))
 
 				if reachedInterval {
 					co_sync.CondBoardcast(it.bufferWait, func() { it.previousTime = time.Now() })
@@ -85,15 +85,17 @@ func (it *asyncBufferTimeSequenceIterator[R, T]) startBuffer() {
 func (it *asyncBufferTimeSequenceIterator[R, T]) next() (*Optional[T], error) {
 	it.startBuffer()
 
-	if it.sourceEnded && len(it.bufferedData) == 0 {
+	if it.sourceEnded && it.bufferedData.len() == 0 {
 		return NewOptionalEmpty[T](), nil
 	}
 
 	co_sync.CondWait(it.bufferWait, func() bool {
-		return !it.sourceEnded && (len(it.bufferedData) == 0 || !it.intervalPassed())
+		return !it.sourceEnded && (it.bufferedData.len() == 0 || !it.intervalPassed())
 	})
 
-	var result T
-	result, it.bufferedData = it.bufferedData[0], it.bufferedData[1:]
-	return OptionalOf(result), nil
+	if it.sourceEnded && it.bufferedData.len() == 0 {
+		return NewOptionalEmpty[T](), nil
+	}
+
+	return OptionalOf(it.bufferedData.popFirst()), nil
 }

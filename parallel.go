@@ -38,10 +38,11 @@ func (d *parallel[R]) SetPersistentData(b bool) *parallel[R] {
 
 func (d *parallel[R]) Process(fn func() R) chan R {
 	atomic.AddUint64(&d.sent, 1)
-	seq := d.workerPool.AddJob(fn)
-
+	seq := d.workerPool.ReserveSeq()
 	ch := make(chan R)
 	d.seqFnMap.Store(seq, ch)
+
+	d.workerPool.AddJobAt(seq, fn)
 	return ch
 }
 

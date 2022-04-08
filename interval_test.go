@@ -15,7 +15,7 @@ func TestAsyncInterval(t *testing.T) {
 		convey.Convey("expect resolved list to be identical with given values", func() {
 			counter, pre, intervals := 0, time.Now(), []int64{}
 			for range oChannel.Emit() {
-				intervals = append(intervals, time.Since(pre).Round(time.Millisecond).Milliseconds())
+				intervals = append(intervals, time.Since(pre).Milliseconds())
 				pre = time.Now()
 
 				if counter++; counter == 20 {
@@ -27,7 +27,7 @@ func TestAsyncInterval(t *testing.T) {
 			intervals = intervals[1:]
 			convey.Printf("We have a list of interval %+v\n", intervals)
 			for i := range intervals {
-				convey.So(intervals[i], convey.ShouldEqual, 100)
+				convey.So(intervals[i], convey.ShouldBeBetweenOrEqual, 99, 101)
 			}
 			convey.So(len(intervals), convey.ShouldEqual, 19)
 		})
