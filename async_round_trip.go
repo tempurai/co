@@ -54,6 +54,12 @@ func (a *asyncRoundTrip[R, E, T]) Transform(fn func(AsyncSequenceable[T]) AsyncS
 	return a
 }
 
+func (a *asyncRoundTrip[R, E, T]) SetAsyncSequenceable(async AsyncSequenceable[T]) *asyncRoundTrip[R, E, T] {
+	a.async = async
+	a.it = a.async.iterator()
+	return a
+}
+
 func (a *asyncRoundTrip[R, E, T]) startListening() {
 	a.runOnce.Do(func() {
 		co_sync.SafeGo(func() {
