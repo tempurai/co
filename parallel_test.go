@@ -10,13 +10,15 @@ import (
 
 func TestParallel(t *testing.T) {
 	convey.Convey("given a sequential tasks", t, func() {
-		markers := make([]bool, 10000)
+		size := 10000
+		actual := make([]bool, size)
+		expected := make([]bool, size)
 
 		p := co.NewParallel[bool](10)
-		for i := 0; i < 10000; i++ {
+		for i := 0; i < size; i++ {
 			func(idx int) {
 				p.Process(func() bool {
-					markers[idx] = true
+					actual[idx] = true
 					return true
 				})
 			}(i)
@@ -25,9 +27,10 @@ func TestParallel(t *testing.T) {
 			p.Wait()
 
 			convey.Convey("Each markers should be marked", func() {
-				for i := 0; i < 10000; i++ {
-					convey.So(markers[i], convey.ShouldEqual, true)
+				for i := 0; i < size; i++ {
+					expected[i] = true
 				}
+				convey.So(actual, convey.ShouldResemble, expected)
 			})
 		})
 	})
@@ -35,8 +38,9 @@ func TestParallel(t *testing.T) {
 
 func TestParallelWithResponse(t *testing.T) {
 	convey.Convey("given a sequential tasks", t, func() {
+		size := 10000
 		p := co.NewParallel[int](10).SetPersistentData(true)
-		for i := 0; i < 1000; i++ {
+		for i := 0; i < size; i++ {
 			func(idx int) {
 				p.Process(func() int {
 					return idx + 1
@@ -45,12 +49,14 @@ func TestParallelWithResponse(t *testing.T) {
 		}
 
 		convey.Convey("On wait", func() {
-			vals := p.Wait().GetData()
+			actuals := p.Wait().GetData()
+			expected := make([]int, 0)
 
 			convey.Convey("Each response should be valid", func() {
-				for i := 0; i < 1000; i++ {
-					convey.So(vals[i], convey.ShouldEqual, i+1)
+				for i := 0; i < size; i++ {
+					expected = append(expected, i+1)
 				}
+				convey.So(actuals, convey.ShouldResemble, expected)
 			})
 		})
 	})
@@ -58,13 +64,14 @@ func TestParallelWithResponse(t *testing.T) {
 
 func TestParallelSeparatedAdd(t *testing.T) {
 	convey.Convey("given a sequential tasks", t, func() {
-		markers := make([]bool, 10000)
+		size1, size2 := 500, 1000
+		actuals := make([]bool, size2)
 
 		p := co.NewParallel[bool](10)
-		for i := 0; i < 500; i++ {
+		for i := 0; i < size1; i++ {
 			func(idx int) {
 				p.Process(func() bool {
-					markers[idx] = true
+					actuals[idx] = true
 					return true
 				})
 			}(i)
@@ -75,20 +82,25 @@ func TestParallelSeparatedAdd(t *testing.T) {
 			time.Sleep(1 * time.Second)
 		}
 
-		for i := 500; i < 1000; i++ {
+		for i := size1; i < size2; i++ {
 			func(idx int) {
 				p.Process(func() bool {
-					markers[idx] = true
+					actuals[idx] = true
 					return true
 				})
 			}(i)
 		}
 
 		convey.Convey("On wait", func() {
+			p.Wait()
+			expected := make([]bool, 0)
+
 			convey.Convey("Each markers should be marked", func() {
-				for i := 0; i < 1000; i++ {
-					convey.So(markers[i], convey.ShouldEqual, true)
+				for i := 0; i < size2; i++ {
+					expected = append(expected, true)
+
 				}
+				convey.So(actuals, convey.ShouldResemble, expected)
 			})
 		})
 	})
@@ -96,13 +108,14 @@ func TestParallelSeparatedAdd(t *testing.T) {
 
 func TestParallelHungerWait(t *testing.T) {
 	convey.Convey("given a sequential tasks", t, func() {
-		markers := make([]bool, 10000)
+		size := 500
+		actuals := make([]bool, size)
 
 		p := co.NewParallel[bool](10)
-		for i := 0; i < 500; i++ {
+		for i := 0; i < size; i++ {
 			func(idx int) {
 				p.Process(func() bool {
-					markers[idx] = true
+					actuals[idx] = true
 					return true
 				})
 			}(i)
@@ -116,10 +129,12 @@ func TestParallelHungerWait(t *testing.T) {
 		convey.Convey("On wait", func() {
 			p.Wait()
 
+			expected := make([]bool, 0)
 			convey.Convey("Each markers should be marked", func() {
-				for i := 0; i < 500; i++ {
-					convey.So(markers[i], convey.ShouldEqual, true)
+				for i := 0; i < size; i++ {
+					expected = append(expected, true)
 				}
+				convey.So(actuals, convey.ShouldResemble, expected)
 			})
 		})
 	})

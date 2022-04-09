@@ -26,9 +26,12 @@ func TestAwaitAll(t *testing.T) {
 			responses := co.AwaitAll(handlers...)
 
 			convey.Convey("The responded value should be valid", func() {
+				expected, actuals := []int{}, []int{}
 				for i := 0; i < 1000; i++ {
-					convey.So(responses[i].GetValue(), convey.ShouldEqual, i+1)
+					expected = append(expected, i+1)
+					actuals = append(actuals, responses[i].GetValue())
 				}
+				convey.So(expected, convey.ShouldResemble, actuals)
 			})
 		})
 	})
