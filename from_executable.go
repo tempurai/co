@@ -1,5 +1,7 @@
 package co
 
+import "sync/atomic"
+
 type AsyncExecutable[R any] struct {
 	*asyncSequence[R]
 
@@ -49,7 +51,7 @@ func (it *asyncExecutableIterator[R]) next() (*Optional[R], error) {
 		return NewOptionalEmpty[R](), nil
 	}
 
-	defer func() { it.underlying.currentIndex++ }()
-	val, err := it.executeAt(it.underlying.currentIndex)
+	defer func() { atomic.AddInt32(&it.underlying.currentIndex, 1) }()
+	val, err := it.executeAt(int(it.underlying.currentIndex))
 	return OptionalOf(val), err
 }

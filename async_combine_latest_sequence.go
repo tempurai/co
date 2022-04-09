@@ -3,20 +3,25 @@ package co
 import (
 	"sync"
 
+	"github.com/tempura-shrimp/co/ds/queue"
 	co_sync "github.com/tempura-shrimp/co/sync"
 )
 
 type asyncCombineLatestFn[R any] func([]any, error) (R, error)
 
 type AsyncCombineLatestSequence[R any] struct {
+	*asyncSequence[R]
+
 	its         []iteratorAny
 	converterFn asyncCombineLatestFn[R]
 }
 
 func NewAsyncCombineLatestSequence[R any](its []iteratorAny) *AsyncCombineLatestSequence[R] {
-	return &AsyncCombineLatestSequence[R]{
+	a := &AsyncCombineLatestSequence[R]{
 		its: its,
 	}
+	a.asyncSequence = NewAsyncSequence[R](a)
+	return a
 }
 
 func (a *AsyncCombineLatestSequence[R]) setConverterFn(fn asyncCombineLatestFn[R]) *AsyncCombineLatestSequence[R] {
@@ -28,8 +33,15 @@ func (a *AsyncCombineLatestSequence[R]) iterator() Iterator[R] {
 	it := &asyncCombineLatestSequenceIterator[R]{
 		AsyncCombineLatestSequence: a,
 		dataStore:                  make([]any, len(a.its)),
+		statusData:                 make([]combineLatestAsyncData, len(a.its)),
+		bufferWait:                 sync.NewCond(&sync.Mutex{}),
 	}
 	it.asyncSequenceIterator = NewAsyncSequenceIterator[R](it)
+	for i := range it.statusData {
+		it.statusData[i] = combineLatestAsyncData{
+			asyncData: *NewAsyncData(queue.NewQueue[any]()).TransiteTo(asyncStatusDone),
+		}
+	}
 	return it
 }
 
@@ -44,7 +56,7 @@ func CombineLatest[T1, T2 any](seq1 AsyncSequenceable[T1], seq2 AsyncSequenceabl
 }
 
 func CombineLatest3[T1, T2, T3 any](seq1 AsyncSequenceable[T1], seq2 AsyncSequenceable[T2], seq3 AsyncSequenceable[T3]) *AsyncCombineLatestSequence[Type3[T1, T2, T3]] {
-	anyIterators := castToIteratorAny(seq1.iterator(), seq2.iterator())
+	anyIterators := castToIteratorAny(seq1.iterator(), seq2.iterator(), seq3.iterator())
 	converterFn := func(v []any, err error) (Type3[T1, T2, T3], error) {
 		return Type3[T1, T2, T3]{CastOrNil[T1](v[0]), CastOrNil[T2](v[1]), CastOrNil[T3](v[2])}, err
 	}
@@ -52,50 +64,146 @@ func CombineLatest3[T1, T2, T3 any](seq1 AsyncSequenceable[T1], seq2 AsyncSequen
 	return a
 }
 
+type combineLatestAsyncData struct {
+	asyncData   AsyncData[*queue.Queue[any]]
+	sourceEnded bool
+}
+
 type asyncCombineLatestSequenceIterator[R any] struct {
 	*asyncSequenceIterator[R]
 
 	*AsyncCombineLatestSequence[R]
-	dataStore             []any
-	firstpassCompleted    bool
-	normalPassCompletedCh chan bool
-	updated               []bool
+	firstpass  bool
+	bufferWait *sync.Cond
+
+	statusData []combineLatestAsyncData
+	dataStore  []any
+
+	mux sync.Mutex // Avoid data race
 }
 
-func (a *asyncCombineLatestSequenceIterator[R]) pass() {
+func (a *asyncCombineLatestSequenceIterator[R]) copyDirtyToStore() {
+	a.mux.Lock()
+	defer a.mux.Unlock()
+
+	for i := range a.statusData {
+		if !a.statusData[i].asyncData.IsDone() {
+			continue
+		}
+
+		a.dataStore[i] = a.statusData[i].asyncData.value.Dequeue()
+		if a.statusData[i].asyncData.value.Len() == 0 && a.statusData[i].asyncData.IsDone() {
+			a.statusData[i].asyncData.TransiteTo(asyncStatusIdle)
+		}
+	}
+}
+
+func (a *asyncCombineLatestSequenceIterator[R]) hasQueuedData() bool {
+	a.mux.Lock()
+	defer a.mux.Unlock()
+
+	for i := range a.statusData {
+		if a.statusData[i].asyncData.value.Len() != 0 {
+			return true
+		}
+	}
+	return false
+}
+
+func (a *asyncCombineLatestSequenceIterator[R]) allSourcesEneded() bool {
+	a.mux.Lock()
+	defer a.mux.Unlock()
+
+	for i := range a.statusData {
+		if !a.statusData[i].sourceEnded {
+			return false
+		}
+	}
+	return true
+}
+
+func (a *asyncCombineLatestSequenceIterator[R]) startFirstPass() {
 	wg := sync.WaitGroup{}
 	wg.Add(len(a.its))
 
-	a.updated = make([]bool, len(a.its))
 	for i, it := range a.its {
 		go func(idx int, it iteratorAny) {
 			defer wg.Done()
-			for op, err := it.nextAny(); op.valid && err != nil; op, err = it.nextAny() {
-				a.dataStore[idx] = op.data
-				if !a.firstpassCompleted {
-					a.normalPassCompletedCh <- true
+
+			for op, err := it.nextAny(); op.valid; op, err = it.nextAny() {
+				if err != nil {
+					continue
 				}
-				a.firstpassCompleted = true
-				a.updated[idx] = true
+
+				a.statusData[idx].asyncData.value.Enqueue(op.data)
+				break
 			}
 		}(i, it)
 	}
 
 	wg.Wait()
+	a.firstpass = true
+}
+
+func (a *asyncCombineLatestSequenceIterator[R]) pass() {
+	if !a.firstpass {
+		a.startFirstPass()
+		co_sync.CondBoardcast(a.bufferWait, func() {})
+		return
+	}
+
+	for i := range a.its {
+		if a.statusData[i].sourceEnded {
+			continue
+		}
+		if !a.statusData[i].asyncData.IsIdel() {
+			continue
+		}
+		if a.statusData[i].asyncData.value.Len() > 0 {
+			continue
+		}
+
+		a.statusData[i].asyncData.TransiteTo(asyncStatusPending)
+		go func(idx int, statusData *combineLatestAsyncData, it iteratorAny) {
+
+			for op, err := it.nextAny(); op.valid; op, err = it.nextAny() {
+				if err != nil {
+					continue
+				}
+
+				co_sync.CondBoardcast(a.bufferWait, func() {
+					a.mux.Lock()
+					defer a.mux.Unlock()
+
+					statusData.asyncData.value.Enqueue(op.data)
+					statusData.asyncData.TransiteTo(asyncStatusDone)
+				})
+				return
+			}
+			co_sync.CondBoardcast(a.bufferWait, func() {
+				a.mux.Lock()
+				defer a.mux.Unlock()
+
+				// becuase we have already emmited final value at loop therefore no more data
+				statusData.asyncData.TransiteTo(asyncStatusIdle)
+				statusData.sourceEnded = true
+			})
+		}(i, &a.statusData[i], a.its[i])
+	}
 }
 
 func (a *asyncCombineLatestSequenceIterator[R]) next() (*Optional[R], error) {
-	if !a.firstpassCompleted {
-		co_sync.SafeGo(a.pass)
-		<-a.normalPassCompletedCh
-	} else {
+	if !a.allSourcesEneded() && !a.hasQueuedData() {
 		a.pass()
+		co_sync.CondWait(a.bufferWait, func() bool {
+			return !a.allSourcesEneded() && !a.hasQueuedData()
+		})
 	}
-
-	if EvertET(a.updated, false) {
+	if a.allSourcesEneded() && !a.hasQueuedData() {
 		return NewOptionalEmpty[R](), nil
 	}
 
+	a.copyDirtyToStore()
 	data, err := a.converterFn(a.dataStore, nil)
 	return OptionalOf(data), err
 }

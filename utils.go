@@ -27,9 +27,18 @@ func EvertGET[T constraints.Ordered](ele []T, target T) bool {
 
 func EvertET[T comparable](ele []T, target T) bool {
 	for _, e := range ele {
-		if e == target {
+		if e != target {
 			return false
 		}
 	}
 	return true
+}
+
+func AnyET[T comparable](ele []T, target T) bool {
+	for _, e := range ele {
+		if e == target {
+			return true
+		}
+	}
+	return false
 }

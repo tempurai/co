@@ -41,7 +41,9 @@ func (op Optional[R]) String() string {
 }
 
 func (op Optional[R]) AsOptional() *Optional[any] {
-	return OptionalOf[any](op.data)
+	op2 := OptionalOf[any](op.data)
+	op2.valid = op.valid
+	return op2
 }
 
 func (op Optional[R]) Get() R {

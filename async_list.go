@@ -2,6 +2,7 @@ package co
 
 import (
 	"sync"
+	"sync/atomic"
 )
 
 type List[R any] struct {
@@ -96,11 +97,11 @@ type iterativeListIterator[R any] struct {
 	*asyncSequenceIterator[R]
 
 	*iterativeList[R]
-	currentIndex int
+	currentIndex int32
 }
 
 func (it *iterativeListIterator[R]) preflight() bool {
-	return it.currentIndex < it.len()
+	return atomic.LoadInt32(&it.currentIndex) < int32(it.len())
 }
 
 func (it *iterativeListIterator[R]) next() (*Optional[R], error) {
@@ -108,6 +109,6 @@ func (it *iterativeListIterator[R]) next() (*Optional[R], error) {
 		return NewOptionalEmpty[R](), nil
 	}
 
-	defer func() { it.currentIndex++ }()
+	defer func() { atomic.AddInt32(&it.currentIndex, 1) }()
 	return OptionalOf(it.list[it.currentIndex]), nil
 }
