@@ -85,10 +85,6 @@ func (it *asyncBufferTimeSequenceIterator[R, T]) startBuffer() {
 func (it *asyncBufferTimeSequenceIterator[R, T]) next() (*Optional[T], error) {
 	it.startBuffer()
 
-	if it.sourceEnded && it.bufferedData.len() == 0 {
-		return NewOptionalEmpty[T](), nil
-	}
-
 	co_sync.CondWait(it.bufferWait, func() bool {
 		return !it.sourceEnded && (it.bufferedData.len() == 0 || !it.intervalPassed())
 	})

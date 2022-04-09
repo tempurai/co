@@ -93,10 +93,6 @@ func (it *asyncDebounceSequenceIterator[R]) startBuffer() {
 func (it *asyncDebounceSequenceIterator[R]) next() (*Optional[R], error) {
 	it.startBuffer()
 
-	if it.sourceEnded && it.bufferedData.Len() == 0 {
-		return NewOptionalEmpty[R](), nil
-	}
-
 	co_sync.CondWait(it.bufferWait, func() bool {
 		return !it.sourceEnded && it.bufferedData.Len() == 0
 	})
