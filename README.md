@@ -1,3 +1,5 @@
+[![Go](https://github.com/tempura-shrimp/co/actions/workflows/go.yml/badge.svg)](https://github.com/tempura-shrimp/co/actions/workflows/go.yml)
+
 # Co
 
 A concurrency lib project with GENERIC SUPPORTED dedicate to help developer ease the pain of dealing goroutine and channel when coding 2 more lines of channel code become annoying.
