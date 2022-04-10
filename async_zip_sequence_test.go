@@ -5,33 +5,33 @@ import (
 
 	"github.com/smartystreets/goconvey/convey"
 	"github.com/tempura-shrimp/co"
-	"golang.org/x/exp/slices"
 )
 
-func checkCombineLatest[T comparable](c convey.C, a [][]T, l ...[]T) {
+func checkZip[T comparable](c convey.C, a [][]T, l ...[]T) {
 	cs := make([][]T, len(l))
 	for _, v := range a {
 		for i := range l {
 			cs[i] = append(cs[i], v[i])
 		}
 	}
+
 	for i := range l {
-		c.So(slices.Compact(cs[i]), convey.ShouldResemble, l[i])
+		c.So(cs[i], convey.ShouldResemble, l[i])
 	}
 }
 
-func TestAsyncCombineLatest2Sequence(t *testing.T) {
+func TestAsyncZip2Sequence(t *testing.T) {
 	convey.Convey("given a sequential int", t, func(c convey.C) {
-		numbers := []int{1, 2, 3, 4, 5}
-		aList := co.OfListWith(numbers...)
+		list1 := []int{1, 2, 3, 4, 5}
+		aList := co.OfListWith(list1...)
 		mList := co.NewAsyncMapSequence[int](aList, func(v int) int {
 			return v
 		})
 
-		numbers2 := []int{1, 2, 3, 4, 5}
-		aList2 := co.OfListWith(numbers2...)
+		list2 := []int{1, 2, 3, 4, 5}
+		aList2 := co.OfListWith(list2...)
 
-		pList := co.CombineLatest[int, int](mList, aList2)
+		pList := co.Zip[int, int](mList, aList2)
 
 		convey.Convey("expect resolved list to be identical with given values \n", func() {
 			actual := [][]int{}
@@ -39,58 +39,65 @@ func TestAsyncCombineLatest2Sequence(t *testing.T) {
 				actual = append(actual, []int{data.GetValue().V1, data.GetValue().V2})
 			}
 			convey.Printf("resulted list :: %+v \n", actual)
-			checkCombineLatest(c, actual, numbers, numbers2)
+			checkZip(c, actual, list1, list2)
 		})
 	})
 }
 
-func TestAsyncCombineLatest2SequenceWithDifferentLength(t *testing.T) {
+func TestAsyncZip2SequenceWithDifferentLength(t *testing.T) {
 	convey.Convey("given a sequential int", t, func(c convey.C) {
-		numbers := []int{1, 2, 3, 4, 5, 6, 7, 8}
-		aList := co.OfListWith(numbers...)
+		list1 := []int{1, 2, 3, 4, 5, 6, 7, 8}
+		aList := co.OfListWith(list1...)
 		mList := co.NewAsyncMapSequence[int](aList, func(v int) int {
-			return v
+			return v + 1
 		})
 
-		numbers2 := []int{1, 2, 3, 4, 5}
-		aList2 := co.OfListWith(numbers2...)
+		list2 := []int{1, 2, 3, 4, 5}
+		aList2 := co.OfListWith(list2...)
 
-		pList := co.CombineLatest[int, int](mList, aList2)
+		pList := co.Zip[int, int](mList, aList2)
 
 		convey.Convey("expect resolved list to be identical with given values \n", func() {
+			expected1 := []int{2, 3, 4, 5, 6}
+			expected2 := []int{1, 2, 3, 4, 5, 5, 5, 5}
+
 			actual := [][]int{}
 			for data := range pList.Emit() {
 				actual = append(actual, []int{data.GetValue().V1, data.GetValue().V2})
 			}
 			convey.Printf("resulted list :: %+v \n", actual)
-			checkCombineLatest(c, actual, numbers, numbers2)
+			checkZip(c, actual, expected1, expected2)
 		})
 	})
 }
 
-func TestAsyncCombineLatest3Sequence(t *testing.T) {
+func TestAsyncZip3Sequence(t *testing.T) {
 	convey.Convey("given a sequential int", t, func(c convey.C) {
-		numbers := []int{1, 2, 3, 4, 5}
-		aList := co.OfListWith(numbers...)
+		list1 := []int{1, 2, 3, 4, 5}
+		aList := co.OfListWith(list1...)
 		mList := co.NewAsyncMapSequence[int](aList, func(v int) int {
-			return v
+			return v + 1
 		})
 
-		numbers2 := []int{1, 2, 3, 4, 5}
-		aList2 := co.OfListWith(numbers2...)
+		list2 := []int{1, 2, 3, 4, 5, 6, 7, 8, 9}
+		aList2 := co.OfListWith(list2...)
 
-		numbers3 := []int{1, 2, 3, 4, 5}
-		aList3 := co.OfListWith(numbers3...)
+		list3 := []int{1, 2, 3, 4, 5, 6, 7}
+		aList3 := co.OfListWith(list3...)
 
-		pList := co.CombineLatest3[int, int, int](mList, aList2, aList3)
+		pList := co.Zip3[int, int, int](mList, aList2, aList3)
 
 		convey.Convey("expect resolved list to be identical with given values \n", func() {
+			expected1 := []int{2, 3, 4, 5, 6, 6, 6, 6, 6}
+			expected2 := []int{1, 2, 3, 4, 5, 6, 7, 8, 9}
+			expected3 := []int{1, 2, 3, 4, 5, 6, 7, 7, 7}
+
 			actual := [][]int{}
 			for data := range pList.Emit() {
 				actual = append(actual, []int{data.GetValue().V1, data.GetValue().V2, data.GetValue().V3})
 			}
 			convey.Printf("resulted list %+v \n", actual)
-			checkCombineLatest(c, actual, numbers, numbers2, numbers3)
+			checkZip(c, actual, expected1, expected2, expected3)
 		})
 	})
 }

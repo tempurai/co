@@ -7,14 +7,18 @@ import (
 type asyncZipFn[R any] func([]any, error) (R, error)
 
 type AsyncZipSequence[R any] struct {
+	*asyncSequence[R]
+
 	its         []iteratorAny
 	converterFn asyncZipFn[R]
 }
 
 func NewAsyncZipSequence[R any](its []iteratorAny) *AsyncZipSequence[R] {
-	return &AsyncZipSequence[R]{
+	a := &AsyncZipSequence[R]{
 		its: its,
 	}
+	a.asyncSequence = NewAsyncSequence[R](a)
+	return a
 }
 
 func (a *AsyncZipSequence[R]) setConverterFn(fn asyncZipFn[R]) *AsyncZipSequence[R] {
@@ -25,6 +29,7 @@ func (a *AsyncZipSequence[R]) setConverterFn(fn asyncZipFn[R]) *AsyncZipSequence
 func (a *AsyncZipSequence[R]) iterator() Iterator[R] {
 	it := &asyncZipSequenceIterator[R]{
 		AsyncZipSequence: a,
+		latestData:       make([]any, len(a.its)),
 	}
 	it.asyncSequenceIterator = NewAsyncSequenceIterator[R](it)
 	return it
@@ -41,7 +46,7 @@ func Zip[T1, T2 any](seq1 AsyncSequenceable[T1], seq2 AsyncSequenceable[T2]) *As
 }
 
 func Zip3[T1, T2, T3 any](seq1 AsyncSequenceable[T1], seq2 AsyncSequenceable[T2], seq3 AsyncSequenceable[T3]) *AsyncZipSequence[Type3[T1, T2, T3]] {
-	anyIterators := castToIteratorAny(seq1.iterator(), seq2.iterator())
+	anyIterators := castToIteratorAny(seq1.iterator(), seq2.iterator(), seq3.iterator())
 	converterFn := func(v []any, err error) (Type3[T1, T2, T3], error) {
 		return Type3[T1, T2, T3]{CastOrNil[T1](v[0]), CastOrNil[T2](v[1]), CastOrNil[T3](v[2])}, err
 	}
@@ -53,11 +58,22 @@ type asyncZipSequenceIterator[R any] struct {
 	*asyncSequenceIterator[R]
 
 	*AsyncZipSequence[R]
+	latestData []any
+}
+
+func (a *asyncZipSequenceIterator[R]) copyToLatest(waitedData []Optional[any]) bool {
+	ifUpdated := false
+	for i := range waitedData {
+		if waitedData[i].valid {
+			ifUpdated = true
+			a.latestData[i] = waitedData[i].data
+		}
+	}
+	return ifUpdated
 }
 
 func (a *asyncZipSequenceIterator[R]) next() (*Optional[R], error) {
-	results := make([]any, len(a.its))
-	updated := make([]bool, len(a.its))
+	waitedData := make([]Optional[any], len(a.its))
 
 	wg := sync.WaitGroup{}
 	wg.Add(len(a.its))
@@ -65,20 +81,21 @@ func (a *asyncZipSequenceIterator[R]) next() (*Optional[R], error) {
 	for i, it := range a.its {
 		go func(idx int, it iteratorAny) {
 			defer wg.Done()
-			for op, err := it.nextAny(); op.valid && err != nil; {
-				results[idx] = op.data
-				updated[idx] = true
+			for op, err := it.nextAny(); op.valid; op, err = it.nextAny() {
+				if err != nil {
+					continue
+				}
+				waitedData[idx] = *OptionalOf(op.data)
 				break
 			}
 		}(i, it)
 	}
-
 	wg.Wait()
 
-	if EvertET(updated, false) {
+	if !a.copyToLatest(waitedData) {
 		return NewOptionalEmpty[R](), nil
 	}
 
-	data, err := a.converterFn(results, nil)
+	data, err := a.converterFn(a.latestData, nil)
 	return OptionalOf(data), err
 }
