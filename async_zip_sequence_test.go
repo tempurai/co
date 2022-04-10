@@ -58,7 +58,7 @@ func TestAsyncZip2SequenceWithDifferentLength(t *testing.T) {
 		pList := co.Zip[int, int](mList, aList2)
 
 		convey.Convey("expect resolved list to be identical with given values \n", func() {
-			expected1 := []int{2, 3, 4, 5, 6}
+			expected1 := []int{2, 3, 4, 5, 6, 7, 8, 9}
 			expected2 := []int{1, 2, 3, 4, 5, 5, 5, 5}
 
 			actual := [][]int{}
