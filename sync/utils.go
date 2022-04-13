@@ -34,6 +34,15 @@ func SafeNSend[T any](ch chan T, value T) (closed bool) {
 	return false
 }
 
+func SafeNRead[T any](ch chan T) T {
+	select {
+	case val := <-ch:
+		return val
+	default:
+		return *new(T)
+	}
+}
+
 func SafeClose[T any](ch chan T) (closed bool) {
 	defer func() {
 		if recover() != nil {
