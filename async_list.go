@@ -53,13 +53,6 @@ func (l *List[R]) add(items ...R) {
 	l.list = append(l.list, items...)
 }
 
-func (l *List[R]) swap(items []R) {
-	l.rwmux.Lock()
-	defer l.rwmux.Unlock()
-
-	l.list = items
-}
-
 func (l *List[R]) resizeTo(size int) {
 	l.rwmux.Lock()
 	defer l.rwmux.Unlock()

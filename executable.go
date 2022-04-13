@@ -5,15 +5,14 @@ import (
 )
 
 type executable[R any] struct {
-	fn       func() (R, error)
-	executed bool
+	fn func() (R, error)
 }
 
 func NewExecutor[R any]() *executable[R] {
 	return &executable[R]{}
 }
 
-func (e *executable[R]) setFn(fn func() (R, error)) *executable[R] {
+func (e *executable[R]) SetFn(fn func() (R, error)) *executable[R] {
 	e.fn = fn
 	return e
 }
@@ -25,14 +24,6 @@ func (e *executable[R]) exe() (R, error) {
 		}
 	}()
 	return e.fn()
-}
-
-func (e *executable[R]) setExecuted(b bool) {
-	e.executed = b
-}
-
-func (e *executable[R]) isExecuted() bool {
-	return e.executed
 }
 
 type executablesList[R any] struct {

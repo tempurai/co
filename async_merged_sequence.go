@@ -28,9 +28,6 @@ type asyncMergedSequenceIterator[R any] struct {
 
 	its          []Iterator[R]
 	currentIndex int
-
-	previousData *data[R]
-	preProcessed bool
 }
 
 func (it *asyncMergedSequenceIterator[R]) nextIndex() int {

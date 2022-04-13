@@ -58,7 +58,7 @@ func (it *asyncExecutableIterator[R]) next() *Optional[R] {
 		return NewOptionalEmpty[R]()
 	}
 
-	for val, err := it.nextFn(); ; val, err = it.nextFn() {
+	for val, err := it.nextFn(); it.underlying.preflight(); val, err = it.nextFn() {
 		if err != nil {
 			it.handleError(err)
 			if it.errorMode.shouldSkip() {
