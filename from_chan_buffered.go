@@ -42,7 +42,7 @@ func (a *AsyncBufferedChan[T]) startListening() {
 	})
 }
 
-func (a *AsyncBufferedChan[R]) Done() *AsyncBufferedChan[R] {
+func (a *AsyncBufferedChan[R]) Complete() *AsyncBufferedChan[R] {
 	co_sync.SafeClose(a.sourceCh)
 	return a
 }

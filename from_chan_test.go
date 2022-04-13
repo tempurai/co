@@ -21,7 +21,7 @@ func TestAsyncChannel(t *testing.T) {
 				sourceCh <- val
 				time.Sleep(time.Millisecond * (100 + time.Duration(i)*10))
 			}
-			oChannel.Done()
+			oChannel.Complete()
 		}()
 
 		convey.Convey("expect resolved list to be identical with given values", func() {

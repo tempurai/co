@@ -21,7 +21,7 @@ func Interval(period int) *AsyncInterval[int] {
 	return a
 }
 
-func (a *AsyncInterval[R]) Done() *AsyncInterval[R] {
+func (a *AsyncInterval[R]) Complete() *AsyncInterval[R] {
 	a.ended.Set(true)
 	return a
 }

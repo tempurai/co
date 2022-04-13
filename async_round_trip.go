@@ -70,7 +70,7 @@ func (a *asyncRoundTrip[R, E, T]) startListening() {
 	})
 }
 
-func (a *asyncRoundTrip[R, E, T]) Done() *asyncRoundTrip[R, E, T] {
+func (a *asyncRoundTrip[R, E, T]) Complete() *asyncRoundTrip[R, E, T] {
 	co_sync.SafeClose(a.sourceCh)
 	a.executorPool.Wait().Stop()
 	co_sync.SafeClose(a.interminCh)

@@ -37,6 +37,6 @@ func (as *AsyncData[R]) IsPending() bool {
 	return atomic.LoadInt32(&as.status) == asyncStatusPending
 }
 
-func (as *AsyncData[R]) IsDone() bool {
+func (as *AsyncData[R]) IsComplete() bool {
 	return atomic.LoadInt32(&as.status) == asyncStatusDone
 }

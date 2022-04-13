@@ -19,7 +19,7 @@ func TestAsyncInterval(t *testing.T) {
 				pre = time.Now()
 
 				if counter++; counter == 20 {
-					oChannel.Done()
+					oChannel.Complete()
 					break
 				}
 			}

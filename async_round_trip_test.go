@@ -27,7 +27,7 @@ func TestAsyncRoundTrip(t *testing.T) {
 				time.Sleep(time.Millisecond * (50 + time.Duration(i)*10))
 			}
 			time.Sleep(2 * time.Second)
-			aList.Done()
+			aList.Complete()
 		}()
 
 		convey.Convey("expect resolved list to be identical with given values", func() {

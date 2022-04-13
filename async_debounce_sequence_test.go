@@ -22,7 +22,7 @@ func TestAsyncDebounceSequence(t *testing.T) {
 				sourceCh <- val
 				time.Sleep(time.Millisecond * 100)
 			}
-			oChannel.Done()
+			oChannel.Complete()
 		}()
 
 		convey.Convey("expect resolved list to be identical with given values", func() {
@@ -50,7 +50,7 @@ func TestAsyncDebounceSequenceTolerance(t *testing.T) {
 				sourceCh <- val
 				time.Sleep(time.Millisecond * 100)
 			}
-			oChannel.Done()
+			oChannel.Complete()
 		}()
 
 		convey.Convey("expect resolved list to be identical with given values", func() {

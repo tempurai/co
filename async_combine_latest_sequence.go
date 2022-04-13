@@ -87,12 +87,12 @@ func (a *asyncCombineLatestSequenceIterator[R]) copyDirtyToStore() {
 	defer a.mux.Unlock()
 
 	for i := range a.statusData {
-		if !a.statusData[i].asyncData.IsDone() {
+		if !a.statusData[i].asyncData.IsComplete() {
 			continue
 		}
 
 		a.dataStore[i] = a.statusData[i].asyncData.value.Dequeue()
-		if a.statusData[i].asyncData.value.Len() == 0 && a.statusData[i].asyncData.IsDone() {
+		if a.statusData[i].asyncData.value.Len() == 0 && a.statusData[i].asyncData.IsComplete() {
 			a.statusData[i].asyncData.TransiteTo(asyncStatusIdle)
 		}
 	}

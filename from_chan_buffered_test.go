@@ -16,7 +16,7 @@ func TestAsyncBufferedChan(t *testing.T) {
 		for _, val := range expected {
 			sourceCh <- val
 		}
-		oChannel.Done()
+		oChannel.Complete()
 
 		convey.Convey("expect resolved list to be identical with given values", func() {
 			actual := []int{}

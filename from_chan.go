@@ -18,7 +18,7 @@ func FromChan[R any](ch chan R) *AsyncChannel[R] {
 	return a
 }
 
-func (a *AsyncChannel[R]) Done() *AsyncChannel[R] {
+func (a *AsyncChannel[R]) Complete() *AsyncChannel[R] {
 	co_sync.SafeClose(a.sourceCh)
 	return a
 }
