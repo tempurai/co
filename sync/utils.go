@@ -64,6 +64,14 @@ func SafeFn[E any](fn func() E) (val E, err error) {
 	return
 }
 
+func SafeEFn[E any](fn func() (E, error)) (val E, err error) {
+	if r := recover(); r != nil {
+		err = fmt.Errorf("%w \n go func panic: %+v, stacktrace: %+v", err, r, string(debug.Stack()))
+	}
+	val, err = fn()
+	return
+}
+
 func CondSignal(cond *sync.Cond, fn func()) {
 	cond.L.Lock()
 	fn()

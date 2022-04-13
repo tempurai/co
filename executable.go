@@ -12,11 +12,6 @@ func NewExecutor[R any]() *executable[R] {
 	return &executable[R]{}
 }
 
-func (e *executable[R]) SetFn(fn func() (R, error)) *executable[R] {
-	e.fn = fn
-	return e
-}
-
 func (e *executable[R]) exe() (R, error) {
 	defer func() {
 		if r := recover(); r != nil {
