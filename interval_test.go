@@ -14,7 +14,7 @@ func TestAsyncInterval(t *testing.T) {
 
 		convey.Convey("expect resolved list to be identical with given values", func() {
 			counter, pre, intervals := 0, time.Now(), []int64{}
-			for range oChannel.Emit() {
+			for range oChannel.Iter() {
 				intervals = append(intervals, time.Since(pre).Milliseconds())
 				pre = time.Now()
 

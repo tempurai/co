@@ -20,7 +20,7 @@ func TestAsyncBufferedChan(t *testing.T) {
 
 		convey.Convey("expect resolved list to be identical with given values", func() {
 			actual := []int{}
-			for data := range oChannel.Emit() {
+			for data := range oChannel.Iter() {
 				actual = append(actual, data.GetValue())
 			}
 

@@ -35,7 +35,7 @@ func TestAsyncZip2Sequence(t *testing.T) {
 
 		convey.Convey("expect resolved list to be identical with given values \n", func() {
 			actual := [][]int{}
-			for data := range pList.Emit() {
+			for data := range pList.Iter() {
 				actual = append(actual, []int{data.GetValue().V1, data.GetValue().V2})
 			}
 			convey.Printf("resulted list :: %+v \n", actual)
@@ -62,7 +62,7 @@ func TestAsyncZip2SequenceWithDifferentLength(t *testing.T) {
 			expected2 := []int{1, 2, 3, 4, 5, 5, 5, 5}
 
 			actual := [][]int{}
-			for data := range pList.Emit() {
+			for data := range pList.Iter() {
 				actual = append(actual, []int{data.GetValue().V1, data.GetValue().V2})
 			}
 			convey.Printf("resulted list :: %+v \n", actual)
@@ -93,7 +93,7 @@ func TestAsyncZip3Sequence(t *testing.T) {
 			expected3 := []int{1, 2, 3, 4, 5, 6, 7, 7, 7}
 
 			actual := [][]int{}
-			for data := range pList.Emit() {
+			for data := range pList.Iter() {
 				actual = append(actual, []int{data.GetValue().V1, data.GetValue().V2, data.GetValue().V3})
 			}
 			convey.Printf("resulted list %+v \n", actual)

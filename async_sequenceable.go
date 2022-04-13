@@ -2,7 +2,7 @@ package co
 
 type AsyncSequenceable[R any] interface {
 	iterator() Iterator[R]
-	Emit() <-chan *data[R]
+	Iter() <-chan *data[R]
 }
 
 func toAsyncIterators[R any](cos ...AsyncSequenceable[R]) []Iterator[R] {

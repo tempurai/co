@@ -28,7 +28,7 @@ func TestAsyncDebounceSequence(t *testing.T) {
 		convey.Convey("expect resolved list to be identical with given values", func() {
 			expected := []int{1, 11, 21}
 			actual := []int{}
-			for data := range dList.Emit() {
+			for data := range dList.Iter() {
 				actual = append(actual, data.GetValue())
 			}
 			convey.So(actual, convey.ShouldResemble, expected)
@@ -56,7 +56,7 @@ func TestAsyncDebounceSequenceTolerance(t *testing.T) {
 		convey.Convey("expect resolved list to be identical with given values", func() {
 			expected := []int{1, 2, 3, 13, 14, 15, 25}
 			actual := []int{}
-			for data := range dList.Emit() {
+			for data := range dList.Iter() {
 				actual = append(actual, data.GetValue())
 			}
 			convey.So(actual, convey.ShouldResemble, expected)
