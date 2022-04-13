@@ -24,7 +24,7 @@ func TestAsyncMergedSequence(t *testing.T) {
 			expected := []int{2, 2, 5, 4, 6, 7, 7, 0, 8, 21}
 			actual := []int{}
 			for data := range pList.Iter() {
-				actual = append(actual, data.GetValue())
+				actual = append(actual, data)
 			}
 			convey.So(actual, convey.ShouldResemble, expected)
 

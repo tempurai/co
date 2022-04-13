@@ -1,5 +1,9 @@
 package co
 
+import (
+	co_sync "github.com/tempura-shrimp/co/sync"
+)
+
 type AsyncAdjacentFilterSequence[R any] struct {
 	*asyncSequence[R]
 
@@ -41,33 +45,40 @@ func (it *asyncAdjacentFilterSequenceIterator[R]) preflight() {
 		return
 	}
 
-	for op, err := it.previousIterator.next(); op.valid; op, err = it.previousIterator.next() {
-		if err != nil {
-			continue
-		}
+	for op := it.previousIterator.next(); op.valid; op = it.previousIterator.next() {
 		it.previousData = *op
 		break
 	}
 }
 
-func (it *asyncAdjacentFilterSequenceIterator[R]) next() (*Optional[R], error) {
+func (it *asyncAdjacentFilterSequenceIterator[R]) next() *Optional[R] {
 	it.preflight()
 
 	if !it.previousData.valid {
-		return NewOptionalEmpty[R](), nil
+		return NewOptionalEmpty[R]()
 	}
 
 	previousValue := it.previousData.data
-	for op, err := it.previousIterator.next(); op.valid; op, err = it.previousIterator.next() {
-		if err != nil {
-			continue
-		}
+	for op := it.previousIterator.next(); op.valid; op = it.previousIterator.next() {
 		it.previousData = *op
-		if it.predictorFn(previousValue, op.data) {
-			return OptionalOf(previousValue), nil
+
+		match, err := co_sync.SafeFn(func() bool {
+			return it.predictorFn(previousValue, op.data)
+		})
+		if err != nil {
+			it.handleError(err)
+			if it.errorMode.shouldSkip() {
+				continue
+			}
+			if it.errorMode.shouldStop() {
+				return NewOptionalEmpty[R]()
+			}
+		}
+		if match {
+			return OptionalOf(previousValue)
 		}
 	}
 
 	it.previousData = *NewOptionalEmpty[R]()
-	return OptionalOf(previousValue), nil
+	return OptionalOf(previousValue)
 }

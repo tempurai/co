@@ -61,15 +61,15 @@ type asyncBufferedChanIterator[R any] struct {
 	*AsyncBufferedChan[R]
 }
 
-func (it *asyncBufferedChanIterator[R]) next() (*Optional[R], error) {
+func (it *asyncBufferedChanIterator[R]) next() *Optional[R] {
 	if it.sourceEnded.Get() && it.bufferedData.Len() == 0 {
-		return NewOptionalEmpty[R](), nil
+		return NewOptionalEmpty[R]()
 	}
 	co_sync.CondWait(it.bufferWait, func() bool {
 		return !it.sourceEnded.Get() && it.bufferedData.Len() == 0
 	})
 	if it.sourceEnded.Get() && it.bufferedData.Len() == 0 {
-		return NewOptionalEmpty[R](), nil
+		return NewOptionalEmpty[R]()
 	}
-	return OptionalOf(it.bufferedData.Dequeue()), nil
+	return OptionalOf(it.bufferedData.Dequeue())
 }

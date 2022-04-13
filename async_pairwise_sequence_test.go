@@ -22,7 +22,7 @@ func TestAsyncPairwiseSequence(t *testing.T) {
 
 			actual := [][]string{}
 			for data := range pList.Iter() {
-				actual = append(actual, data.GetValue())
+				actual = append(actual, data)
 			}
 			convey.So(actual, convey.ShouldResemble, expected)
 

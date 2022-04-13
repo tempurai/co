@@ -47,18 +47,14 @@ func (it *asyncPartitionSequenceIterator[T, R]) nextIndex() int {
 	return it.currentIndex
 }
 
-func (it *asyncPartitionSequenceIterator[T, R]) getNextPrevious() (*Optional[T], error) {
+func (it *asyncPartitionSequenceIterator[T, R]) getNextPrevious() *Optional[T] {
 	return it.previousIterators[it.nextIndex()].next()
 }
 
-func (it *asyncPartitionSequenceIterator[T, R]) next() (*Optional[R], error) {
+func (it *asyncPartitionSequenceIterator[T, R]) next() *Optional[R] {
 	results := make(R, 0)
 
-	for op, err := it.getNextPrevious(); op.valid; op, err = it.getNextPrevious() {
-		if err != nil {
-			continue
-		}
-
+	for op := it.getNextPrevious(); op.valid; op = it.getNextPrevious() {
 		results = append(results, op.data)
 		if len(results) == it.size {
 			break
@@ -66,8 +62,8 @@ func (it *asyncPartitionSequenceIterator[T, R]) next() (*Optional[R], error) {
 	}
 
 	if len(results) == 0 {
-		return NewOptionalEmpty[R](), nil
+		return NewOptionalEmpty[R]()
 	}
 
-	return OptionalOf(results), nil
+	return OptionalOf(results)
 }

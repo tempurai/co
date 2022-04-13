@@ -1,5 +1,7 @@
 package co
 
+import co_sync "github.com/tempura-shrimp/co/sync"
+
 type AsyncMapSequence[R, T any] struct {
 	*asyncSequence[T]
 
@@ -35,12 +37,21 @@ type asyncMapSequenceIterator[R, T any] struct {
 	*AsyncMapSequence[R, T]
 }
 
-func (it *asyncMapSequenceIterator[R, T]) next() (*Optional[T], error) {
-	for op, err := it.previousIterator.next(); op.valid; op, err = it.previousIterator.next() {
+func (it *asyncMapSequenceIterator[R, T]) next() *Optional[T] {
+	for op := it.previousIterator.next(); op.valid; op = it.previousIterator.next() {
+		mapped, err := co_sync.SafeFn(func() T {
+			return it.predictorFn(op.data)
+		})
 		if err != nil {
-			return nil, err
+			it.handleError(err)
+			if it.errorMode.shouldSkip() {
+				continue
+			}
+			if it.errorMode.shouldStop() {
+				return NewOptionalEmpty[T]()
+			}
 		}
-		return OptionalOf(it.predictorFn(op.data)), nil
+		return OptionalOf(mapped)
 	}
-	return NewOptionalEmpty[T](), nil
+	return NewOptionalEmpty[T]()
 }

@@ -37,11 +37,11 @@ type asyncChannelIterator[R any] struct {
 	*AsyncChannel[R]
 }
 
-func (it *asyncChannelIterator[R]) next() (*Optional[R], error) {
+func (it *asyncChannelIterator[R]) next() *Optional[R] {
 	val, ok := <-it.sourceCh
 	if !ok {
-		return NewOptionalEmpty[R](), nil
+		return NewOptionalEmpty[R]()
 	}
 
-	return OptionalOf(val), nil
+	return OptionalOf(val)
 }

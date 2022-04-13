@@ -35,26 +35,20 @@ func (it *asyncPairwiseSequenceIterator[R, T]) preflight() {
 		return
 	}
 
-	for op, err := it.previousIterator.next(); op.valid; op, err = it.previousIterator.next() {
-		if err != nil {
-			continue
-		}
+	for op := it.previousIterator.next(); op.valid; op = it.previousIterator.next() {
 		it.previousData = *op
 		break
 	}
 }
 
-func (it *asyncPairwiseSequenceIterator[R, T]) next() (*Optional[T], error) {
+func (it *asyncPairwiseSequenceIterator[R, T]) next() *Optional[T] {
 	it.preflight()
 
 	previousData := it.previousData.data
-	for op, err := it.previousIterator.next(); op.valid; op, err = it.previousIterator.next() {
-		if err != nil {
-			return NewOptionalEmpty[T](), nil
-		}
+	for op := it.previousIterator.next(); op.valid; op = it.previousIterator.next() {
 		it.previousData = *op
-		return OptionalOf(T{previousData, op.data}), nil
+		return OptionalOf(T{previousData, op.data})
 	}
 
-	return NewOptionalEmpty[T](), nil
+	return NewOptionalEmpty[T]()
 }

@@ -7,7 +7,7 @@ import (
 	co_sync "github.com/tempura-shrimp/co/sync"
 )
 
-type asyncCombineLatestFn[R any] func([]any, error) (R, error)
+type asyncCombineLatestFn[R any] func([]any) R
 
 type AsyncCombineLatestSequence[R any] struct {
 	*asyncSequence[R]
@@ -47,8 +47,8 @@ func (a *AsyncCombineLatestSequence[R]) iterator() Iterator[R] {
 
 func CombineLatest[T1, T2 any](seq1 AsyncSequenceable[T1], seq2 AsyncSequenceable[T2]) *AsyncCombineLatestSequence[Type2[T1, T2]] {
 	anyIterators := castToIteratorAny(seq1.iterator(), seq2.iterator())
-	converterFn := func(v []any, err error) (Type2[T1, T2], error) {
-		return Type2[T1, T2]{CastOrNil[T1](v[0]), CastOrNil[T2](v[1])}, err
+	converterFn := func(v []any) Type2[T1, T2] {
+		return Type2[T1, T2]{CastOrNil[T1](v[0]), CastOrNil[T2](v[1])}
 	}
 
 	a := NewAsyncCombineLatestSequence[Type2[T1, T2]](anyIterators).setConverterFn(converterFn)
@@ -57,8 +57,8 @@ func CombineLatest[T1, T2 any](seq1 AsyncSequenceable[T1], seq2 AsyncSequenceabl
 
 func CombineLatest3[T1, T2, T3 any](seq1 AsyncSequenceable[T1], seq2 AsyncSequenceable[T2], seq3 AsyncSequenceable[T3]) *AsyncCombineLatestSequence[Type3[T1, T2, T3]] {
 	anyIterators := castToIteratorAny(seq1.iterator(), seq2.iterator(), seq3.iterator())
-	converterFn := func(v []any, err error) (Type3[T1, T2, T3], error) {
-		return Type3[T1, T2, T3]{CastOrNil[T1](v[0]), CastOrNil[T2](v[1]), CastOrNil[T3](v[2])}, err
+	converterFn := func(v []any) Type3[T1, T2, T3] {
+		return Type3[T1, T2, T3]{CastOrNil[T1](v[0]), CastOrNil[T2](v[1]), CastOrNil[T3](v[2])}
 	}
 	a := NewAsyncCombineLatestSequence[Type3[T1, T2, T3]](anyIterators).setConverterFn(converterFn)
 	return a
@@ -130,11 +130,7 @@ func (a *asyncCombineLatestSequenceIterator[R]) startFirstPass() {
 		go func(idx int, it iteratorAny) {
 			defer wg.Done()
 
-			for op, err := it.nextAny(); op.valid; op, err = it.nextAny() {
-				if err != nil {
-					continue
-				}
-
+			for op := it.nextAny(); op.valid; op = it.nextAny() {
 				a.statusData[idx].asyncData.value.Enqueue(op.data)
 				break
 			}
@@ -166,11 +162,7 @@ func (a *asyncCombineLatestSequenceIterator[R]) pass() {
 		a.statusData[i].asyncData.TransiteTo(asyncStatusPending)
 		go func(idx int, statusData *combineLatestAsyncData, it iteratorAny) {
 
-			for op, err := it.nextAny(); op.valid; op, err = it.nextAny() {
-				if err != nil {
-					continue
-				}
-
+			for op := it.nextAny(); op.valid; op = it.nextAny() {
 				co_sync.CondBoardcast(a.bufferWait, func() {
 					a.mux.Lock()
 					defer a.mux.Unlock()
@@ -192,7 +184,7 @@ func (a *asyncCombineLatestSequenceIterator[R]) pass() {
 	}
 }
 
-func (a *asyncCombineLatestSequenceIterator[R]) next() (*Optional[R], error) {
+func (a *asyncCombineLatestSequenceIterator[R]) next() *Optional[R] {
 	if !a.allSourcesEneded() && !a.hasQueuedData() {
 		a.pass()
 		co_sync.CondWait(a.bufferWait, func() bool {
@@ -200,10 +192,10 @@ func (a *asyncCombineLatestSequenceIterator[R]) next() (*Optional[R], error) {
 		})
 	}
 	if a.allSourcesEneded() && !a.hasQueuedData() {
-		return NewOptionalEmpty[R](), nil
+		return NewOptionalEmpty[R]()
 	}
 
 	a.copyDirtyToStore()
-	data, err := a.converterFn(a.dataStore, nil)
-	return OptionalOf(data), err
+	data := a.converterFn(a.dataStore)
+	return OptionalOf(data)
 }

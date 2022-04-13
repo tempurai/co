@@ -43,16 +43,16 @@ type asyncIntervalIterator[R any] struct {
 	timer *time.Ticker
 }
 
-func (it *asyncIntervalIterator[R]) cleanUp() (*Optional[R], error) {
+func (it *asyncIntervalIterator[R]) cleanUp() *Optional[R] {
 	it.timer.Stop()
-	return NewOptionalEmpty[R](), nil
+	return NewOptionalEmpty[R]()
 }
 
-func (it *asyncIntervalIterator[R]) next() (*Optional[R], error) {
+func (it *asyncIntervalIterator[R]) next() *Optional[R] {
 	if it.ended.Get() {
 		return it.cleanUp()
 	}
 
 	<-it.timer.C
-	return OptionalOf(*new(R)), nil
+	return OptionalOf(*new(R))
 }

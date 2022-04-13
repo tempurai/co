@@ -19,7 +19,7 @@ func TestAsyncMapSequence(t *testing.T) {
 		convey.Convey("expect resolved list to be identical with given values", func() {
 			idx := 0
 			for data := range mList.Iter() {
-				convey.So(data.GetValue(), convey.ShouldEqual, strconv.Itoa(numbers[idx]))
+				convey.So(data, convey.ShouldEqual, strconv.Itoa(numbers[idx]))
 				idx++
 			}
 		})

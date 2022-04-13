@@ -1,12 +1,13 @@
 package co
 
 type Iterator[T any] interface {
-	next() (*Optional[T], error)
-	Iter() <-chan *data[T]
+	next() *Optional[T]
+	Iter() <-chan T
+	EIter() <-chan *data[T]
 }
 
 type iteratorAny interface {
-	nextAny() (*Optional[any], error)
+	nextAny() *Optional[any]
 }
 
 func castToIteratorAny(vals ...any) []iteratorAny {

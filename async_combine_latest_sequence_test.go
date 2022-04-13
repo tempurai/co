@@ -36,7 +36,7 @@ func TestAsyncCombineLatest2Sequence(t *testing.T) {
 		convey.Convey("expect resolved list to be identical with given values \n", func() {
 			actual := [][]int{}
 			for data := range pList.Iter() {
-				actual = append(actual, []int{data.GetValue().V1, data.GetValue().V2})
+				actual = append(actual, []int{data.V1, data.V2})
 			}
 			convey.Printf("resulted list :: %+v \n", actual)
 			checkCombineLatest(c, actual, numbers, numbers2)
@@ -60,7 +60,7 @@ func TestAsyncCombineLatest2SequenceWithDifferentLength(t *testing.T) {
 		convey.Convey("expect resolved list to be identical with given values \n", func() {
 			actual := [][]int{}
 			for data := range pList.Iter() {
-				actual = append(actual, []int{data.GetValue().V1, data.GetValue().V2})
+				actual = append(actual, []int{data.V1, data.V2})
 			}
 			convey.Printf("resulted list :: %+v \n", actual)
 			checkCombineLatest(c, actual, numbers, numbers2)
@@ -87,7 +87,7 @@ func TestAsyncCombineLatest3Sequence(t *testing.T) {
 		convey.Convey("expect resolved list to be identical with given values \n", func() {
 			actual := [][]int{}
 			for data := range pList.Iter() {
-				actual = append(actual, []int{data.GetValue().V1, data.GetValue().V2, data.GetValue().V3})
+				actual = append(actual, []int{data.V1, data.V2, data.V3})
 			}
 			convey.Printf("resulted list %+v \n", actual)
 			checkCombineLatest(c, actual, numbers, numbers2, numbers3)

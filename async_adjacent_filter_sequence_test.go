@@ -22,7 +22,7 @@ func TestAsyncAdjacentFilterSequence(t *testing.T) {
 			expected := []int{1, 4, 5, 6, 7, 8, 9}
 			actual := []int{}
 			for data := range pList.Iter() {
-				actual = append(actual, data.GetValue())
+				actual = append(actual, data)
 			}
 			convey.So(actual, convey.ShouldResemble, expected)
 

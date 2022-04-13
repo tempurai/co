@@ -24,8 +24,12 @@ func (a *asyncSequence[R]) defaultIterator() Iterator[R] {
 	return a._defaultIterator
 }
 
-func (a *asyncSequence[R]) Iter() <-chan *data[R] {
+func (a *asyncSequence[R]) Iter() <-chan R {
 	return a.defaultIterator().Iter()
+}
+
+func (a *asyncSequence[R]) EIter() <-chan *data[R] {
+	return a.defaultIterator().EIter()
 }
 
 func (a *asyncSequence[R]) AdjacentFilter(fn func(R, R) bool) *AsyncAdjacentFilterSequence[R] {
@@ -37,53 +41,82 @@ func (a *asyncSequence[R]) Merge(its ...AsyncSequenceable[R]) *AsyncMergedSequen
 	return NewAsyncMergedSequence(its...)
 }
 
+type ErrorMode int
+
+const (
+	ErrorModeSkip ErrorMode = iota
+	ErrorModeStop
+)
+
+func (e ErrorMode) shouldSkip() bool {
+	return e == ErrorModeSkip
+}
+
+func (e ErrorMode) shouldStop() bool {
+	return e == ErrorModeStop
+}
+
 type asyncSequenceIterator[T any] struct {
 	delegated Iterator[T]
 	mux       sync.RWMutex
 	runOnce   sync.Once
 
-	emitCh []chan *data[T]
+	emitCh   []chan T
+	emitECh  []chan *data[T]
+	dataPool sync.Pool
 
+	errorMode ErrorMode
 	successFn func(T)
 	failedFn  func(error)
 }
 
 func NewAsyncSequenceIterator[T any](it Iterator[T]) *asyncSequenceIterator[T] {
-	return &asyncSequenceIterator[T]{
+	a := &asyncSequenceIterator[T]{
 		delegated: it,
-		emitCh:    make([]chan *data[T], 0),
-
-		successFn: func(t T) {},
-		failedFn:  func(err error) {},
+		emitCh:    make([]chan T, 0),
+		emitECh:   make([]chan *data[T], 0),
+		dataPool:  sync.Pool{},
 	}
+	a.dataPool.New = func() any { return NewData[T]() }
+	return a
 }
 
-func (it *asyncSequenceIterator[T]) nextAny() (*Optional[any], error) {
-	oVal, err := it.delegated.next()
-	return oVal.AsOptional(), err
+func (it *asyncSequenceIterator[T]) nextAny() *Optional[any] {
+	return it.delegated.next().AsOptional()
+}
+
+func (it *asyncSequenceIterator[T]) handleError(err error) {
+	it.failedFn(err)
+
+	d := it.dataPool.Get().(*data[T]).set(*new(T), err)
+	it.emitData(d)
 }
 
 func (it *asyncSequenceIterator[T]) emitData(d *data[T]) {
 	it.mux.RLock()
 	defer it.mux.RUnlock()
 
+	for i := range it.emitECh {
+		co_sync.SafeSend(it.emitECh[i], d)
+	}
+	if d.err != nil {
+		return
+	}
+
 	for i := range it.emitCh {
-		co_sync.SafeSend(it.emitCh[i], d)
+		co_sync.SafeSend(it.emitCh[i], d.GetValue())
 	}
 }
 
 func (it *asyncSequenceIterator[T]) startListening() {
 	it.runOnce.Do(func() {
 		co_sync.SafeGo(func() {
-			for op, err := it.delegated.next(); op.valid; op, err = it.delegated.next() {
-				// Channel
-				it.emitData(NewDataWith(op.data, err))
+			for op := it.delegated.next(); op.valid; op = it.delegated.next() {
+				d := it.dataPool.Get().(*data[T]).set(op.data, nil)
+				it.emitData(d)
 
-				// Function
-				if err == nil {
-					it.successFn(op.data)
-				} else {
-					it.failedFn(err)
+				if it.successFn != nil {
+					co_sync.SafeGo(func() { it.successFn(op.data) })
 				}
 			}
 			for _, ch := range it.emitCh {
@@ -93,12 +126,23 @@ func (it *asyncSequenceIterator[T]) startListening() {
 	})
 }
 
-func (it *asyncSequenceIterator[T]) Iter() <-chan *data[T] {
+func (it *asyncSequenceIterator[T]) Iter() <-chan T {
+	it.mux.Lock()
+	defer it.mux.Unlock()
+
+	eCh := make(chan T)
+	it.emitCh = append(it.emitCh, eCh)
+
+	it.startListening()
+	return eCh
+}
+
+func (it *asyncSequenceIterator[T]) EIter() <-chan *data[T] {
 	it.mux.Lock()
 	defer it.mux.Unlock()
 
 	eCh := make(chan *data[T])
-	it.emitCh = append(it.emitCh, eCh)
+	it.emitECh = append(it.emitECh, eCh)
 
 	it.startListening()
 	return eCh

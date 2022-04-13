@@ -1,31 +1,38 @@
 package co
 
-import co_sync "github.com/tempura-shrimp/co/sync"
+import (
+	"sync"
+
+	co_sync "github.com/tempura-shrimp/co/sync"
+)
 
 type actionRace[R any] struct {
 	*Action[*data[R]]
 
 	it        executableListIterator[R]
 	ignoreErr bool
+	runOnce   sync.Once
 }
 
 func (a *actionRace[R]) run() {
 	dataCh := make(chan *data[R])
-	ifData := false
+	ifData := co_sync.AtomicBool{}
 
 	for i := 0; a.it.preflight(); i++ {
 		go func(i int) {
-			if ifData {
+			if ifData.Get() {
 				return
 			}
 
 			val, err := a.it.exeAt(i)
-			if (err != nil && !a.ignoreErr) || ifData {
+			if (err != nil && !a.ignoreErr) || ifData.Get() {
 				return
 			}
 
-			co_sync.SafeSend(dataCh, NewDataWith(val, err))
-			ifData = true
+			ifData.Set(true)
+			a.runOnce.Do(func() {
+				co_sync.SafeSend(dataCh, NewDataWith(val, err))
+			})
 		}(i)
 	}
 

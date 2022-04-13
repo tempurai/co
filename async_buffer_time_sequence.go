@@ -60,11 +60,7 @@ func (it *asyncBufferTimeSequenceIterator[R, T]) startBuffer() {
 		it.previousTime = time.Now()
 
 		co_sync.SafeGo(func() {
-			for op, err := it.previousIterator.next(); op.valid; op, err = it.previousIterator.next() {
-				if err != nil {
-					continue
-				}
-
+			for op := it.previousIterator.next(); op.valid; op = it.previousIterator.next() {
 				reachedInterval := it.intervalPassed()
 				if it.bufferedData.len() == 0 || reachedInterval {
 					it.bufferedData.add(T{})
@@ -82,7 +78,7 @@ func (it *asyncBufferTimeSequenceIterator[R, T]) startBuffer() {
 	})
 }
 
-func (it *asyncBufferTimeSequenceIterator[R, T]) next() (*Optional[T], error) {
+func (it *asyncBufferTimeSequenceIterator[R, T]) next() *Optional[T] {
 	it.startBuffer()
 
 	co_sync.CondWait(it.bufferWait, func() bool {
@@ -90,8 +86,8 @@ func (it *asyncBufferTimeSequenceIterator[R, T]) next() (*Optional[T], error) {
 	})
 
 	if it.sourceEnded && it.bufferedData.len() == 0 {
-		return NewOptionalEmpty[T](), nil
+		return NewOptionalEmpty[T]()
 	}
 
-	return OptionalOf(it.bufferedData.popFirst()), nil
+	return OptionalOf(it.bufferedData.popFirst())
 }

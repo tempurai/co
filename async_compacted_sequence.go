@@ -1,5 +1,7 @@
 package co
 
+import co_sync "github.com/tempura-shrimp/co/sync"
+
 type AsyncCompactedSequence[R comparable] struct {
 	*asyncSequence[R]
 
@@ -35,15 +37,25 @@ type asyncCompactedSequenceIterator[R comparable] struct {
 	*AsyncCompactedSequence[R]
 }
 
-func (it *asyncCompactedSequenceIterator[R]) next() (*Optional[R], error) {
-	for op, err := it.previousIterator.next(); op.valid; op, err = it.previousIterator.next() {
+func (it *asyncCompactedSequenceIterator[R]) next() *Optional[R] {
+	for op := it.previousIterator.next(); op.valid; op = it.previousIterator.next() {
+		match, err := co_sync.SafeFn(func() bool {
+			return it.predictorFn(op.data)
+		})
 		if err != nil {
-			return nil, err
+			it.handleError(err)
+			if it.errorMode.shouldSkip() {
+				continue
+			}
+			if it.errorMode.shouldStop() {
+				return NewOptionalEmpty[R]()
+			}
 		}
-		if !it.predictorFn(op.data) {
+
+		if !match {
 			continue
 		}
-		return op, nil
+		return op
 	}
-	return NewOptionalEmpty[R](), nil
+	return NewOptionalEmpty[R]()
 }

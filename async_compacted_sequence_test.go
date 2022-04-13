@@ -19,7 +19,7 @@ func TestAsyncCompactedSequence(t *testing.T) {
 			expected := []*vData{{1}, {4}, {3245}, {6}, {7}, {32}, {4}}
 			actual := []*vData{}
 			for data := range pList.Iter() {
-				actual = append(actual, data.GetValue())
+				actual = append(actual, data)
 			}
 			convey.So(actual, convey.ShouldResemble, expected)
 
@@ -37,7 +37,7 @@ func TestAsyncCompactedSequenceStruct(t *testing.T) {
 			expected := []vData{{1}, {4}, {3245}, {6}, {7}, {32}, {4}}
 			actual := []vData{}
 			for data := range pList.Iter() {
-				actual = append(actual, data.GetValue())
+				actual = append(actual, data)
 			}
 			convey.So(actual, convey.ShouldResemble, expected)
 
@@ -55,7 +55,7 @@ func TestAsyncCompactedSequencePrimitiveTypes(t *testing.T) {
 			expected := []int{1, 23, 5, 8, 1, 3, 40, 73, 12, 32345, 123, 123, 324, 1, 5, 6}
 			actual := []int{}
 			for data := range pList.Iter() {
-				actual = append(actual, data.GetValue())
+				actual = append(actual, data)
 			}
 			convey.So(actual, convey.ShouldResemble, expected)
 

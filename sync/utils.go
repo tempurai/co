@@ -56,6 +56,14 @@ func SafeGo(fn func()) {
 	}()
 }
 
+func SafeFn[E any](fn func() E) (val E, err error) {
+	if r := recover(); r != nil {
+		err = fmt.Errorf("go func panic: %+v, stacktrace: %+v", r, string(debug.Stack()))
+	}
+	val = fn()
+	return
+}
+
 func CondSignal(cond *sync.Cond, fn func()) {
 	cond.L.Lock()
 	fn()

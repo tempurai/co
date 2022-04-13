@@ -29,10 +29,7 @@ func NewAsyncMulticastSequence[R any](it AsyncSequenceable[R]) *AsyncMulticastSe
 func (a *AsyncMulticastSequence[T]) startListening() {
 	a.runOnce.Do(func() {
 		co_sync.SafeGo(func() {
-			for op, err := a.previousIterator.next(); op.valid; op, err = a.previousIterator.next() {
-				if err != nil {
-					continue
-				}
+			for op := a.previousIterator.next(); op.valid; op = a.previousIterator.next() {
 				co_sync.CondBoardcast(a.bufferWait, func() {
 					a.bufferedQueue.Enqueue(op.data)
 				})
@@ -72,14 +69,14 @@ type asyncMulticastSequenceIterator[R any] struct {
 	receiver *queue.QueueReceiver[R]
 }
 
-func (it *asyncMulticastSequenceIterator[R]) next() (*Optional[R], error) {
+func (it *asyncMulticastSequenceIterator[R]) next() *Optional[R] {
 	co_sync.CondWait(it.bufferWait, func() bool {
 		return !it.sourceEnded && it.receiver.IsEmpty()
 	})
 
 	if it.sourceEnded && it.receiver.IsEmpty() {
-		return NewOptionalEmpty[R](), nil
+		return NewOptionalEmpty[R]()
 	}
 
-	return OptionalOf(it.receiver.Dequeue()), nil
+	return OptionalOf(it.receiver.Dequeue())
 }

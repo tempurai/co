@@ -46,12 +46,30 @@ type asyncExecutableIterator[R any] struct {
 	underlying *iterativeListIterator[*executable[R]]
 }
 
-func (it *asyncExecutableIterator[R]) next() (*Optional[R], error) {
+func (it *asyncExecutableIterator[R]) nextFn() (R, error) {
+	defer func() { atomic.AddInt32(&it.underlying.currentIndex, 1) }()
+
+	val, err := it.executeAt(int(it.underlying.currentIndex))
+	return val, err
+}
+
+func (it *asyncExecutableIterator[R]) next() *Optional[R] {
 	if !it.underlying.preflight() {
-		return NewOptionalEmpty[R](), nil
+		return NewOptionalEmpty[R]()
 	}
 
-	defer func() { atomic.AddInt32(&it.underlying.currentIndex, 1) }()
-	val, err := it.executeAt(int(it.underlying.currentIndex))
-	return OptionalOf(val), err
+	for val, err := it.nextFn(); ; val, err = it.nextFn() {
+		if err != nil {
+			it.handleError(err)
+			if it.errorMode.shouldSkip() {
+				continue
+			}
+			if it.errorMode.shouldStop() {
+				return NewOptionalEmpty[R]()
+			}
+		}
+		return OptionalOf(val)
+	}
+
+	return NewOptionalEmpty[R]()
 }

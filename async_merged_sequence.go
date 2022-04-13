@@ -44,16 +44,13 @@ func (it *asyncMergedSequenceIterator[R]) nextIndex() int {
 	return it.currentIndex
 }
 
-func (it *asyncMergedSequenceIterator[R]) next() (*Optional[R], error) {
+func (it *asyncMergedSequenceIterator[R]) next() *Optional[R] {
 	for range it.its {
-		op, err := it.its[it.nextIndex()].next()
-		if err != nil {
-			return nil, err
-		}
+		op := it.its[it.nextIndex()].next()
 		if !op.valid {
 			continue
 		}
-		return op, nil
+		return op
 	}
-	return NewOptionalEmpty[R](), nil
+	return NewOptionalEmpty[R]()
 }

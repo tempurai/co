@@ -31,11 +31,7 @@ type asyncFlattenSequenceIterator[R any, T []R] struct {
 }
 
 func (it *asyncFlattenSequenceIterator[R, T]) preflight() bool {
-	for op, err := it.previousIterator.next(); op.valid; op, err = it.previousIterator.next() {
-		if err != nil {
-			continue
-		}
-
+	for op := it.previousIterator.next(); op.valid; op = it.previousIterator.next() {
 		if len(op.data) > 0 {
 			it.bufferedData = append(it.bufferedData, op.data...)
 			return true
@@ -44,15 +40,15 @@ func (it *asyncFlattenSequenceIterator[R, T]) preflight() bool {
 	return false
 }
 
-func (it *asyncFlattenSequenceIterator[R, T]) next() (*Optional[R], error) {
+func (it *asyncFlattenSequenceIterator[R, T]) next() *Optional[R] {
 	if len(it.bufferedData) == 0 {
 		if !it.preflight() {
-			return NewOptionalEmpty[R](), nil
+			return NewOptionalEmpty[R]()
 		}
 	}
 
 	result, nextBuffer := it.bufferedData[0], it.bufferedData[1:]
 	it.bufferedData = nextBuffer
 
-	return OptionalOf(result), nil
+	return OptionalOf(result)
 }

@@ -104,11 +104,11 @@ func (it *iterativeListIterator[R]) preflight() bool {
 	return atomic.LoadInt32(&it.currentIndex) < int32(it.len())
 }
 
-func (it *iterativeListIterator[R]) next() (*Optional[R], error) {
+func (it *iterativeListIterator[R]) next() *Optional[R] {
 	if !it.preflight() {
-		return NewOptionalEmpty[R](), nil
+		return NewOptionalEmpty[R]()
 	}
 
 	defer func() { atomic.AddInt32(&it.currentIndex, 1) }()
-	return OptionalOf(it.list[it.currentIndex]), nil
+	return OptionalOf(it.list[it.currentIndex])
 }

@@ -15,7 +15,7 @@ func TestAsyncList(t *testing.T) {
 		convey.Convey("expect resolved list to be identical with given values", func() {
 			actual := []int{}
 			for data := range aList.Iter() {
-				actual = append(actual, data.GetValue())
+				actual = append(actual, data)
 			}
 			convey.So(actual, convey.ShouldResemble, expected)
 		})

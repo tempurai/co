@@ -29,7 +29,7 @@ func TestAsyncDebounceSequence(t *testing.T) {
 			expected := []int{1, 11, 21}
 			actual := []int{}
 			for data := range dList.Iter() {
-				actual = append(actual, data.GetValue())
+				actual = append(actual, data)
 			}
 			convey.So(actual, convey.ShouldResemble, expected)
 		})
@@ -57,7 +57,7 @@ func TestAsyncDebounceSequenceTolerance(t *testing.T) {
 			expected := []int{1, 2, 3, 13, 14, 15, 25}
 			actual := []int{}
 			for data := range dList.Iter() {
-				actual = append(actual, data.GetValue())
+				actual = append(actual, data)
 			}
 			convey.So(actual, convey.ShouldResemble, expected)
 		})

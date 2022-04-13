@@ -15,10 +15,10 @@ func TestAsyncRoundTrip(t *testing.T) {
 		source := []int{1, 4, 5, 6, 7, 2, 2, 3, 4, 5, 12, 4, 2, 3, 43, 127, 37598, 34, 34, 123, 123}
 		actual := []int{}
 
-		callbackFn := func(v int) {
+		callbackFn := func(v int, _ error) {
 			actual = append(actual, v)
 		}
-		aList := co.NewAsyncRoundTrip[int](callbackFn)
+		aList := co.NewAsyncRoundTrip[int, int]()
 
 		go func() {
 			time.Sleep(time.Second)
@@ -32,9 +32,9 @@ func TestAsyncRoundTrip(t *testing.T) {
 
 		convey.Convey("expect resolved list to be identical with given values", func() {
 			triggered := 0
-			aList.Handle(func(i int) int {
+			aList.Handle(func(i int) (int, error) {
 				triggered++
-				return i + 1
+				return i + 1, nil
 			})
 
 		})

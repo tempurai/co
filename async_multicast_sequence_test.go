@@ -24,7 +24,7 @@ func TestAsyncMulticastSequence(t *testing.T) {
 
 			actual := []string{}
 			for data := range cc1.Iter() {
-				actual = append(actual, data.GetValue())
+				actual = append(actual, data)
 			}
 			convey.So(actual, convey.ShouldResemble, expected)
 		})
@@ -34,7 +34,7 @@ func TestAsyncMulticastSequence(t *testing.T) {
 
 			actual := []string{}
 			for data := range cc2.Iter() {
-				actual = append(actual, data.GetValue())
+				actual = append(actual, data)
 			}
 			convey.So(actual, convey.ShouldResemble, expected)
 		})

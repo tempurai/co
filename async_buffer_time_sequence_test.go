@@ -29,7 +29,7 @@ func TestAsyncBufferTimeSequence(t *testing.T) {
 			expected := [][]int{{1, 4, 5, 6, 7, 2, 2, 3}, {4, 5, 12, 4, 2}, {3, 43, 127, 37598, 34}, {34, 123, 123}}
 			actual := [][]int{}
 			for data := range bList.Iter() {
-				actual = append(actual, data.GetValue())
+				actual = append(actual, data)
 			}
 			convey.So(actual, convey.ShouldResemble, expected)
 		})
