@@ -93,6 +93,8 @@ func (it *asyncSequenceIterator[T]) handleError(err error) {
 }
 
 func (it *asyncSequenceIterator[T]) emitData(d *data[T]) {
+	defer func() { it.dataPool.Put(d) }()
+
 	it.mux.RLock()
 	defer it.mux.RUnlock()
 
