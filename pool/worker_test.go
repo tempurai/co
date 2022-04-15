@@ -33,7 +33,7 @@ func TestWorkerPool(t *testing.T) {
 	})
 }
 
-func BenchmarkHeavyWorkPoolWithFib(b *testing.B) {
+func BenchmarkWorkPoolWithFib(b *testing.B) {
 	p := pool.NewWorkerPool[int](256)
 
 	b.ResetTimer()

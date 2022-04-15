@@ -160,15 +160,17 @@ for data := range bList.Iter() {
 
 ## Benchmark
 
+Pool benchmark
+
 ```
 goos: darwin
 goarch: amd64
 pkg: github.com/tempura-shrimp/co/pool
 cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
-BenchmarkSimpleWorkPoolWithFib-12          10000            176316 ns/op
-BenchmarkFibSequence-12                    10000            959778 ns/op
+BenchmarkWorkPoolWithFib-12                10000            178232 ns/op
+BenchmarkDispatchPoolWithFib-12            10000            176316 ns/op
 BenchmarkFibWithAwaitAll-12                10000            194145 ns/op
 BenchmarkFibWithTunny-12                   10000            907005 ns/op
-BenchmarkHeavyWorkPoolWithFib-12           10000            178232 ns/op
+BenchmarkFibSequence-12                    10000            959778 ns/op
 PASS
 ```

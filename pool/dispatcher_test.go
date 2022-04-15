@@ -7,7 +7,7 @@ import (
 	"github.com/tempura-shrimp/co/pool"
 )
 
-func TestSimpleWorkerPool(t *testing.T) {
+func TestDispatchPool(t *testing.T) {
 	convey.Convey("given a sequential tasks", t, func() {
 		markers := make([]bool, 1000)
 
@@ -33,7 +33,7 @@ func TestSimpleWorkerPool(t *testing.T) {
 	})
 }
 
-func BenchmarkSimpleWorkPoolWithFib(b *testing.B) {
+func BenchmarkDispatchPoolWithFib(b *testing.B) {
 	p := pool.NewDispatchPool[int](256)
 
 	b.ResetTimer()
