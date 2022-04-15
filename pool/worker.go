@@ -5,7 +5,7 @@ import (
 	"sync/atomic"
 
 	"github.com/tempura-shrimp/co/ds/queue"
-	co_sync "github.com/tempura-shrimp/co/sync"
+	co_sync "github.com/tempura-shrimp/co/internal/sync"
 )
 
 func NewWorkerPool[K any](maxWorkers int) *WorkerPool[K] {

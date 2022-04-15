@@ -4,8 +4,8 @@ import (
 	"sync"
 	"sync/atomic"
 
+	co_sync "github.com/tempura-shrimp/co/internal/sync"
 	"github.com/tempura-shrimp/co/pool"
-	co_sync "github.com/tempura-shrimp/co/sync"
 )
 
 type seqItem[R any] struct {

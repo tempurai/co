@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"github.com/tempura-shrimp/co/ds/queue"
-	co_sync "github.com/tempura-shrimp/co/sync"
+	co_sync "github.com/tempura-shrimp/co/internal/sync"
 )
 
 type asyncCombineLatestFn[R any] func([]any) R

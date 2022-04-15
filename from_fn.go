@@ -2,7 +2,7 @@ package co
 
 import (
 	"github.com/tempura-shrimp/co/ds/queue"
-	co_sync "github.com/tempura-shrimp/co/sync"
+	co_sync "github.com/tempura-shrimp/co/internal/sync"
 )
 
 type asyncFn[R any] func() (R, error)

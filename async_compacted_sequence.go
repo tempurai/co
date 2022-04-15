@@ -1,6 +1,6 @@
 package co
 
-import co_sync "github.com/tempura-shrimp/co/sync"
+import co_sync "github.com/tempura-shrimp/co/internal/sync"
 
 type AsyncCompactedSequence[R comparable] struct {
 	*asyncSequence[R]

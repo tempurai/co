@@ -1,7 +1,7 @@
 package co
 
 import (
-	co_sync "github.com/tempura-shrimp/co/sync"
+	co_sync "github.com/tempura-shrimp/co/internal/sync"
 )
 
 type AsyncSubject[R any] struct {

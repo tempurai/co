@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	co_sync "github.com/tempura-shrimp/co/sync"
+	co_sync "github.com/tempura-shrimp/co/internal/sync"
 )
 
 type AsyncBufferTimeSequence[R any, T []R] struct {
