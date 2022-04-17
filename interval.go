@@ -3,7 +3,7 @@ package co
 import (
 	"time"
 
-	co_sync "github.com/tempura-shrimp/co/internal/sync"
+	co_sync "tempura.ink/co/internal/sync"
 )
 
 type AsyncInterval[R any] struct {

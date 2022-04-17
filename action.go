@@ -3,7 +3,7 @@ package co
 import (
 	"sync"
 
-	co_sync "github.com/tempura-shrimp/co/internal/sync"
+	co_sync "tempura.ink/co/internal/sync"
 )
 
 type Action[E any] struct {

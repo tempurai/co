@@ -1,4 +1,4 @@
-module github.com/tempura-shrimp/co
+module tempura.ink/co
 
 go 1.18
 

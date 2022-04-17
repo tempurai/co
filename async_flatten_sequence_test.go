@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/smartystreets/goconvey/convey"
-	"github.com/tempura-shrimp/co"
+	"tempura.ink/co"
 )
 
 func TestAsyncFlattenSequence(t *testing.T) {

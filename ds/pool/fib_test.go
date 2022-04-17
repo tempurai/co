@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/Jeffail/tunny"
-	"github.com/tempura-shrimp/co"
+	"tempura.ink/co"
 )
 
 func memoizeFib(n int) int {

@@ -1,4 +1,4 @@
-[![Go](https://github.com/tempura-shrimp/co/actions/workflows/go.yml/badge.svg)](https://github.com/tempura-shrimp/co/actions/workflows/go.yml)
+[![Go](https://tempura.ink/co/actions/workflows/go.yml/badge.svg)](https://tempura.ink/co/actions/workflows/go.yml)
 
 # Co
 
@@ -28,7 +28,7 @@ However, even though I have mentioned a lot of ReactiveX patterns above. I do no
 
 ## APIs
 
-https://godoc.org/github.com/tempura-shrimp/co
+https://godoc.org/tempura.ink/co
 
 ### Promising functions:
 
@@ -77,7 +77,7 @@ https://godoc.org/github.com/tempura-shrimp/co
 
 ## Getting started
 
-Navigate to your project base and `go get github.com/tempura-shrimp/co`
+Navigate to your project base and `go get tempura.ink/co`
 
 ## Examples
 
@@ -165,7 +165,7 @@ Pool benchmark
 ```
 goos: darwin
 goarch: amd64
-pkg: github.com/tempura-shrimp/co/pool
+pkg: tempura.ink/co/pool
 cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
 BenchmarkWorkPoolWithFib-12                10000            178232 ns/op
 BenchmarkDispatchPoolWithFib-12            10000            176316 ns/op

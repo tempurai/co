@@ -1,7 +1,7 @@
 package co
 
 import (
-	co_sync "github.com/tempura-shrimp/co/internal/sync"
+	co_sync "tempura.ink/co/internal/sync"
 )
 
 type AsyncAdjacentFilterSequence[R any] struct {

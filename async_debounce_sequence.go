@@ -4,8 +4,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/tempura-shrimp/co/ds/queue"
-	co_sync "github.com/tempura-shrimp/co/internal/sync"
+	"tempura.ink/co/ds/queue"
+	co_sync "tempura.ink/co/internal/sync"
 )
 
 type AsyncDebounceSequence[R any] struct {
