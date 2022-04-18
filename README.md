@@ -50,6 +50,7 @@ https://godoc.org/github.com/tempura-shrimp/co
 - `AsyncMultiCast`: broadcasting async sequence to multiple successor sequences.
 - `AsyncPartition`: horizontally partition elements of multiple async sequence.
 - `AsyncZip`: get the latest result of all multiple async sequence with different type.
+- `AsyncAny`: wait for any async sequence to be resolved or failed.
 
 #### Transform
 
