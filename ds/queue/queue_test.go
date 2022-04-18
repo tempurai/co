@@ -17,7 +17,7 @@ func TestQueue(t *testing.T) {
 		}
 
 		convey.Convey("On wait", func() {
-			convey.Convey("Dequeue should be indentical to enqueued", func() {
+			convey.Convey("Dequeue should be identical to enqueued", func() {
 				for i := 1; i <= l; i++ {
 					v := q.Dequeue()
 					convey.So(v, convey.ShouldEqual, i)

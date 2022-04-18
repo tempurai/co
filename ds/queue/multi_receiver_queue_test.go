@@ -21,7 +21,7 @@ func TestMultiReceiverQueue(t *testing.T) {
 		}
 
 		convey.Convey("On wait", func() {
-			convey.Convey("Dequeue should be indentical to enqueued", func() {
+			convey.Convey("Dequeue should be identical to enqueued", func() {
 				actual := make([]int, 0)
 				for i := 1; i <= l; i++ {
 					v := q.Dequeue()
@@ -53,7 +53,7 @@ func TestMultiReceiverQueueWith2Receiver(t *testing.T) {
 		}
 
 		convey.Convey("On wait", func() {
-			convey.Convey("Dequeue 1 should be indentical to enqueued", func() {
+			convey.Convey("Dequeue 1 should be identical to enqueued", func() {
 				convey.So(r1.IsEmpty(), convey.ShouldEqual, false)
 				actual := make([]int, 0)
 				for i := 0; i < l; i++ {
@@ -64,7 +64,7 @@ func TestMultiReceiverQueueWith2Receiver(t *testing.T) {
 				convey.So(actual, convey.ShouldResemble, expected)
 				convey.So(r1.IsEmpty(), convey.ShouldEqual, true)
 			})
-			convey.Convey("Dequeue 2 should be indentical to enqueued", func() {
+			convey.Convey("Dequeue 2 should be identical to enqueued", func() {
 				convey.So(r2.IsEmpty(), convey.ShouldEqual, false)
 				actual := make([]int, 0)
 				for i := 0; i < l; i++ {
@@ -124,7 +124,7 @@ func TestMultiReceiverQueueWith2ReceiverConcurrently(t *testing.T) {
 		}
 
 		for val := range actualCh {
-			c.Convey(fmt.Sprintf("Dequeue %d should be indentical to enqueued", val.i+1), func() {
+			c.Convey(fmt.Sprintf("Dequeue %d should be identical to enqueued", val.i+1), func() {
 				c.So(val.v, convey.ShouldResemble, expected)
 				c.So(r[val.i].IsEmpty(), convey.ShouldEqual, true)
 			})
