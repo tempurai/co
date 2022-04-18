@@ -66,12 +66,13 @@ func (it *asyncAnySequenceIterator[R]) next() *Optional[R] {
 	<-completedCh
 	close(completedCh)
 
-	if it.dataQueue.Len() == 0 {
-		if wg.Wait(); it.dataQueue.Len() == 0 {
-			it.sourceEnded = true
-			return NewOptionalEmpty[R]()
-		}
+	if it.dataQueue.Len() > 0 {
+		return OptionalOf(it.dataQueue.Dequeue())
 	}
 
+	if wg.Wait(); it.dataQueue.Len() == 0 {
+		it.sourceEnded = true
+		return NewOptionalEmpty[R]()
+	}
 	return OptionalOf(it.dataQueue.Dequeue())
 }
