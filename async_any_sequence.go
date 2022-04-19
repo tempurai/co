@@ -25,6 +25,8 @@ func (c *AsyncAnySequence[R]) iterator() Iterator[R] {
 	it := &asyncAnySequenceIterator[R]{
 		AsyncAnySequence: c,
 		dataQueue:        queue.NewQueue[R](),
+		completedCh:      make(chan bool),
+		waitCond:         sync.NewCond(&sync.Mutex{}),
 	}
 	it.asyncSequenceIterator = NewAsyncSequenceIterator[R](it)
 	return it
@@ -34,8 +36,11 @@ type asyncAnySequenceIterator[R any] struct {
 	*asyncSequenceIterator[R]
 
 	*AsyncAnySequence[R]
-	dataQueue   *queue.Queue[R]
-	sourceEnded bool
+	dataQueue    *queue.Queue[R]
+	sourceEnded  bool
+	waitCond     *sync.Cond
+	completedCh  chan bool
+	ifProcessing co_sync.AtomicBool
 }
 
 func (it *asyncAnySequenceIterator[R]) next() *Optional[R] {
@@ -46,32 +51,38 @@ func (it *asyncAnySequenceIterator[R]) next() *Optional[R] {
 		return OptionalOf(it.dataQueue.Dequeue())
 	}
 
-	completedCh := make(chan bool)
+	if it.ifProcessing.Get() {
+		<-it.completedCh
+	}
+	it.ifProcessing.Set(true)
 
 	wg := &sync.WaitGroup{}
 	wg.Add(len(it.its))
+
+	go func() {
+		wg.Wait()
+		it.ifProcessing.Set(false)
+		co_sync.SafeNSend(it.completedCh, true)
+
+		if it.dataQueue.Len() > 0 {
+			return
+		}
+		co_sync.CondBoardcast(it.waitCond, func() { it.sourceEnded = true })
+	}()
 
 	for i, pIt := range it.its {
 		go func(idx int, pIt Iterator[R]) {
 			defer wg.Done()
 			for op := pIt.next(); op.valid; op = pIt.next() {
-				it.dataQueue.Enqueue(op.data)
-				co_sync.SafeSend(completedCh, true)
+				co_sync.CondSignal(it.waitCond, func() { it.dataQueue.Enqueue(op.data) })
 				return
 			}
-			co_sync.SafeSend(completedCh, true)
 		}(i, pIt)
 	}
 
-	<-completedCh
-	close(completedCh)
+	co_sync.CondWait(it.waitCond, func() bool { return !it.sourceEnded && it.dataQueue.Len() == 0 })
 
-	if it.dataQueue.Len() > 0 {
-		return OptionalOf(it.dataQueue.Dequeue())
-	}
-
-	if wg.Wait(); it.dataQueue.Len() == 0 {
-		it.sourceEnded = true
+	if it.sourceEnded {
 		return NewOptionalEmpty[R]()
 	}
 	return OptionalOf(it.dataQueue.Dequeue())
