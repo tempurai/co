@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/smartystreets/goconvey/convey"
+	"go.tempura.ink/co"
 	"golang.org/x/exp/slices"
-	"tempura.ink/co"
 )
 
 func checkCombineLatest[T comparable](c convey.C, a [][]T, l ...[]T) {

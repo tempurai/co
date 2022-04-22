@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/smartystreets/goconvey/convey"
-	"tempura.ink/co"
+	"go.tempura.ink/co"
 )
 
 func checkZip[T comparable](c convey.C, a [][]T, l ...[]T) {
