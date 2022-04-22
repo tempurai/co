@@ -3,7 +3,7 @@ package co
 import (
 	"sync"
 
-	co_sync "tempura.ink/co/internal/sync"
+	co_sync "go.tempura.ink/co/internal/sync"
 )
 
 type asyncSequence[R any] struct {

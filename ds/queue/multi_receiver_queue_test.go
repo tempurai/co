@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/smartystreets/goconvey/convey"
-	"tempura.ink/co/ds/queue"
+	"go.tempura.ink/co/ds/queue"
 )
 
 func TestMultiReceiverQueue(t *testing.T) {

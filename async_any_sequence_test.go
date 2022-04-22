@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/smartystreets/goconvey/convey"
+	"go.tempura.ink/co"
 	"golang.org/x/exp/slices"
-	"tempura.ink/co"
 )
 
 func TestAsyncAnySequence(t *testing.T) {

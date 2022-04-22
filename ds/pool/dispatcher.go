@@ -4,8 +4,8 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"tempura.ink/co/ds/queue"
-	co_sync "tempura.ink/co/internal/sync"
+	"go.tempura.ink/co/ds/queue"
+	co_sync "go.tempura.ink/co/internal/sync"
 )
 
 func NewDispatchPool[K any](maxWorkers int) *DispatcherPool[K] {

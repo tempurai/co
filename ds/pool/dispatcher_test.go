@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/smartystreets/goconvey/convey"
-	"tempura.ink/co/ds/pool"
+	"go.tempura.ink/co/ds/pool"
 )
 
 func TestDispatchPool(t *testing.T) {

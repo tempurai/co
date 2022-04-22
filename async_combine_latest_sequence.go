@@ -3,8 +3,8 @@ package co
 import (
 	"sync"
 
-	"tempura.ink/co/ds/queue"
-	co_sync "tempura.ink/co/internal/sync"
+	"go.tempura.ink/co/ds/queue"
+	co_sync "go.tempura.ink/co/internal/sync"
 )
 
 type asyncCombineLatestFn[R any] func([]any) R

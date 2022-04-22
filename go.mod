@@ -1,4 +1,4 @@
-module tempura.ink/co
+module go.tempura.ink/co
 
 go 1.18
 

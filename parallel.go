@@ -4,8 +4,8 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"tempura.ink/co/ds/pool"
-	co_sync "tempura.ink/co/internal/sync"
+	"go.tempura.ink/co/ds/pool"
+	co_sync "go.tempura.ink/co/internal/sync"
 )
 
 type parallel[R any] struct {

@@ -1,7 +1,7 @@
 package co
 
 import (
-	co_sync "tempura.ink/co/internal/sync"
+	co_sync "go.tempura.ink/co/internal/sync"
 )
 
 type AsyncChannel[R any] struct {

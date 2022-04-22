@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/smartystreets/goconvey/convey"
-	"tempura.ink/co"
+	"go.tempura.ink/co"
 )
 
 func TestAsyncChannel(t *testing.T) {

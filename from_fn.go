@@ -1,8 +1,8 @@
 package co
 
 import (
-	"tempura.ink/co/ds/queue"
-	co_sync "tempura.ink/co/internal/sync"
+	"go.tempura.ink/co/ds/queue"
+	co_sync "go.tempura.ink/co/internal/sync"
 )
 
 type asyncFn[R any] func() (R, error)

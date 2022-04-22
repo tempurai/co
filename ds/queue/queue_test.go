@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/smartystreets/goconvey/convey"
-	"tempura.ink/co/ds/queue"
+	"go.tempura.ink/co/ds/queue"
 )
 
 func TestQueue(t *testing.T) {
