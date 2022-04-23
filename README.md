@@ -16,10 +16,6 @@
 - high performance none blocking queue: `Queue`, `MultiReceiverQueue`
 - high performance worker pool: `WorkerPool`, `DispatchePool`
 
-## Usage
-
-`go get go.tempura.ink/co`
-
 ## Motivation on Go with Reactive programming
 
 I consider ReactiveX programming pattern as a data stream friendly way to dealing with never ending data. However, most common scenario for such a pattern is in client side programming, for example, in AngularX, and I actually never saw any backend project using the pattern. Actually, it's quite easy to understand. The common pattern in backend simply is to push something to controller (and it will send some data to database) and listen to the callback.
@@ -82,7 +78,7 @@ https://godoc.org/go.tempura.ink/co
 
 ## Getting started
 
-Navigate to your project base and `go get github.com/tempura-shrimp/co`
+Navigate to your project base and `go get go.tempura.ink/co`
 
 ## Examples
 
