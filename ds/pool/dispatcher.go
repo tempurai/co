@@ -5,7 +5,7 @@ import (
 	"sync/atomic"
 
 	"go.tempura.ink/co/ds/queue"
-	syncx "go.tempura.ink/co/internal/sync"
+	syncx "go.tempura.ink/co/internal/syncx"
 )
 
 func NewDispatchPool[K any](maxWorkers int) *DispatcherPool[K] {

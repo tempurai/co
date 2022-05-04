@@ -1,7 +1,7 @@
 package co
 
 import (
-	syncx "go.tempura.ink/co/internal/sync"
+	syncx "go.tempura.ink/co/internal/syncx"
 )
 
 type AsyncAdjacentFilterSequence[R any] struct {

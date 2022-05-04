@@ -2,7 +2,7 @@ package co
 
 import (
 	"go.tempura.ink/co/ds/queue"
-	syncx "go.tempura.ink/co/internal/sync"
+	syncx "go.tempura.ink/co/internal/syncx"
 )
 
 type asyncFn[R any] func() (R, error)

@@ -1,6 +1,6 @@
 package co
 
-import syncx "go.tempura.ink/co/internal/sync"
+import syncx "go.tempura.ink/co/internal/syncx"
 
 type AsyncMapSequence[R, T any] struct {
 	*asyncSequence[T]

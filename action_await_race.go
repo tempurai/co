@@ -3,7 +3,7 @@ package co
 import (
 	"sync"
 
-	syncx "go.tempura.ink/co/internal/sync"
+	syncx "go.tempura.ink/co/internal/syncx"
 )
 
 type actionRace[R any] struct {

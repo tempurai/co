@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	syncx "go.tempura.ink/co/internal/sync"
+	syncx "go.tempura.ink/co/internal/syncx"
 )
 
 type AsyncBufferTimeSequence[R any, T []R] struct {

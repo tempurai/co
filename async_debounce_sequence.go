@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"go.tempura.ink/co/ds/queue"
-	syncx "go.tempura.ink/co/internal/sync"
+	syncx "go.tempura.ink/co/internal/syncx"
 )
 
 type AsyncDebounceSequence[R any] struct {

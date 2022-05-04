@@ -3,7 +3,7 @@ package co
 import (
 	"time"
 
-	syncx "go.tempura.ink/co/internal/sync"
+	syncx "go.tempura.ink/co/internal/syncx"
 )
 
 type AsyncInterval[R any] struct {
