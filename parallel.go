@@ -5,7 +5,7 @@ import (
 	"sync/atomic"
 
 	"go.tempura.ink/co/ds/pool"
-	co_sync "go.tempura.ink/co/internal/sync"
+	syncx "go.tempura.ink/co/internal/sync"
 )
 
 type parallel[R any] struct {
@@ -49,8 +49,8 @@ func (d *parallel[R]) Process(fn func() R) chan R {
 func (d *parallel[R]) receiveValue(seq uint64, val R) {
 	//TODO: check if seq is in map, if not then use cond
 	ch, _ := d.seqFnMap.Load(seq)
-	co_sync.SafeGo(func() {
-		co_sync.SafeSend(ch.(chan R), val)
+	syncx.SafeGo(func() {
+		syncx.SafeSend(ch.(chan R), val)
 	})
 	d.seqFnMap.Delete(seq)
 
@@ -58,7 +58,7 @@ func (d *parallel[R]) receiveValue(seq uint64, val R) {
 		d.storedData.setAt(int(seq)-1, val)
 	}
 
-	co_sync.CondBroadcast(d.recieverCond, func() {
+	syncx.CondBroadcast(d.recieverCond, func() {
 		atomic.AddUint64(&d.finished, 1)
 	})
 }
@@ -72,7 +72,7 @@ func (d *parallel[R]) GetData() []R {
 
 func (d *parallel[R]) Wait() *parallel[R] {
 	d.workerPool.Wait()
-	co_sync.CondWait(d.recieverCond, func() bool {
+	syncx.CondWait(d.recieverCond, func() bool {
 		return d.finished != d.sent
 	})
 	return d

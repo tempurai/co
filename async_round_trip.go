@@ -5,7 +5,7 @@ import (
 	"sync/atomic"
 
 	"go.tempura.ink/co/ds/pool"
-	co_sync "go.tempura.ink/co/internal/sync"
+	syncx "go.tempura.ink/co/internal/sync"
 )
 
 type seqItem[R any] struct {
@@ -62,7 +62,7 @@ func (a *asyncRoundTrip[R, E, T]) SetAsyncSequenceable(async AsyncSequenceable[T
 
 func (a *asyncRoundTrip[R, E, T]) startListening() {
 	a.runOnce.Do(func() {
-		co_sync.SafeGo(func() {
+		syncx.SafeGo(func() {
 			for op := a.it.next(); op.valid; op = a.it.next() {
 				a.interminCh <- op.data
 			}
@@ -71,9 +71,9 @@ func (a *asyncRoundTrip[R, E, T]) startListening() {
 }
 
 func (a *asyncRoundTrip[R, E, T]) Complete() *asyncRoundTrip[R, E, T] {
-	co_sync.SafeClose(a.sourceCh)
+	syncx.SafeClose(a.sourceCh)
 	a.executorPool.Wait().Stop()
-	co_sync.SafeClose(a.interminCh)
+	syncx.SafeClose(a.interminCh)
 	return a
 }
 
@@ -99,7 +99,7 @@ func (a *asyncRoundTrip[R, E, T]) receiveCallback(pSeq uint64, val *data[E]) {
 	if !ok {
 		panic("co / roundTrip: seq to callback fn map not found")
 	}
-	co_sync.SafeGo(func() {
+	syncx.SafeGo(func() {
 		callbackFn.(func(E, error))(val.GetValue(), val.GetError())
 	})
 }

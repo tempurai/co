@@ -1,4 +1,4 @@
-package co_sync
+package syncx
 
 import "sync"
 

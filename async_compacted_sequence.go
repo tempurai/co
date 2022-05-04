@@ -1,6 +1,6 @@
 package co
 
-import co_sync "go.tempura.ink/co/internal/sync"
+import syncx "go.tempura.ink/co/internal/sync"
 
 type AsyncCompactedSequence[R comparable] struct {
 	*asyncSequence[R]
@@ -39,7 +39,7 @@ type asyncCompactedSequenceIterator[R comparable] struct {
 
 func (it *asyncCompactedSequenceIterator[R]) next() *Optional[R] {
 	for op := it.previousIterator.next(); op.valid; op = it.previousIterator.next() {
-		match, err := co_sync.SafeFn(func() bool {
+		match, err := syncx.SafeFn(func() bool {
 			return it.predictorFn(op.data)
 		})
 		if err != nil {

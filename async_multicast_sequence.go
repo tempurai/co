@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"go.tempura.ink/co/ds/queue"
-	co_sync "go.tempura.ink/co/internal/sync"
+	syncx "go.tempura.ink/co/internal/sync"
 )
 
 type AsyncMulticastSequence[R any] struct {
@@ -28,13 +28,13 @@ func NewAsyncMulticastSequence[R any](it AsyncSequenceable[R]) *AsyncMulticastSe
 
 func (a *AsyncMulticastSequence[T]) startListening() {
 	a.runOnce.Do(func() {
-		co_sync.SafeGo(func() {
+		syncx.SafeGo(func() {
 			for op := a.previousIterator.next(); op.valid; op = a.previousIterator.next() {
-				co_sync.CondBroadcast(a.bufferWait, func() {
+				syncx.CondBroadcast(a.bufferWait, func() {
 					a.bufferedQueue.Enqueue(op.data)
 				})
 			}
-			co_sync.CondBroadcast(a.bufferWait, func() { a.sourceEnded = true })
+			syncx.CondBroadcast(a.bufferWait, func() { a.sourceEnded = true })
 		})
 	})
 }
@@ -70,7 +70,7 @@ type asyncMulticastSequenceIterator[R any] struct {
 }
 
 func (it *asyncMulticastSequenceIterator[R]) next() *Optional[R] {
-	co_sync.CondWait(it.bufferWait, func() bool {
+	syncx.CondWait(it.bufferWait, func() bool {
 		return !it.sourceEnded && it.receiver.IsEmpty()
 	})
 

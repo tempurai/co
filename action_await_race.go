@@ -3,7 +3,7 @@ package co
 import (
 	"sync"
 
-	co_sync "go.tempura.ink/co/internal/sync"
+	syncx "go.tempura.ink/co/internal/sync"
 )
 
 type actionRace[R any] struct {
@@ -16,7 +16,7 @@ type actionRace[R any] struct {
 
 func (a *actionRace[R]) run() {
 	dataCh := make(chan *data[R])
-	ifData := co_sync.AtomicBool{}
+	ifData := syncx.AtomicBool{}
 
 	for i := 0; a.it.preflight(); i++ {
 		go func(i int) {
@@ -31,7 +31,7 @@ func (a *actionRace[R]) run() {
 
 			ifData.Set(true)
 			a.runOnce.Do(func() {
-				co_sync.SafeSend(dataCh, NewDataWith(val, err))
+				syncx.SafeSend(dataCh, NewDataWith(val, err))
 			})
 		}(i)
 	}
@@ -48,7 +48,7 @@ func baseRace[R any](ignoreErr bool, list *executablesList[R]) *Action[*data[R]]
 		ignoreErr: ignoreErr,
 	}
 
-	co_sync.SafeGo(action.run)
+	syncx.SafeGo(action.run)
 	return action.Action
 }
 

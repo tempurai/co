@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	co_sync "go.tempura.ink/co/internal/sync"
+	syncx "go.tempura.ink/co/internal/sync"
 )
 
 type AsyncBufferTimeSequence[R any, T []R] struct {
@@ -59,7 +59,7 @@ func (it *asyncBufferTimeSequenceIterator[R, T]) startBuffer() {
 	it.runOnce.Do(func() {
 		it.previousTime = time.Now()
 
-		co_sync.SafeGo(func() {
+		syncx.SafeGo(func() {
 			for op := it.previousIterator.next(); op.valid; op = it.previousIterator.next() {
 				reachedInterval := it.intervalPassed()
 				if it.bufferedData.len() == 0 || reachedInterval {
@@ -70,10 +70,10 @@ func (it *asyncBufferTimeSequenceIterator[R, T]) startBuffer() {
 				it.bufferedData.setAt(lIdx, append(it.bufferedData.getAt(lIdx), op.data))
 
 				if reachedInterval {
-					co_sync.CondBroadcast(it.bufferWait, func() { it.previousTime = time.Now() })
+					syncx.CondBroadcast(it.bufferWait, func() { it.previousTime = time.Now() })
 				}
 			}
-			co_sync.CondBroadcast(it.bufferWait, func() { it.sourceEnded = true })
+			syncx.CondBroadcast(it.bufferWait, func() { it.sourceEnded = true })
 		})
 	})
 }
@@ -81,7 +81,7 @@ func (it *asyncBufferTimeSequenceIterator[R, T]) startBuffer() {
 func (it *asyncBufferTimeSequenceIterator[R, T]) next() *Optional[T] {
 	it.startBuffer()
 
-	co_sync.CondWait(it.bufferWait, func() bool {
+	syncx.CondWait(it.bufferWait, func() bool {
 		return !it.sourceEnded && (it.bufferedData.len() == 0 || !it.intervalPassed())
 	})
 

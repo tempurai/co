@@ -1,6 +1,6 @@
 package co
 
-import co_sync "go.tempura.ink/co/internal/sync"
+import syncx "go.tempura.ink/co/internal/sync"
 
 type AsyncMapSequence[R, T any] struct {
 	*asyncSequence[T]
@@ -39,7 +39,7 @@ type asyncMapSequenceIterator[R, T any] struct {
 
 func (it *asyncMapSequenceIterator[R, T]) next() *Optional[T] {
 	for op := it.previousIterator.next(); op.valid; op = it.previousIterator.next() {
-		mapped, err := co_sync.SafeFn(func() T {
+		mapped, err := syncx.SafeFn(func() T {
 			return it.predictorFn(op.data)
 		})
 		if err != nil {

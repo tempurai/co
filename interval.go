@@ -3,14 +3,14 @@ package co
 import (
 	"time"
 
-	co_sync "go.tempura.ink/co/internal/sync"
+	syncx "go.tempura.ink/co/internal/sync"
 )
 
 type AsyncInterval[R any] struct {
 	*asyncSequence[R]
 
 	period int
-	ended  co_sync.AtomicBool
+	ended  syncx.AtomicBool
 }
 
 func Interval(period int) *AsyncInterval[int] {

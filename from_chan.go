@@ -1,7 +1,7 @@
 package co
 
 import (
-	co_sync "go.tempura.ink/co/internal/sync"
+	syncx "go.tempura.ink/co/internal/sync"
 )
 
 type AsyncChannel[R any] struct {
@@ -19,7 +19,7 @@ func FromChan[R any](ch chan R) *AsyncChannel[R] {
 }
 
 func (a *AsyncChannel[R]) Complete() *AsyncChannel[R] {
-	co_sync.SafeClose(a.sourceCh)
+	syncx.SafeClose(a.sourceCh)
 	return a
 }
 

@@ -3,7 +3,7 @@ package co
 import (
 	"sync"
 
-	co_sync "go.tempura.ink/co/internal/sync"
+	syncx "go.tempura.ink/co/internal/sync"
 )
 
 type Action[E any] struct {
@@ -71,7 +71,7 @@ func (a *Action[E]) listen(el ...E) {
 
 	for _, e := range el {
 		for _, ch := range a.emitChs {
-			co_sync.SafeNSend(ch, e)
+			syncx.SafeNSend(ch, e)
 		}
 	}
 
@@ -81,18 +81,18 @@ func (a *Action[E]) listen(el ...E) {
 	}
 	if sendFirstCh {
 		go func() {
-			co_sync.SafeSend(a.firstChan, true)
-			co_sync.SafeClose(a.firstChan)
+			syncx.SafeSend(a.firstChan, true)
+			syncx.SafeClose(a.firstChan)
 		}()
 	}
 }
 
 func (a *Action[E]) done() {
 	for i := range a.emitChs {
-		co_sync.SafeClose(a.emitChs[i])
+		syncx.SafeClose(a.emitChs[i])
 	}
-	co_sync.SafeSend(a.lastChan, true)
-	co_sync.SafeClose(a.lastChan)
+	syncx.SafeSend(a.lastChan, true)
+	syncx.SafeClose(a.lastChan)
 }
 
 func MapAction[T1, T2 any](a1 *Action[T1], fn func(T1) T2) *Action[T2] {

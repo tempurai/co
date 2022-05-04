@@ -2,7 +2,7 @@ package co
 
 import (
 	"go.tempura.ink/co/ds/queue"
-	co_sync "go.tempura.ink/co/internal/sync"
+	syncx "go.tempura.ink/co/internal/sync"
 )
 
 type asyncFn[R any] func() (R, error)
@@ -44,7 +44,7 @@ type asyncFnsIterator[R any] struct {
 
 func (it *asyncFnsIterator[R]) next() *Optional[R] {
 	for fn := it.fnQueue.Dequeue(); it.fnQueue.Len() != 0; fn = it.fnQueue.Dequeue() {
-		val, err := co_sync.SafeEFn(fn)
+		val, err := syncx.SafeEFn(fn)
 		if err != nil {
 			it.handleError(err)
 			if it.errorMode.shouldSkip() {

@@ -5,7 +5,7 @@ import (
 	"sync/atomic"
 
 	"go.tempura.ink/co/ds/queue"
-	co_sync "go.tempura.ink/co/internal/sync"
+	syncx "go.tempura.ink/co/internal/sync"
 )
 
 func NewDispatchPool[K any](maxWorkers int) *DispatcherPool[K] {
@@ -14,7 +14,7 @@ func NewDispatchPool[K any](maxWorkers int) *DispatcherPool[K] {
 		quitCh:         make(chan bool),
 		idleDispatcher: int32(maxWorkers),
 
-		workerCond: co_sync.NewCondCh(&sync.Mutex{}),
+		workerCond: syncx.NewCondCh(&sync.Mutex{}),
 		jobQueue:   queue.NewQueue[*job[K]](),
 	}
 
@@ -30,7 +30,7 @@ type DispatcherPool[K any] struct {
 	*poolBasic[K]
 
 	pool           sync.Pool
-	workerCond     *co_sync.CondCh
+	workerCond     *syncx.CondCh
 	idleDispatcher int32
 
 	callbackFn func(id uint64, val K)
@@ -40,7 +40,7 @@ type DispatcherPool[K any] struct {
 }
 
 func (p *DispatcherPool[K]) startListening() {
-	co_sync.SafeGo(func() {
+	syncx.SafeGo(func() {
 		for {
 			select {
 			case <-p.quitCh:
@@ -53,7 +53,7 @@ func (p *DispatcherPool[K]) startListening() {
 				})
 
 				if p.callbackFn != nil {
-					co_sync.SafeGo(func() {
+					syncx.SafeGo(func() {
 						p.callbackFn(data.seq, data.val)
 					})
 				}
@@ -62,7 +62,7 @@ func (p *DispatcherPool[K]) startListening() {
 		}
 	})
 
-	co_sync.SafeGo(func() {
+	syncx.SafeGo(func() {
 		for {
 			select {
 			case <-p.quitCh:
@@ -117,7 +117,7 @@ func NewDispatcher[K any](doneCh *chan *jobDone[K]) *Dispatcher[K] {
 }
 
 func (w *Dispatcher[K]) trigger(load *job[K]) {
-	co_sync.SafeGo(func() {
+	syncx.SafeGo(func() {
 		*(w.doneCh) <- &jobDone[K]{val: load.fn(), seq: load.seq, workerRef: w}
 	})
 }

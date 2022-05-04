@@ -3,7 +3,7 @@ package co
 import (
 	"sync"
 
-	co_sync "go.tempura.ink/co/internal/sync"
+	syncx "go.tempura.ink/co/internal/sync"
 )
 
 type asyncSequence[R any] struct {
@@ -99,30 +99,30 @@ func (it *asyncSequenceIterator[T]) emitData(d *data[T]) {
 	defer it.mux.RUnlock()
 
 	for i := range it.emitECh {
-		co_sync.SafeSend(it.emitECh[i], d)
+		syncx.SafeSend(it.emitECh[i], d)
 	}
 	if d.err != nil {
 		return
 	}
 
 	for i := range it.emitCh {
-		co_sync.SafeSend(it.emitCh[i], d.GetValue())
+		syncx.SafeSend(it.emitCh[i], d.GetValue())
 	}
 }
 
 func (it *asyncSequenceIterator[T]) startListening() {
 	it.runOnce.Do(func() {
-		co_sync.SafeGo(func() {
+		syncx.SafeGo(func() {
 			for op := it.delegated.next(); op.valid; op = it.delegated.next() {
 				d := it.dataPool.Get().(*data[T]).set(op.data, nil)
 				it.emitData(d)
 
 				if it.successFn != nil {
-					co_sync.SafeGo(func() { it.successFn(op.data) })
+					syncx.SafeGo(func() { it.successFn(op.data) })
 				}
 			}
 			for _, ch := range it.emitCh {
-				co_sync.SafeClose(ch)
+				syncx.SafeClose(ch)
 			}
 		})
 	})

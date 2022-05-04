@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"go.tempura.ink/co/ds/queue"
-	co_sync "go.tempura.ink/co/internal/sync"
+	syncx "go.tempura.ink/co/internal/sync"
 )
 
 type AsyncDebounceSequence[R any] struct {
@@ -70,7 +70,7 @@ func (it *asyncDebounceSequenceIterator[R]) startBuffer() {
 	it.runOnce.Do(func() {
 		it.previousTime = time.Now()
 
-		co_sync.SafeGo(func() {
+		syncx.SafeGo(func() {
 			for op := it.previousIterator.next(); op.valid; op = it.previousIterator.next() {
 				reachedInterval := it.intervalPassed()
 				if !reachedInterval {
@@ -79,10 +79,10 @@ func (it *asyncDebounceSequenceIterator[R]) startBuffer() {
 
 				it.bufferedData.Enqueue(op.data)
 				if it.tolerance == it.interval || it.tolerancePassed() {
-					co_sync.CondBroadcast(it.bufferWait, func() { it.previousTime = time.Now() })
+					syncx.CondBroadcast(it.bufferWait, func() { it.previousTime = time.Now() })
 				}
 			}
-			co_sync.CondBroadcast(it.bufferWait, func() { it.sourceEnded = true })
+			syncx.CondBroadcast(it.bufferWait, func() { it.sourceEnded = true })
 		})
 	})
 }
@@ -90,7 +90,7 @@ func (it *asyncDebounceSequenceIterator[R]) startBuffer() {
 func (it *asyncDebounceSequenceIterator[R]) next() *Optional[R] {
 	it.startBuffer()
 
-	co_sync.CondWait(it.bufferWait, func() bool {
+	syncx.CondWait(it.bufferWait, func() bool {
 		return !it.sourceEnded && it.bufferedData.Len() == 0
 	})
 

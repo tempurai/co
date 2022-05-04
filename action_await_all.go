@@ -3,7 +3,7 @@ package co
 import (
 	"sync"
 
-	co_sync "go.tempura.ink/co/internal/sync"
+	syncx "go.tempura.ink/co/internal/sync"
 )
 
 type actionAwait[R any] struct {
@@ -37,7 +37,7 @@ func All[R any](list *executablesList[R]) *Action[*data[R]] {
 		list:   list.iterator(),
 	}
 
-	co_sync.SafeGo(action.run)
+	syncx.SafeGo(action.run)
 	return action.Action
 }
 

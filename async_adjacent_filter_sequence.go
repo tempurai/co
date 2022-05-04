@@ -1,7 +1,7 @@
 package co
 
 import (
-	co_sync "go.tempura.ink/co/internal/sync"
+	syncx "go.tempura.ink/co/internal/sync"
 )
 
 type AsyncAdjacentFilterSequence[R any] struct {
@@ -62,7 +62,7 @@ func (it *asyncAdjacentFilterSequenceIterator[R]) next() *Optional[R] {
 	for op := it.previousIterator.next(); op.valid; op = it.previousIterator.next() {
 		it.previousData = *op
 
-		match, err := co_sync.SafeFn(func() bool {
+		match, err := syncx.SafeFn(func() bool {
 			return it.predictorFn(previousValue, op.data)
 		})
 		if err != nil {

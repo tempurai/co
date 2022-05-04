@@ -4,14 +4,14 @@ import (
 	"sync"
 
 	"go.tempura.ink/co/ds/queue"
-	co_sync "go.tempura.ink/co/internal/sync"
+	syncx "go.tempura.ink/co/internal/sync"
 )
 
 type AsyncBufferedChan[R any] struct {
 	*asyncSequence[R]
 
 	sourceCh    chan R
-	sourceEnded co_sync.AtomicBool
+	sourceEnded syncx.AtomicBool
 	runOnce     sync.Once
 
 	bufferedData *queue.Queue[R]
@@ -31,19 +31,19 @@ func FromChanBuffered[R any](ch chan R) *AsyncBufferedChan[R] {
 
 func (a *AsyncBufferedChan[T]) startListening() {
 	a.runOnce.Do(func() {
-		co_sync.SafeGo(func() {
+		syncx.SafeGo(func() {
 			for val := range a.sourceCh {
-				co_sync.CondBroadcast(a.bufferWait, func() {
+				syncx.CondBroadcast(a.bufferWait, func() {
 					a.bufferedData.Enqueue(val)
 				})
 			}
-			co_sync.CondBroadcast(a.bufferWait, func() { a.sourceEnded.Set(true) })
+			syncx.CondBroadcast(a.bufferWait, func() { a.sourceEnded.Set(true) })
 		})
 	})
 }
 
 func (a *AsyncBufferedChan[R]) Complete() *AsyncBufferedChan[R] {
-	co_sync.SafeClose(a.sourceCh)
+	syncx.SafeClose(a.sourceCh)
 	return a
 }
 
@@ -65,7 +65,7 @@ func (it *asyncBufferedChanIterator[R]) next() *Optional[R] {
 	if it.sourceEnded.Get() && it.bufferedData.Len() == 0 {
 		return NewOptionalEmpty[R]()
 	}
-	co_sync.CondWait(it.bufferWait, func() bool {
+	syncx.CondWait(it.bufferWait, func() bool {
 		return !it.sourceEnded.Get() && it.bufferedData.Len() == 0
 	})
 	if it.sourceEnded.Get() && it.bufferedData.Len() == 0 {

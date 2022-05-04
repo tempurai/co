@@ -1,5 +1,5 @@
 package co
 
-import co_sync "go.tempura.ink/co/internal/sync"
+import syncx "go.tempura.ink/co/internal/sync"
 
-type CondCh = co_sync.CondCh
+type CondCh = syncx.CondCh

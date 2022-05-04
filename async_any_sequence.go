@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"go.tempura.ink/co/ds/queue"
-	co_sync "go.tempura.ink/co/internal/sync"
+	syncx "go.tempura.ink/co/internal/sync"
 )
 
 type AsyncAnySequence[R any] struct {
@@ -40,7 +40,7 @@ type asyncAnySequenceIterator[R any] struct {
 	sourceEnded  bool
 	waitCond     *sync.Cond
 	completedCh  chan bool
-	ifProcessing co_sync.AtomicBool
+	ifProcessing syncx.AtomicBool
 }
 
 func (it *asyncAnySequenceIterator[R]) next() *Optional[R] {
@@ -62,25 +62,25 @@ func (it *asyncAnySequenceIterator[R]) next() *Optional[R] {
 	go func() {
 		wg.Wait()
 		it.ifProcessing.Set(false)
-		co_sync.SafeNSend(it.completedCh, true)
+		syncx.SafeNSend(it.completedCh, true)
 
 		if it.dataQueue.Len() > 0 {
 			return
 		}
-		co_sync.CondBroadcast(it.waitCond, func() { it.sourceEnded = true })
+		syncx.CondBroadcast(it.waitCond, func() { it.sourceEnded = true })
 	}()
 
 	for i, pIt := range it.its {
 		go func(idx int, pIt Iterator[R]) {
 			defer wg.Done()
 			for op := pIt.next(); op.valid; op = pIt.next() {
-				co_sync.CondSignal(it.waitCond, func() { it.dataQueue.Enqueue(op.data) })
+				syncx.CondSignal(it.waitCond, func() { it.dataQueue.Enqueue(op.data) })
 				return
 			}
 		}(i, pIt)
 	}
 
-	co_sync.CondWait(it.waitCond, func() bool { return !it.sourceEnded && it.dataQueue.Len() == 0 })
+	syncx.CondWait(it.waitCond, func() bool { return !it.sourceEnded && it.dataQueue.Len() == 0 })
 
 	if it.sourceEnded {
 		return NewOptionalEmpty[R]()

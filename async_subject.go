@@ -1,7 +1,7 @@
 package co
 
 import (
-	co_sync "go.tempura.ink/co/internal/sync"
+	syncx "go.tempura.ink/co/internal/sync"
 )
 
 type AsyncSubject[R any] struct {
@@ -20,16 +20,16 @@ func NewAsyncSubject[R any]() *AsyncSubject[R] {
 }
 
 func (c *AsyncSubject[R]) Next(val R) *AsyncSubject[R] {
-	co_sync.SafeGo(func() {
-		co_sync.SafeNRead(c.latestDataCh)
+	syncx.SafeGo(func() {
+		syncx.SafeNRead(c.latestDataCh)
 		c.latestDataCh <- NewDataWith(val, nil)
 	})
 	return c
 }
 
 func (c *AsyncSubject[R]) Error(err error) *AsyncSubject[R] {
-	co_sync.SafeGo(func() {
-		co_sync.SafeNRead(c.latestDataCh)
+	syncx.SafeGo(func() {
+		syncx.SafeNRead(c.latestDataCh)
 		c.latestDataCh <- NewDataWith(*new(R), err)
 	})
 	return c
@@ -37,7 +37,7 @@ func (c *AsyncSubject[R]) Error(err error) *AsyncSubject[R] {
 
 func (c *AsyncSubject[R]) Complete() *AsyncSubject[R] {
 	c.sourceEnded = true
-	co_sync.SafeClose(c.latestDataCh)
+	syncx.SafeClose(c.latestDataCh)
 	return c
 }
 

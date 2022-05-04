@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"go.tempura.ink/co/ds/queue"
-	co_sync "go.tempura.ink/co/internal/sync"
+	syncx "go.tempura.ink/co/internal/sync"
 )
 
 type asyncCombineLatestFn[R any] func([]any) R
@@ -144,7 +144,7 @@ func (a *asyncCombineLatestSequenceIterator[R]) startFirstPass() {
 func (a *asyncCombineLatestSequenceIterator[R]) pass() {
 	if !a.firstpass {
 		a.startFirstPass()
-		co_sync.CondBroadcast(a.bufferWait, func() {})
+		syncx.CondBroadcast(a.bufferWait, func() {})
 		return
 	}
 
@@ -163,7 +163,7 @@ func (a *asyncCombineLatestSequenceIterator[R]) pass() {
 		go func(idx int, statusData *combineLatestAsyncData, it iteratorAny) {
 
 			for op := it.nextAny(); op.valid; op = it.nextAny() {
-				co_sync.CondBroadcast(a.bufferWait, func() {
+				syncx.CondBroadcast(a.bufferWait, func() {
 					a.mux.Lock()
 					defer a.mux.Unlock()
 
@@ -172,7 +172,7 @@ func (a *asyncCombineLatestSequenceIterator[R]) pass() {
 				})
 				return
 			}
-			co_sync.CondBroadcast(a.bufferWait, func() {
+			syncx.CondBroadcast(a.bufferWait, func() {
 				a.mux.Lock()
 				defer a.mux.Unlock()
 
@@ -187,7 +187,7 @@ func (a *asyncCombineLatestSequenceIterator[R]) pass() {
 func (a *asyncCombineLatestSequenceIterator[R]) next() *Optional[R] {
 	if !a.allSourcesEneded() && !a.hasQueuedData() {
 		a.pass()
-		co_sync.CondWait(a.bufferWait, func() bool {
+		syncx.CondWait(a.bufferWait, func() bool {
 			return !a.allSourcesEneded() && !a.hasQueuedData()
 		})
 	}
