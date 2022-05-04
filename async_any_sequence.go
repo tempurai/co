@@ -67,7 +67,7 @@ func (it *asyncAnySequenceIterator[R]) next() *Optional[R] {
 		if it.dataQueue.Len() > 0 {
 			return
 		}
-		co_sync.CondBoardcast(it.waitCond, func() { it.sourceEnded = true })
+		co_sync.CondBroadcast(it.waitCond, func() { it.sourceEnded = true })
 	}()
 
 	for i, pIt := range it.its {

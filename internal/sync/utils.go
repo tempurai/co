@@ -88,7 +88,7 @@ func CondSignal(cond *sync.Cond, fn func()) {
 	cond.L.Unlock()
 }
 
-func CondBoardcast(cond *sync.Cond, fn func()) {
+func CondBroadcast(cond *sync.Cond, fn func()) {
 	cond.L.Lock()
 	fn()
 	cond.Broadcast()

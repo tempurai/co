@@ -30,11 +30,11 @@ func (a *AsyncMulticastSequence[T]) startListening() {
 	a.runOnce.Do(func() {
 		co_sync.SafeGo(func() {
 			for op := a.previousIterator.next(); op.valid; op = a.previousIterator.next() {
-				co_sync.CondBoardcast(a.bufferWait, func() {
+				co_sync.CondBroadcast(a.bufferWait, func() {
 					a.bufferedQueue.Enqueue(op.data)
 				})
 			}
-			co_sync.CondBoardcast(a.bufferWait, func() { a.sourceEnded = true })
+			co_sync.CondBroadcast(a.bufferWait, func() { a.sourceEnded = true })
 		})
 	})
 }

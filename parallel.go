@@ -58,7 +58,7 @@ func (d *parallel[R]) receiveValue(seq uint64, val R) {
 		d.storedData.setAt(int(seq)-1, val)
 	}
 
-	co_sync.CondBoardcast(d.recieverCond, func() {
+	co_sync.CondBroadcast(d.recieverCond, func() {
 		atomic.AddUint64(&d.finished, 1)
 	})
 }

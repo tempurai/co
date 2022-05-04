@@ -33,11 +33,11 @@ func (a *AsyncBufferedChan[T]) startListening() {
 	a.runOnce.Do(func() {
 		co_sync.SafeGo(func() {
 			for val := range a.sourceCh {
-				co_sync.CondBoardcast(a.bufferWait, func() {
+				co_sync.CondBroadcast(a.bufferWait, func() {
 					a.bufferedData.Enqueue(val)
 				})
 			}
-			co_sync.CondBoardcast(a.bufferWait, func() { a.sourceEnded.Set(true) })
+			co_sync.CondBroadcast(a.bufferWait, func() { a.sourceEnded.Set(true) })
 		})
 	})
 }

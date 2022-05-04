@@ -144,7 +144,7 @@ func (a *asyncCombineLatestSequenceIterator[R]) startFirstPass() {
 func (a *asyncCombineLatestSequenceIterator[R]) pass() {
 	if !a.firstpass {
 		a.startFirstPass()
-		co_sync.CondBoardcast(a.bufferWait, func() {})
+		co_sync.CondBroadcast(a.bufferWait, func() {})
 		return
 	}
 
@@ -163,7 +163,7 @@ func (a *asyncCombineLatestSequenceIterator[R]) pass() {
 		go func(idx int, statusData *combineLatestAsyncData, it iteratorAny) {
 
 			for op := it.nextAny(); op.valid; op = it.nextAny() {
-				co_sync.CondBoardcast(a.bufferWait, func() {
+				co_sync.CondBroadcast(a.bufferWait, func() {
 					a.mux.Lock()
 					defer a.mux.Unlock()
 
@@ -172,7 +172,7 @@ func (a *asyncCombineLatestSequenceIterator[R]) pass() {
 				})
 				return
 			}
-			co_sync.CondBoardcast(a.bufferWait, func() {
+			co_sync.CondBroadcast(a.bufferWait, func() {
 				a.mux.Lock()
 				defer a.mux.Unlock()
 

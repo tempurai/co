@@ -16,7 +16,7 @@ func NewWorkerPool[K any](maxWorkers int) *WorkerPool[K] {
 		quitCh:      make(chan bool),
 		idleWorkers: queue.NewQueue[*Worker[K]](),
 
-		workerCond: sync.NewCond(&sync.Mutex{}),
+		workerCond: co_sync.NewCondCh(&sync.Mutex{}),
 		jobQueue:   queue.NewQueue[*job[K]](),
 	}
 
@@ -33,13 +33,12 @@ func NewWorkerPool[K any](maxWorkers int) *WorkerPool[K] {
 type WorkerPool[K any] struct {
 	*poolBasic[K]
 
-	workerCond  *sync.Cond
+	workerCond  *co_sync.CondCh
 	idleWorkers *queue.Queue[*Worker[K]]
 
 	callbackFn func(id uint64, val K)
 
 	workers []*Worker[K] // for shutting down
-	quit    bool
 	quitCh  chan bool
 
 	jobQueue *queue.Queue[*job[K]]
@@ -53,7 +52,7 @@ func (p *WorkerPool[K]) startListening() {
 				return
 
 			case done := <-p.doneCh:
-				co_sync.CondSignal(p.workerCond, func() {
+				p.workerCond.Signal(func() {
 					p.idleWorkers.Enqueue(done.workerRef.(*Worker[K]))
 				})
 
@@ -69,15 +68,13 @@ func (p *WorkerPool[K]) startListening() {
 
 	co_sync.SafeGo(func() {
 		for {
-			co_sync.CondWait(p.workerCond, func() bool {
-				return !p.quit && (p.jobQueue.Len() == 0 || p.idleWorkers.Len() == 0)
-			})
-			if p.quit {
+			select {
+			case <-p.quitCh:
 				return
+			case <-p.workerCond.WaitCh(func() bool { return p.jobQueue.Len() == 0 || p.idleWorkers.Len() == 0 }):
+				w := p.idleWorkers.Dequeue()
+				w.jobCh <- p.jobQueue.Dequeue()
 			}
-
-			w := p.idleWorkers.Dequeue()
-			w.jobCh <- p.jobQueue.Dequeue()
 		}
 	})
 }
@@ -92,7 +89,7 @@ func (p *WorkerPool[K]) ReserveSeq() uint64 {
 }
 
 func (p *WorkerPool[K]) AddJobAt(seq uint64, fn func() K) uint64 {
-	co_sync.CondSignal(p.workerCond, func() {
+	p.workerCond.Signal(func() {
 		p.jobQueue.Enqueue(&job[K]{fn: fn, seq: seq})
 	})
 
@@ -103,7 +100,7 @@ func (p *WorkerPool[K]) AddJobAt(seq uint64, fn func() K) uint64 {
 func (p *WorkerPool[K]) AddJob(fn func() K) uint64 {
 	id := atomic.AddUint64(&p.seq, 1)
 
-	co_sync.CondSignal(p.workerCond, func() {
+	p.workerCond.Signal(func() {
 		p.jobQueue.Enqueue(&job[K]{fn: fn, seq: id})
 	})
 
@@ -120,8 +117,6 @@ func (p *WorkerPool[K]) Stop() {
 		worker.stop()
 	}
 	p.quitCh <- true
-	p.quit = true
-	p.workerCond.Broadcast()
 }
 
 type Worker[K any] struct {

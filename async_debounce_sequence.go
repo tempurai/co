@@ -79,10 +79,10 @@ func (it *asyncDebounceSequenceIterator[R]) startBuffer() {
 
 				it.bufferedData.Enqueue(op.data)
 				if it.tolerance == it.interval || it.tolerancePassed() {
-					co_sync.CondBoardcast(it.bufferWait, func() { it.previousTime = time.Now() })
+					co_sync.CondBroadcast(it.bufferWait, func() { it.previousTime = time.Now() })
 				}
 			}
-			co_sync.CondBoardcast(it.bufferWait, func() { it.sourceEnded = true })
+			co_sync.CondBroadcast(it.bufferWait, func() { it.sourceEnded = true })
 		})
 	})
 }

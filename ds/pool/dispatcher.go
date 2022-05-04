@@ -14,7 +14,7 @@ func NewDispatchPool[K any](maxWorkers int) *DispatcherPool[K] {
 		quitCh:         make(chan bool),
 		idleDispatcher: int32(maxWorkers),
 
-		workerCond: sync.NewCond(&sync.Mutex{}),
+		workerCond: co_sync.NewCondCh(&sync.Mutex{}),
 		jobQueue:   queue.NewQueue[*job[K]](),
 	}
 
@@ -30,13 +30,11 @@ type DispatcherPool[K any] struct {
 	*poolBasic[K]
 
 	pool           sync.Pool
-	workerCond     *sync.Cond
+	workerCond     *co_sync.CondCh
 	idleDispatcher int32
 
 	callbackFn func(id uint64, val K)
-
-	quit   bool
-	quitCh chan bool
+	quitCh     chan bool
 
 	jobQueue *queue.Queue[*job[K]]
 }
@@ -49,7 +47,7 @@ func (p *DispatcherPool[K]) startListening() {
 				return
 
 			case data := <-p.doneCh:
-				co_sync.CondSignal(p.workerCond, func() {
+				p.workerCond.Signal(func() {
 					p.pool.Put(data.workerRef)
 					atomic.AddInt32(&p.idleDispatcher, 1)
 				})
@@ -66,17 +64,15 @@ func (p *DispatcherPool[K]) startListening() {
 
 	co_sync.SafeGo(func() {
 		for {
-			co_sync.CondWait(p.workerCond, func() bool {
-				return !p.quit && (p.jobQueue.Len() == 0 || p.idleDispatcher == 0)
-			})
-			if p.quit {
+			select {
+			case <-p.quitCh:
 				return
+			case <-p.workerCond.WaitCh(func() bool { return p.jobQueue.Len() == 0 || p.idleDispatcher == 0 }):
+				atomic.AddInt32(&p.idleDispatcher, -1)
+
+				w := p.pool.Get().(*Dispatcher[K])
+				w.trigger(p.jobQueue.Dequeue())
 			}
-
-			atomic.AddInt32(&p.idleDispatcher, -1)
-
-			w := p.pool.Get().(*Dispatcher[K])
-			w.trigger(p.jobQueue.Dequeue())
 		}
 	})
 }
@@ -87,7 +83,7 @@ func (p *DispatcherPool[K]) SetCallbackFn(fn func(uint64, K)) *DispatcherPool[K]
 }
 
 func (p *DispatcherPool[K]) AddJobAt(seq uint64, fn func() K) uint64 {
-	co_sync.CondSignal(p.workerCond, func() {
+	p.workerCond.Signal(func() {
 		p.jobQueue.Enqueue(&job[K]{fn: fn, seq: seq})
 	})
 
@@ -107,8 +103,6 @@ func (p *DispatcherPool[K]) Wait() *DispatcherPool[K] {
 
 func (p *DispatcherPool[K]) Stop() {
 	p.quitCh <- true
-	p.quit = true
-	p.workerCond.Broadcast()
 }
 
 type Dispatcher[K any] struct {

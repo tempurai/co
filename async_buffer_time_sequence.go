@@ -70,10 +70,10 @@ func (it *asyncBufferTimeSequenceIterator[R, T]) startBuffer() {
 				it.bufferedData.setAt(lIdx, append(it.bufferedData.getAt(lIdx), op.data))
 
 				if reachedInterval {
-					co_sync.CondBoardcast(it.bufferWait, func() { it.previousTime = time.Now() })
+					co_sync.CondBroadcast(it.bufferWait, func() { it.previousTime = time.Now() })
 				}
 			}
-			co_sync.CondBoardcast(it.bufferWait, func() { it.sourceEnded = true })
+			co_sync.CondBroadcast(it.bufferWait, func() { it.sourceEnded = true })
 		})
 	})
 }
