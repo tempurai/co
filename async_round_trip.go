@@ -99,7 +99,10 @@ func (a *asyncRoundTrip[R, E, T]) receiveCallback(pSeq uint64, val *data[E]) {
 	if !ok {
 		panic("co / roundTrip: seq to callback fn map not found")
 	}
-	syncx.SafeGo(func() {
-		callbackFn.(func(E, error))(val.GetValue(), val.GetError())
-	})
+
+	func(val *data[E]) {
+		syncx.SafeGo(func() {
+			callbackFn.(func(E, error))(val.GetValue(), val.GetError())
+		})
+	}(val)
 }
