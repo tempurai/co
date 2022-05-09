@@ -40,7 +40,6 @@ func (p *poolBasic[K]) callCallback(seq uint64, val K) {
 	}
 }
 
-func (p *WorkerPool[K]) SetCallbackFn(fn func(uint64, K)) *WorkerPool[K] {
+func (p *poolBasic[K]) SetCallbackFn(fn func(uint64, K)) {
 	p.callbackFn = fn
-	return p
 }
