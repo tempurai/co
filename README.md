@@ -163,15 +163,17 @@ for data := range bList.Iter() {
 
 Pool benchmark
 
-```
+```golang
 goos: darwin
 goarch: amd64
-pkg: github.com/tempura-shrimp/co/pool
+pkg: go.tempura.ink/co/benchmark
 cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
-BenchmarkWorkPoolWithFib-12                10000            178232 ns/op
-BenchmarkDispatchPoolWithFib-12            10000            176316 ns/op
-BenchmarkFibWithAwaitAll-12                10000            194145 ns/op
-BenchmarkFibWithTunny-12                   10000            907005 ns/op
-BenchmarkFibSequence-12                    10000            959778 ns/op
+BenchmarkUnmarshalLargeJSONWithSequence-12                    50          45000332 ns/op        11435352 B/op     137058 allocs/op
+BenchmarkUnmarshalLargeJSONWithAwaitAll-12                    50           9901537 ns/op        11207428 B/op     134323 allocs/op
+BenchmarkUnmarshalLargeJSONWithTunny-12                       50          45371793 ns/op        11206861 B/op     134321 allocs/op
+BenchmarkUnmarshalLargeJSONWithAnts-12                        50          10075534 ns/op        11435540 B/op     137063 allocs/op
+BenchmarkUnmarshalLargeJSONWithWorkPool-12                    50           9658117 ns/op        11206981 B/op     134322 allocs/op
+BenchmarkUnmarshalLargeJSONWithDispatchPool-12                50          10893923 ns/op        11207039 B/op     134322 allocs/op
 PASS
+ok      go.tempura.ink/co/benchmark     6.793s
 ```

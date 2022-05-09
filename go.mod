@@ -3,7 +3,6 @@ module go.tempura.ink/co
 go 1.18
 
 require (
-	github.com/Jeffail/tunny v0.1.4
 	github.com/smartystreets/goconvey v1.7.2
 	golang.org/x/exp v0.0.0-20220328175248-053ad81199eb
 )

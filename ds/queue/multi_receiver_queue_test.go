@@ -2,11 +2,13 @@ package queue_test
 
 import (
 	"fmt"
+	"log"
 	"sync/atomic"
 	"testing"
 
 	"github.com/smartystreets/goconvey/convey"
 	"go.tempura.ink/co/ds/queue"
+	"golang.org/x/exp/slices"
 )
 
 func TestMultiReceiverQueue(t *testing.T) {
@@ -34,48 +36,82 @@ func TestMultiReceiverQueue(t *testing.T) {
 	})
 }
 
-func TestMultiReceiverQueueWith2Receiver(t *testing.T) {
+func TestMultiReceiverQueueConcurrentRead(t *testing.T) {
 	convey.Convey("given a sequential int to enqueue", t, func() {
-		q := queue.NewMultiReceiverQueue[int]()
-		r1 := q.Receiver()
-		r2 := q.Receiver()
-		l := 5000
+		q := queue.NewMultiReceiverQueue[int]().Receiver()
+		l := 100000
 
-		convey.Convey("Queue should be empty at initial", func() {
-			convey.So(r1.IsEmpty(), convey.ShouldEqual, true)
-			convey.So(r2.IsEmpty(), convey.ShouldEqual, true)
-		})
-
-		expected := make([]int, 0)
-		for i := 0; i < l; i++ {
-			expected = append(expected, i)
+		exptected := make([]int, 0)
+		for i := 1; i <= l; i++ {
 			q.Enqueue(i)
+			exptected = append(exptected, i)
 		}
 
-		convey.Convey("On wait", func() {
-			convey.Convey("Dequeue 1 should be identical to enqueued", func() {
-				convey.So(r1.IsEmpty(), convey.ShouldEqual, false)
-				actual := make([]int, 0)
-				for i := 0; i < l; i++ {
-					v := r1.Dequeue()
-					actual = append(actual, v)
+		actualCh := make(chan int)
+		actualCount := (int32)(0)
 
+		convey.So(q.IsEmpty(), convey.ShouldEqual, false)
+		for i := 1; i <= l; i++ {
+			go func(i int) {
+				actualCh <- q.Dequeue()
+				if atomic.AddInt32(&actualCount, 1) == int32(l) {
+					close(actualCh)
 				}
-				convey.So(actual, convey.ShouldResemble, expected)
-				convey.So(r1.IsEmpty(), convey.ShouldEqual, true)
-			})
-			convey.Convey("Dequeue 2 should be identical to enqueued", func() {
-				convey.So(r2.IsEmpty(), convey.ShouldEqual, false)
-				actual := make([]int, 0)
-				for i := 0; i < l; i++ {
-					v := r2.Dequeue()
-					actual = append(actual, v)
+			}(i)
+		}
 
-				}
-				convey.So(actual, convey.ShouldResemble, expected)
-				convey.So(r2.IsEmpty(), convey.ShouldEqual, true)
-			})
-		})
+		actual := make([]int, 0)
+		for val := range actualCh {
+			actual = append(actual, val)
+		}
+		slices.Sort(actual)
+		slices.Sort(exptected)
+
+		convey.So(actual, convey.ShouldResemble, exptected)
+		convey.So(q.IsEmpty(), convey.ShouldEqual, true)
+	})
+}
+
+func TestMultiReceiverQueueWith2Receiver(t *testing.T) {
+	q := queue.NewMultiReceiverQueue[int]()
+	r1 := q.Receiver()
+	r2 := q.Receiver()
+	l := 50
+
+	convey.Convey("Queue should be empty at initial", t, func() {
+		convey.So(r1.IsEmpty(), convey.ShouldEqual, true)
+		convey.So(r2.IsEmpty(), convey.ShouldEqual, true)
+	})
+
+	expected := make([]int, 0)
+	log.Printf("Enqueueing items\n")
+	for i := 1; i < l+1; i++ {
+		expected = append(expected, i)
+		q.Enqueue(i)
+	}
+
+	convey.Convey("Both dequeue should be identical to enqueued", t, func() {
+		convey.Println("Dequeue 1 ...")
+		convey.So(r1.IsEmpty(), convey.ShouldEqual, false)
+		actual := make([]int, 0)
+		for i := 0; i < l; i++ {
+			v := r1.Dequeue()
+			actual = append(actual, v)
+			convey.So(q.Count(), convey.ShouldEqual, 50)
+		}
+		convey.So(actual, convey.ShouldResemble, expected)
+		convey.So(r1.IsEmpty(), convey.ShouldEqual, true)
+
+		convey.Println("Dequeue 2 ...")
+		convey.So(r2.IsEmpty(), convey.ShouldEqual, false)
+		actual = make([]int, 0)
+		for i := 0; i < l; i++ {
+			v := r2.Dequeue()
+			actual = append(actual, v)
+			convey.So(q.Count(), convey.ShouldEqual, 50-i-1)
+		}
+		convey.So(actual, convey.ShouldResemble, expected)
+		convey.So(r2.IsEmpty(), convey.ShouldEqual, true)
 	})
 }
 
@@ -124,10 +160,9 @@ func TestMultiReceiverQueueWith2ReceiverConcurrently(t *testing.T) {
 		}
 
 		for val := range actualCh {
-			c.Convey(fmt.Sprintf("Dequeue %d should be identical to enqueued", val.i+1), func() {
-				c.So(val.v, convey.ShouldResemble, expected)
-				c.So(r[val.i].IsEmpty(), convey.ShouldEqual, true)
-			})
+			c.Println(fmt.Sprintf("Dequeue %d should be identical to enqueued", val.i+1))
+			c.So(val.v, convey.ShouldResemble, expected)
+			c.So(r[val.i].IsEmpty(), convey.ShouldEqual, true)
 		}
 	})
 }

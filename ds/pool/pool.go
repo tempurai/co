@@ -6,16 +6,18 @@ import (
 )
 
 type poolBasic[K any] struct {
-	doneCh chan *jobDone[K]
-	doneWG sync.WaitGroup
+	doneWG   sync.WaitGroup
+	jobCache sync.Pool
 
 	seq uint64
 }
 
 func newPoolBasic[K any]() *poolBasic[K] {
-	return &poolBasic[K]{
-		doneCh: make(chan *jobDone[K]),
+	p := &poolBasic[K]{}
+	p.jobCache.New = func() any {
+		return &job[K]{}
 	}
+	return p
 }
 
 func (p *poolBasic[K]) ReserveSeq() uint64 {

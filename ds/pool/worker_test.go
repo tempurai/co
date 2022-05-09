@@ -21,29 +21,13 @@ func TestWorkerPool(t *testing.T) {
 				})
 			}(i)
 		}
-		convey.Convey("On wait", func() {
-			p.Wait()
 
-			convey.Convey("Each markers should be marked", func() {
-				for i := 0; i < 1000; i++ {
-					convey.So(markers[i], convey.ShouldEqual, true)
-				}
-			})
+		p.Wait()
+
+		convey.Convey("Each markers should be marked", func() {
+			for i := 0; i < 1000; i++ {
+				convey.So(markers[i], convey.ShouldEqual, true)
+			}
 		})
 	})
-}
-
-func BenchmarkWorkPoolWithFib(b *testing.B) {
-	p := pool.NewWorkerPool[int](256)
-
-	b.ResetTimer()
-	for i := 1; i < b.N; i++ {
-		func(idx int) {
-			p.AddJob(func() int {
-				return memoizeFib(idx)
-			})
-		}(i)
-	}
-
-	p.Wait()
 }

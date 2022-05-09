@@ -11,7 +11,6 @@ import (
 func NewDispatchPool[K any](maxWorkers int) *DispatcherPool[K] {
 	p := &DispatcherPool[K]{
 		poolBasic:      newPoolBasic[K](),
-		quitCh:         make(chan bool),
 		idleDispatcher: int32(maxWorkers),
 
 		workerCond: syncx.NewCondCh(&sync.Mutex{}),
@@ -19,7 +18,7 @@ func NewDispatchPool[K any](maxWorkers int) *DispatcherPool[K] {
 	}
 
 	p.pool.New = func() any {
-		return NewDispatcher(&p.doneCh)
+		return NewDispatcher(p)
 	}
 
 	p.startListening()
@@ -34,7 +33,7 @@ type DispatcherPool[K any] struct {
 	idleDispatcher int32
 
 	callbackFn func(id uint64, val K)
-	quitCh     chan bool
+	quit       bool
 
 	jobQueue *queue.Queue[*job[K]]
 }
@@ -42,37 +41,18 @@ type DispatcherPool[K any] struct {
 func (p *DispatcherPool[K]) startListening() {
 	syncx.SafeGo(func() {
 		for {
-			select {
-			case <-p.quitCh:
+			p.workerCond.Waitify(func() bool {
+				return !p.quit && (p.jobQueue.Len() == 0 || p.idleDispatcher == 0)
+			}, func() {
+				p.idleDispatcher--
+			})
+
+			if p.quit {
 				return
-
-			case data := <-p.doneCh:
-				p.workerCond.Signal(func() {
-					p.pool.Put(data.workerRef)
-					atomic.AddInt32(&p.idleDispatcher, 1)
-				})
-
-				if p.callbackFn != nil {
-					syncx.SafeGo(func() {
-						p.callbackFn(data.seq, data.val)
-					})
-				}
-				p.doneWG.Done()
 			}
-		}
-	})
 
-	syncx.SafeGo(func() {
-		for {
-			select {
-			case <-p.quitCh:
-				return
-			case <-p.workerCond.WaitCh(func() bool { return p.jobQueue.Len() == 0 || p.idleDispatcher == 0 }):
-				atomic.AddInt32(&p.idleDispatcher, -1)
-
-				w := p.pool.Get().(*Dispatcher[K])
-				w.trigger(p.jobQueue.Dequeue())
-			}
+			w := p.pool.Get().(*Dispatcher[K])
+			w.trigger(p.jobQueue.Dequeue())
 		}
 	})
 }
@@ -83,8 +63,10 @@ func (p *DispatcherPool[K]) SetCallbackFn(fn func(uint64, K)) *DispatcherPool[K]
 }
 
 func (p *DispatcherPool[K]) AddJobAt(seq uint64, fn func() K) uint64 {
-	p.workerCond.Signal(func() {
-		p.jobQueue.Enqueue(&job[K]{fn: fn, seq: seq})
+	p.workerCond.Signalify(func() {
+		load := p.jobCache.Get().(*job[K])
+		load.fn, load.seq = fn, seq
+		p.jobQueue.Enqueue(load)
 	})
 
 	p.doneWG.Add(1)
@@ -102,22 +84,38 @@ func (p *DispatcherPool[K]) Wait() *DispatcherPool[K] {
 }
 
 func (p *DispatcherPool[K]) Stop() {
-	p.quitCh <- true
+	p.workerCond.Broadcastify(func() {
+		p.quit = true
+	})
 }
 
 type Dispatcher[K any] struct {
-	doneCh *chan *jobDone[K]
+	pool *DispatcherPool[K]
 }
 
-func NewDispatcher[K any](doneCh *chan *jobDone[K]) *Dispatcher[K] {
+func NewDispatcher[K any](p *DispatcherPool[K]) *Dispatcher[K] {
 	w := Dispatcher[K]{
-		doneCh: doneCh,
+		pool: p,
 	}
 	return &w
 }
 
 func (w *Dispatcher[K]) trigger(load *job[K]) {
-	syncx.SafeGo(func() {
-		*(w.doneCh) <- &jobDone[K]{val: load.fn(), seq: load.seq, workerRef: w}
-	})
+	go func() {
+		defer func() {
+			w.pool.workerCond.Signalify(func() {
+				w.pool.pool.Put(w)
+				w.pool.jobCache.Put(load)
+				w.pool.idleDispatcher++
+			})
+			w.pool.doneWG.Done()
+		}()
+
+		val := load.fn()
+		if w.pool.callbackFn != nil {
+			syncx.SafeGo(func() {
+				w.pool.callbackFn(load.seq, val)
+			})
+		}
+	}()
 }

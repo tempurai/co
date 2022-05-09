@@ -32,18 +32,3 @@ func TestDispatchPool(t *testing.T) {
 		})
 	})
 }
-
-func BenchmarkDispatchPoolWithFib(b *testing.B) {
-	p := pool.NewDispatchPool[int](256)
-
-	b.ResetTimer()
-	for i := 1; i < b.N; i++ {
-		func(idx int) {
-			p.AddJob(func() int {
-				return memoizeFib(idx)
-			})
-		}(i)
-	}
-
-	p.Wait()
-}

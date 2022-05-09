@@ -9,7 +9,11 @@ func NewQueue[K any]() *Queue[K] {
 }
 
 func (q *Queue[K]) Len() int {
-	return q.r.len()
+	return q.r.Count()
+}
+
+func (q *Queue[K]) IsEmpty() bool {
+	return q.r.IsEmpty()
 }
 
 func (q *Queue[K]) Enqueue(v K) {

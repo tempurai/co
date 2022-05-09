@@ -10,16 +10,16 @@ func NewCondCh(mux *sync.Mutex) *CondCh {
 	return &CondCh{Cond: sync.NewCond(mux)}
 }
 
-func (c *CondCh) Signal(fn func()) {
+func (c *CondCh) Signalify(fn func()) {
 	CondSignal(c.Cond, fn)
 }
 
-func (c *CondCh) Broadcast(fn func()) {
+func (c *CondCh) Broadcastify(fn func()) {
 	CondBroadcast(c.Cond, fn)
 }
 
-func (c *CondCh) Wait(fn func() bool) {
-	CondWait(c.Cond, fn)
+func (c *CondCh) Waitify(fn1 func() bool, fn2 func()) {
+	CondWaitWrap(c.Cond, fn1, fn2)
 }
 
 func (c *CondCh) WaitCh(fn func() bool) <-chan struct{} {

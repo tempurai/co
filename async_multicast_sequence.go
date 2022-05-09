@@ -1,6 +1,7 @@
 package co
 
 import (
+	"log"
 	"sync"
 
 	"go.tempura.ink/co/ds/queue"
@@ -44,6 +45,7 @@ func (a *AsyncMulticastSequence[R]) Connect() *AsyncMulticastConnector[R] {
 		AsyncMulticastSequence: a,
 	}
 	c.asyncSequence = NewAsyncSequence[R](c)
+	c._defaultIterator = c.iterator() // init here to ensure queue works
 	return c
 }
 
@@ -74,6 +76,7 @@ func (it *asyncMulticastSequenceIterator[R]) next() *Optional[R] {
 		return !it.sourceEnded && it.receiver.IsEmpty()
 	})
 
+	log.Println("it.sourceEnded && it.receiver.IsEmpty() ", it.sourceEnded, it.receiver.IsEmpty())
 	if it.sourceEnded && it.receiver.IsEmpty() {
 		return NewOptionalEmpty[R]()
 	}

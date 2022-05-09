@@ -1,6 +1,7 @@
 package queue
 
 import (
+	"sync"
 	"sync/atomic"
 	"unsafe"
 )
@@ -12,6 +13,8 @@ type MultiReceiverQueue[K any] struct {
 
 	size     int32
 	receiver uint32
+
+	nodeCache sync.Pool
 }
 
 type node[K any] struct {
@@ -30,7 +33,9 @@ type QueueReceiver[K any] struct {
 // NewMultiReceiverQueue returns an empty queue.
 func NewMultiReceiverQueue[K any]() *MultiReceiverQueue[K] {
 	n := unsafe.Pointer(&node[K]{})
-	return &MultiReceiverQueue[K]{head: n, tail: n, receiver: 1}
+	r := &MultiReceiverQueue[K]{head: n, tail: n, receiver: 0}
+	r.nodeCache.New = func() any { return &node[K]{} }
+	return r
 }
 
 func (q *MultiReceiverQueue[K]) Receiver() *QueueReceiver[K] {
@@ -38,21 +43,23 @@ func (q *MultiReceiverQueue[K]) Receiver() *QueueReceiver[K] {
 	return &QueueReceiver[K]{MultiReceiverQueue: q, node: q.head}
 }
 
-func (q *MultiReceiverQueue[K]) len() int {
+func (q *MultiReceiverQueue[K]) Count() int {
 	return int(q.size)
 }
 
 // Enqueue puts the given value v at the tail of the queue.
 func (q *MultiReceiverQueue[K]) Enqueue(v K) {
-	n := &node[K]{value: v}
+	n := q.nodeCache.Get().(*node[K])
+	n.value = v
+
 	for {
 		tail := load[K](&q.tail)
 		next := load[K](&tail.next)
 		if tail == load[K](&q.tail) { // are tail and next consistent?
 			if next == nil {
 				if cas(&tail.next, next, n) {
-					atomic.AddInt32(&q.size, 1)
 					cas(&q.tail, tail, n) // Enqueue is done.  try to swing tail to the inserted node
+					atomic.AddInt32(&q.size, 1)
 					return
 				}
 			} else { // tail was not pointing to the last node
@@ -63,36 +70,51 @@ func (q *MultiReceiverQueue[K]) Enqueue(v K) {
 	}
 }
 
+func (q *MultiReceiverQueue[K]) purgeNode(n *node[K]) {
+	atomic.AddInt32(&q.size, -1)
+	n.dequeued, n.next = 0, nil
+	q.nodeCache.Put(n) // head is dead, put back to pool
+}
+
 // Dequeue removes and returns the value at the head of the queue.
 // It returns false if the queue is empty.
 func (q *MultiReceiverQueue[K]) dequeue(r *QueueReceiver[K]) K {
 	for {
+		// advacing head
 		head := load[K](&q.head)
-		tail := load[K](&q.tail)
 		next := load[K](&head.next)
-		if head == load[K](&q.head) { // are head, tail, and next consistent?
+
+		tail := load[K](&q.tail)
+
+		if head == load[K](&q.head) { // preflight check
 			if head == tail { // is queue empty or tail falling behind?
 				if next == nil { // is queue empty?
 					return *new(K)
 				}
 				// tail is falling behind.  try to advance it
 				cas(&q.tail, tail, next)
-			} else {
-				un := load[K](&r.node)
-				unext := load[K](&un.next)
-				if unext == nil {
-					return *new(K)
-				}
-				cas(&r.node, un, unext)
 
-				v := unext.value
-				if atomic.AddUint32(&un.dequeued, 1) != q.receiver {
-					atomic.AddInt32(&q.size, -1)
-					return v
-				}
-				if cas(&q.head, head, next) {
-					atomic.AddInt32(&q.size, -1)
-					return v // Dequeue is done.  return
+			} else if next.dequeued == r.receiver {
+				cas(&q.head, head, next)
+				q.purgeNode(head) // head is dead, put back to pool
+
+			} else {
+				rhead := load[K](&r.node)
+				rnext := load[K](&rhead.next)
+
+				if rhead == load[K](&r.node) {
+					v := rnext.value
+
+					if cas(&r.node, rhead, rnext) {
+						if atomic.AddUint32(&rnext.dequeued, 1) == q.receiver {
+							// where the receiver is the last receiver in the queue
+							if cas(&q.head, rhead, rnext) {
+								// if rhead is q.head, then try to advance q.head
+								q.purgeNode(rhead) // head is dead, put back to pool
+							}
+						}
+						return v // Dequeue is done.  return
+					}
 				}
 			}
 		}

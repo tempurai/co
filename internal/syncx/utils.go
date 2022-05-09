@@ -102,3 +102,12 @@ func CondWait(cond *sync.Cond, fn func() bool) {
 	}
 	cond.L.Unlock()
 }
+
+func CondWaitWrap(cond *sync.Cond, fn func() bool, fn2 func()) {
+	cond.L.Lock()
+	for fn() {
+		cond.Wait()
+	}
+	fn2()
+	cond.L.Unlock()
+}
