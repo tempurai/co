@@ -39,7 +39,7 @@ func (c *AsyncDebounceSequence[R]) iterator() Iterator[R] {
 	it := &asyncDebounceSequenceIterator[R]{
 		AsyncDebounceSequence: c,
 		bufferedData:          queue.NewQueue[R](),
-		bufferWait:            sync.NewCond(&sync.Mutex{}),
+		bufferWait:            syncx.NewCondx(&sync.Mutex{}),
 	}
 	it.asyncSequenceIterator = NewAsyncSequenceIterator[R](it)
 	return it
@@ -55,7 +55,7 @@ type asyncDebounceSequenceIterator[R any] struct {
 
 	runOnce     sync.Once
 	sourceEnded bool
-	bufferWait  *sync.Cond
+	bufferWait  *syncx.Condx
 }
 
 func (it *asyncDebounceSequenceIterator[R]) intervalPassed() bool {
@@ -79,10 +79,14 @@ func (it *asyncDebounceSequenceIterator[R]) startBuffer() {
 
 				it.bufferedData.Enqueue(op.data)
 				if it.tolerance == it.interval || it.tolerancePassed() {
-					syncx.CondBroadcast(it.bufferWait, func() { it.previousTime = time.Now() })
+					it.bufferWait.Broadcastify(&syncx.BroadcastOption{
+						PreProcessFn: func() { it.previousTime = time.Now() },
+					})
 				}
 			}
-			syncx.CondBroadcast(it.bufferWait, func() { it.sourceEnded = true })
+			it.bufferWait.Broadcastify(&syncx.BroadcastOption{
+				PreProcessFn: func() { it.sourceEnded = true },
+			})
 		})
 	})
 }
@@ -90,8 +94,10 @@ func (it *asyncDebounceSequenceIterator[R]) startBuffer() {
 func (it *asyncDebounceSequenceIterator[R]) next() *Optional[R] {
 	it.startBuffer()
 
-	syncx.CondWait(it.bufferWait, func() bool {
-		return !it.sourceEnded && it.bufferedData.Len() == 0
+	it.bufferWait.Waitify(&syncx.WaitOption{
+		ConditionFn: func() bool {
+			return !it.sourceEnded && it.bufferedData.Len() == 0
+		},
 	})
 
 	if it.sourceEnded && it.bufferedData.Len() == 0 {

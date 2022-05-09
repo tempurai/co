@@ -14,14 +14,14 @@ type AsyncMulticastSequence[R any] struct {
 	runOnce          sync.Once
 
 	bufferedQueue *queue.MultiReceiverQueue[R]
-	bufferWait    *sync.Cond
+	bufferWait    *syncx.Condx
 }
 
 func NewAsyncMulticastSequence[R any](it AsyncSequenceable[R]) *AsyncMulticastSequence[R] {
 	a := &AsyncMulticastSequence[R]{
 		previousIterator: it.iterator(),
 		bufferedQueue:    queue.NewMultiReceiverQueue[R](),
-		bufferWait:       sync.NewCond(&sync.Mutex{}),
+		bufferWait:       syncx.NewCondx(&sync.Mutex{}),
 	}
 	a.startListening()
 	return a
@@ -31,11 +31,15 @@ func (a *AsyncMulticastSequence[T]) startListening() {
 	a.runOnce.Do(func() {
 		syncx.SafeGo(func() {
 			for op := a.previousIterator.next(); op.valid; op = a.previousIterator.next() {
-				syncx.CondBroadcast(a.bufferWait, func() {
-					a.bufferedQueue.Enqueue(op.data)
+				a.bufferWait.Broadcastify(&syncx.BroadcastOption{
+					PreProcessFn: func() {
+						a.bufferedQueue.Enqueue(op.data)
+					},
 				})
 			}
-			syncx.CondBroadcast(a.bufferWait, func() { a.sourceEnded = true })
+			a.bufferWait.Broadcastify(&syncx.BroadcastOption{
+				PreProcessFn: func() { a.sourceEnded = true },
+			})
 		})
 	})
 }
@@ -72,8 +76,10 @@ type asyncMulticastSequenceIterator[R any] struct {
 }
 
 func (it *asyncMulticastSequenceIterator[R]) next() *Optional[R] {
-	syncx.CondWait(it.bufferWait, func() bool {
-		return !it.sourceEnded && it.receiver.IsEmpty()
+	it.bufferWait.Waitify(&syncx.WaitOption{
+		ConditionFn: func() bool {
+			return !it.sourceEnded && it.receiver.IsEmpty()
+		},
 	})
 
 	log.Println("it.sourceEnded && it.receiver.IsEmpty() ", it.sourceEnded, it.receiver.IsEmpty())

@@ -3,14 +3,19 @@ package syncx
 import (
 	"fmt"
 	"runtime/debug"
-	"sync"
+)
+
+var (
+	Debug = false
 )
 
 func SafeSend[T any](ch chan T, value T) (closed bool) {
 	defer func() {
 		if recover() != nil {
 			closed = true
-			fmt.Printf("channel %+v send out %+v failed\n", ch, value)
+			if Debug {
+				fmt.Printf("channel %+v send out %+v failed\n", ch, value)
+			}
 		}
 	}()
 
@@ -22,14 +27,18 @@ func SafeNSend[T any](ch chan T, value T) (closed bool) {
 	defer func() {
 		if recover() != nil {
 			closed = true
-			fmt.Printf("channel %+v send out %+v failed\n", ch, value)
+			if Debug {
+				fmt.Printf("channel %+v send out %+v failed\n", ch, value)
+			}
 		}
 	}()
 
 	select {
 	case ch <- value:
 	default:
-		fmt.Printf("channel %+v send out %+v blocked omitted, stacktrace: %+v \n", ch, value, string(debug.Stack()))
+		if Debug {
+			fmt.Printf("channel %+v send out %+v blocked omitted, stacktrace: %+v \n", ch, value, string(debug.Stack()))
+		}
 	}
 	return false
 }
@@ -79,35 +88,4 @@ func SafeEFn[E any](fn func() (E, error)) (val E, err error) {
 	}
 	val, err = fn()
 	return
-}
-
-func CondSignal(cond *sync.Cond, fn func()) {
-	cond.L.Lock()
-	fn()
-	cond.Signal()
-	cond.L.Unlock()
-}
-
-func CondBroadcast(cond *sync.Cond, fn func()) {
-	cond.L.Lock()
-	fn()
-	cond.Broadcast()
-	cond.L.Unlock()
-}
-
-func CondWait(cond *sync.Cond, fn func() bool) {
-	cond.L.Lock()
-	for fn() {
-		cond.Wait()
-	}
-	cond.L.Unlock()
-}
-
-func CondWaitWrap(cond *sync.Cond, fn func() bool, fn2 func()) {
-	cond.L.Lock()
-	for fn() {
-		cond.Wait()
-	}
-	fn2()
-	cond.L.Unlock()
 }

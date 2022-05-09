@@ -23,15 +23,14 @@ func TestParallel(t *testing.T) {
 				})
 			}(i)
 		}
-		convey.Convey("On wait", func() {
-			p.Wait()
 
-			convey.Convey("Each markers should be marked", func() {
-				for i := 0; i < size; i++ {
-					expected[i] = true
-				}
-				convey.So(actual, convey.ShouldResemble, expected)
-			})
+		p.Wait()
+
+		convey.Convey("Each markers should be marked", func() {
+			for i := 0; i < size; i++ {
+				expected[i] = true
+			}
+			convey.So(actual, convey.ShouldResemble, expected)
 		})
 	})
 }
@@ -48,16 +47,14 @@ func TestParallelWithResponse(t *testing.T) {
 			}(i)
 		}
 
-		convey.Convey("On wait", func() {
-			actuals := p.Wait().GetData()
-			expected := make([]int, 0)
+		actuals := p.Wait().GetData()
+		expected := make([]int, 0)
 
-			convey.Convey("Each response should be valid", func() {
-				for i := 0; i < size; i++ {
-					expected = append(expected, i+1)
-				}
-				convey.So(actuals, convey.ShouldResemble, expected)
-			})
+		convey.Convey("Each response should be valid", func() {
+			for i := 0; i < size; i++ {
+				expected = append(expected, i+1)
+			}
+			convey.So(actuals, convey.ShouldResemble, expected)
 		})
 	})
 }
@@ -91,17 +88,15 @@ func TestParallelSeparatedAdd(t *testing.T) {
 			}(i)
 		}
 
-		convey.Convey("On wait", func() {
-			p.Wait()
-			expected := make([]bool, 0)
+		p.Wait()
+		expected := make([]bool, 0)
 
-			convey.Convey("Each markers should be marked", func() {
-				for i := 0; i < size2; i++ {
-					expected = append(expected, true)
+		convey.Convey("Each markers should be marked", func() {
+			for i := 0; i < size2; i++ {
+				expected = append(expected, true)
 
-				}
-				convey.So(actuals, convey.ShouldResemble, expected)
-			})
+			}
+			convey.So(actuals, convey.ShouldResemble, expected)
 		})
 	})
 }
@@ -126,16 +121,14 @@ func TestParallelHungerWait(t *testing.T) {
 			time.Sleep(1 * time.Second)
 		}
 
-		convey.Convey("On wait", func() {
-			p.Wait()
+		p.Wait()
 
-			expected := make([]bool, 0)
-			convey.Convey("Each markers should be marked", func() {
-				for i := 0; i < size; i++ {
-					expected = append(expected, true)
-				}
-				convey.So(actuals, convey.ShouldResemble, expected)
-			})
+		expected := make([]bool, 0)
+		convey.Convey("Each markers should be marked", func() {
+			for i := 0; i < size; i++ {
+				expected = append(expected, true)
+			}
+			convey.So(actuals, convey.ShouldResemble, expected)
 		})
 	})
 }

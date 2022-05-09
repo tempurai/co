@@ -10,16 +10,54 @@ func NewCondx(mux *sync.Mutex) *Condx {
 	return &Condx{Cond: sync.NewCond(mux)}
 }
 
-func (c *Condx) Signalify(fn func()) {
-	CondSignal(c.Cond, fn)
+type SignalOption struct {
+	PreProcessFn  func()
+	PostProcessFn func()
 }
 
-func (c *Condx) Broadcastify(fn func()) {
-	CondBroadcast(c.Cond, fn)
+func (c *Condx) Signalify(op *SignalOption) {
+	c.Cond.L.Lock()
+	if op.PreProcessFn != nil {
+		op.PreProcessFn()
+	}
+	c.Cond.Signal()
+	if op.PostProcessFn != nil {
+		op.PostProcessFn()
+	}
+	c.Cond.L.Unlock()
 }
 
-func (c *Condx) Waitify(fn1 func() bool, fn2 func()) {
-	CondWaitWrap(c.Cond, fn1, fn2)
+type BroadcastOption struct {
+	PreProcessFn  func()
+	PostProcessFn func()
+}
+
+func (c *Condx) Broadcastify(op *BroadcastOption) {
+	c.Cond.L.Lock()
+	if op.PreProcessFn != nil {
+		op.PreProcessFn()
+	}
+	c.Cond.Broadcast()
+	if op.PostProcessFn != nil {
+		op.PostProcessFn()
+	}
+	c.Cond.L.Unlock()
+}
+
+type WaitOption struct {
+	ConditionFn   func() bool
+	PostProcessFn func()
+}
+
+func (c *Condx) Waitify(op *WaitOption) {
+	c.Cond.L.Lock()
+	for op.ConditionFn() {
+		c.Cond.Wait()
+	}
+	if op.PostProcessFn != nil {
+		op.PostProcessFn()
+	}
+	c.Cond.L.Unlock()
 }
 
 func (c *Condx) WaitCh(fn func() bool) <-chan struct{} {

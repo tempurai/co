@@ -32,7 +32,7 @@ func (c *AsyncBufferTimeSequence[R, T]) iterator() Iterator[T] {
 	it := &asyncBufferTimeSequenceIterator[R, T]{
 		AsyncBufferTimeSequence: c,
 		bufferedData:            NewList[T](),
-		bufferWait:              sync.NewCond(&sync.Mutex{}),
+		bufferWait:              syncx.NewCondx(&sync.Mutex{}),
 	}
 	it.asyncSequenceIterator = NewAsyncSequenceIterator[T](it)
 	return it
@@ -48,7 +48,7 @@ type asyncBufferTimeSequenceIterator[R any, T []R] struct {
 
 	runOnce     sync.Once
 	sourceEnded bool
-	bufferWait  *sync.Cond
+	bufferWait  *syncx.Condx
 }
 
 func (it *asyncBufferTimeSequenceIterator[R, T]) intervalPassed() bool {
@@ -70,10 +70,14 @@ func (it *asyncBufferTimeSequenceIterator[R, T]) startBuffer() {
 				it.bufferedData.setAt(lIdx, append(it.bufferedData.getAt(lIdx), op.data))
 
 				if reachedInterval {
-					syncx.CondBroadcast(it.bufferWait, func() { it.previousTime = time.Now() })
+					it.bufferWait.Broadcastify(&syncx.BroadcastOption{
+						PreProcessFn: func() { it.previousTime = time.Now() }},
+					)
 				}
 			}
-			syncx.CondBroadcast(it.bufferWait, func() { it.sourceEnded = true })
+			it.bufferWait.Broadcastify(&syncx.BroadcastOption{
+				PreProcessFn: func() { it.sourceEnded = true }},
+			)
 		})
 	})
 }
@@ -81,8 +85,10 @@ func (it *asyncBufferTimeSequenceIterator[R, T]) startBuffer() {
 func (it *asyncBufferTimeSequenceIterator[R, T]) next() *Optional[T] {
 	it.startBuffer()
 
-	syncx.CondWait(it.bufferWait, func() bool {
-		return !it.sourceEnded && (it.bufferedData.len() == 0 || !it.intervalPassed())
+	it.bufferWait.Waitify(&syncx.WaitOption{
+		ConditionFn: func() bool {
+			return !it.sourceEnded && (it.bufferedData.len() == 0 || !it.intervalPassed())
+		},
 	})
 
 	if it.sourceEnded && it.bufferedData.len() == 0 {

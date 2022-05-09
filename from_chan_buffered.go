@@ -15,14 +15,14 @@ type AsyncBufferedChan[R any] struct {
 	runOnce     sync.Once
 
 	bufferedData *queue.Queue[R]
-	bufferWait   *sync.Cond
+	bufferWait   *syncx.Condx
 }
 
 func FromChanBuffered[R any](ch chan R) *AsyncBufferedChan[R] {
 	a := &AsyncBufferedChan[R]{
 		sourceCh:     ch,
 		bufferedData: queue.NewQueue[R](),
-		bufferWait:   sync.NewCond(&sync.Mutex{}),
+		bufferWait:   syncx.NewCondx(&sync.Mutex{}),
 	}
 	a.asyncSequence = NewAsyncSequence[R](a)
 	a.startListening()
@@ -33,11 +33,15 @@ func (a *AsyncBufferedChan[T]) startListening() {
 	a.runOnce.Do(func() {
 		syncx.SafeGo(func() {
 			for val := range a.sourceCh {
-				syncx.CondBroadcast(a.bufferWait, func() {
-					a.bufferedData.Enqueue(val)
+				a.bufferWait.Broadcastify(&syncx.BroadcastOption{
+					PreProcessFn: func() {
+						a.bufferedData.Enqueue(val)
+					},
 				})
 			}
-			syncx.CondBroadcast(a.bufferWait, func() { a.sourceEnded.Set(true) })
+			a.bufferWait.Broadcastify(&syncx.BroadcastOption{
+				PreProcessFn: func() { a.sourceEnded.Set(true) },
+			})
 		})
 	})
 }
@@ -65,8 +69,10 @@ func (it *asyncBufferedChanIterator[R]) next() *Optional[R] {
 	if it.sourceEnded.Get() && it.bufferedData.Len() == 0 {
 		return NewOptionalEmpty[R]()
 	}
-	syncx.CondWait(it.bufferWait, func() bool {
-		return !it.sourceEnded.Get() && it.bufferedData.Len() == 0
+	it.bufferWait.Waitify(&syncx.WaitOption{
+		ConditionFn: func() bool {
+			return !it.sourceEnded.Get() && it.bufferedData.Len() == 0
+		},
 	})
 	if it.sourceEnded.Get() && it.bufferedData.Len() == 0 {
 		return NewOptionalEmpty[R]()

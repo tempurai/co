@@ -32,8 +32,7 @@ type DispatcherPool[K any] struct {
 	workerCond     *syncx.Condx
 	idleDispatcher int32
 
-	callbackFn func(id uint64, val K)
-	quit       bool
+	quit bool
 
 	jobQueue *queue.Queue[*job[K]]
 }
@@ -41,10 +40,11 @@ type DispatcherPool[K any] struct {
 func (p *DispatcherPool[K]) startListening() {
 	syncx.SafeGo(func() {
 		for {
-			p.workerCond.Waitify(func() bool {
-				return !p.quit && (p.jobQueue.Len() == 0 || p.idleDispatcher == 0)
-			}, func() {
-				p.idleDispatcher--
+			p.workerCond.Waitify(&syncx.WaitOption{
+				ConditionFn: func() bool {
+					return !p.quit && (p.jobQueue.Len() == 0 || p.idleDispatcher == 0)
+				},
+				PostProcessFn: func() { p.idleDispatcher-- },
 			})
 
 			if p.quit {
@@ -57,16 +57,13 @@ func (p *DispatcherPool[K]) startListening() {
 	})
 }
 
-func (p *DispatcherPool[K]) SetCallbackFn(fn func(uint64, K)) *DispatcherPool[K] {
-	p.callbackFn = fn
-	return p
-}
-
 func (p *DispatcherPool[K]) AddJobAt(seq uint64, fn func() K) uint64 {
-	p.workerCond.Signalify(func() {
-		load := p.jobCache.Get().(*job[K])
-		load.fn, load.seq = fn, seq
-		p.jobQueue.Enqueue(load)
+	p.workerCond.Signalify(&syncx.SignalOption{
+		PreProcessFn: func() {
+			load := p.jobCache.Get().(*job[K])
+			load.fn, load.seq = fn, seq
+			p.jobQueue.Enqueue(load)
+		},
 	})
 
 	p.doneWG.Add(1)
@@ -84,9 +81,11 @@ func (p *DispatcherPool[K]) Wait() *DispatcherPool[K] {
 }
 
 func (p *DispatcherPool[K]) Stop() {
-	p.workerCond.Broadcastify(func() {
-		p.quit = true
-	})
+	p.workerCond.Broadcastify(&syncx.BroadcastOption{
+		PreProcessFn: func() {
+			p.quit = true
+		}},
+	)
 }
 
 type Dispatcher[K any] struct {
@@ -103,19 +102,17 @@ func NewDispatcher[K any](p *DispatcherPool[K]) *Dispatcher[K] {
 func (w *Dispatcher[K]) trigger(load *job[K]) {
 	go func() {
 		defer func() {
-			w.pool.workerCond.Signalify(func() {
-				w.pool.pool.Put(w)
-				w.pool.jobCache.Put(load)
-				w.pool.idleDispatcher++
+			w.pool.workerCond.Signalify(&syncx.SignalOption{
+				PreProcessFn: func() {
+					w.pool.pool.Put(w)
+					w.pool.jobCache.Put(load)
+					w.pool.idleDispatcher++
+				},
 			})
 			w.pool.doneWG.Done()
 		}()
 
 		val := load.fn()
-		if w.pool.callbackFn != nil {
-			syncx.SafeGo(func() {
-				w.pool.callbackFn(load.seq, val)
-			})
-		}
+		w.pool.callCallback(load.seq, val)
 	}()
 }

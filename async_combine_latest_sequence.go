@@ -34,7 +34,7 @@ func (a *AsyncCombineLatestSequence[R]) iterator() Iterator[R] {
 		AsyncCombineLatestSequence: a,
 		dataStore:                  make([]any, len(a.its)),
 		statusData:                 make([]combineLatestAsyncData, len(a.its)),
-		bufferWait:                 sync.NewCond(&sync.Mutex{}),
+		bufferWait:                 syncx.NewCondx(&sync.Mutex{}),
 	}
 	it.asyncSequenceIterator = NewAsyncSequenceIterator[R](it)
 	for i := range it.statusData {
@@ -74,7 +74,7 @@ type asyncCombineLatestSequenceIterator[R any] struct {
 
 	*AsyncCombineLatestSequence[R]
 	firstpass  bool
-	bufferWait *sync.Cond
+	bufferWait *syncx.Condx
 
 	statusData []combineLatestAsyncData
 	dataStore  []any
@@ -144,7 +144,7 @@ func (a *asyncCombineLatestSequenceIterator[R]) startFirstPass() {
 func (a *asyncCombineLatestSequenceIterator[R]) pass() {
 	if !a.firstpass {
 		a.startFirstPass()
-		syncx.CondBroadcast(a.bufferWait, func() {})
+		a.bufferWait.Broadcast()
 		return
 	}
 
@@ -158,28 +158,31 @@ func (a *asyncCombineLatestSequenceIterator[R]) pass() {
 		if a.statusData[i].asyncData.value.Len() > 0 {
 			continue
 		}
-
 		a.statusData[i].asyncData.TransiteTo(asyncStatusPending)
-		go func(idx int, statusData *combineLatestAsyncData, it iteratorAny) {
 
+		go func(idx int, statusData *combineLatestAsyncData, it iteratorAny) {
 			for op := it.nextAny(); op.valid; op = it.nextAny() {
-				syncx.CondBroadcast(a.bufferWait, func() {
+				a.bufferWait.Broadcastify(&syncx.BroadcastOption{
+					PreProcessFn: func() {
+						a.mux.Lock()
+						defer a.mux.Unlock()
+
+						statusData.asyncData.value.Enqueue(op.data)
+						statusData.asyncData.TransiteTo(asyncStatusDone)
+					}},
+				)
+				return
+			}
+			a.bufferWait.Broadcastify(&syncx.BroadcastOption{
+				PreProcessFn: func() {
 					a.mux.Lock()
 					defer a.mux.Unlock()
 
-					statusData.asyncData.value.Enqueue(op.data)
-					statusData.asyncData.TransiteTo(asyncStatusDone)
-				})
-				return
-			}
-			syncx.CondBroadcast(a.bufferWait, func() {
-				a.mux.Lock()
-				defer a.mux.Unlock()
-
-				// becuase we have already emmited final value at loop therefore no more data
-				statusData.asyncData.TransiteTo(asyncStatusIdle)
-				statusData.sourceEnded = true
-			})
+					// becuase we have already emmited final value at loop therefore no more data
+					statusData.asyncData.TransiteTo(asyncStatusIdle)
+					statusData.sourceEnded = true
+				}},
+			)
 		}(i, &a.statusData[i], a.its[i])
 	}
 }
@@ -187,8 +190,10 @@ func (a *asyncCombineLatestSequenceIterator[R]) pass() {
 func (a *asyncCombineLatestSequenceIterator[R]) next() *Optional[R] {
 	if !a.allSourcesEneded() && !a.hasQueuedData() {
 		a.pass()
-		syncx.CondWait(a.bufferWait, func() bool {
-			return !a.allSourcesEneded() && !a.hasQueuedData()
+		a.bufferWait.Waitify(&syncx.WaitOption{
+			ConditionFn: func() bool {
+				return !a.allSourcesEneded() && !a.hasQueuedData()
+			},
 		})
 	}
 	if a.allSourcesEneded() && !a.hasQueuedData() {
