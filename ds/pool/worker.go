@@ -14,7 +14,7 @@ func NewWorkerPool[K any](maxWorkers int) *WorkerPool[K] {
 
 		workers: make([]*Worker[K], maxWorkers),
 
-		loadCond:  syncx.NewCondCh(&sync.Mutex{}),
+		loadCond:  syncx.NewCondx(&sync.Mutex{}),
 		loadQueue: queue.NewQueue[*job[K]](),
 	}
 
@@ -34,7 +34,7 @@ type WorkerPool[K any] struct {
 	workers []*Worker[K] // for shutting down
 	quit    bool
 
-	loadCond  *syncx.CondCh
+	loadCond  *syncx.Condx
 	loadQueue *queue.Queue[*job[K]]
 }
 

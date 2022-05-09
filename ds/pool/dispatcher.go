@@ -13,7 +13,7 @@ func NewDispatchPool[K any](maxWorkers int) *DispatcherPool[K] {
 		poolBasic:      newPoolBasic[K](),
 		idleDispatcher: int32(maxWorkers),
 
-		workerCond: syncx.NewCondCh(&sync.Mutex{}),
+		workerCond: syncx.NewCondx(&sync.Mutex{}),
 		jobQueue:   queue.NewQueue[*job[K]](),
 	}
 
@@ -29,7 +29,7 @@ type DispatcherPool[K any] struct {
 	*poolBasic[K]
 
 	pool           sync.Pool
-	workerCond     *syncx.CondCh
+	workerCond     *syncx.Condx
 	idleDispatcher int32
 
 	callbackFn func(id uint64, val K)

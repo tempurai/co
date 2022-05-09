@@ -2,27 +2,27 @@ package syncx
 
 import "sync"
 
-type CondCh struct {
+type Condx struct {
 	*sync.Cond
 }
 
-func NewCondCh(mux *sync.Mutex) *CondCh {
-	return &CondCh{Cond: sync.NewCond(mux)}
+func NewCondx(mux *sync.Mutex) *Condx {
+	return &Condx{Cond: sync.NewCond(mux)}
 }
 
-func (c *CondCh) Signalify(fn func()) {
+func (c *Condx) Signalify(fn func()) {
 	CondSignal(c.Cond, fn)
 }
 
-func (c *CondCh) Broadcastify(fn func()) {
+func (c *Condx) Broadcastify(fn func()) {
 	CondBroadcast(c.Cond, fn)
 }
 
-func (c *CondCh) Waitify(fn1 func() bool, fn2 func()) {
+func (c *Condx) Waitify(fn1 func() bool, fn2 func()) {
 	CondWaitWrap(c.Cond, fn1, fn2)
 }
 
-func (c *CondCh) WaitCh(fn func() bool) <-chan struct{} {
+func (c *Condx) WaitCh(fn func() bool) <-chan struct{} {
 	ch := chanPool.Get().(chan struct{})
 	SafeGo(func() {
 		c.Cond.L.Lock()
