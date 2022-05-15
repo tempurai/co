@@ -11,13 +11,13 @@ func TestWorkerPool(t *testing.T) {
 	convey.Convey("given a sequential tasks", t, func() {
 		markers := make([]bool, 1000)
 
-		p := pool.NewWorkerPool[any](10)
+		p := pool.NewWorkerPool[int](10)
 
 		for i := 0; i < 1000; i++ {
 			func(idx int) {
-				p.AddJob(func() any {
+				p.AddJob(func() int {
 					markers[idx] = true
-					return nil
+					return idx
 				})
 			}(i)
 		}

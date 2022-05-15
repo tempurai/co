@@ -1,6 +1,8 @@
 package syncx
 
-import "sync"
+import (
+	"sync"
+)
 
 type Condx struct {
 	*sync.Cond

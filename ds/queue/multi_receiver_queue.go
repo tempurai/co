@@ -95,6 +95,9 @@ func (q *MultiReceiverQueue[K]) dequeue(r *QueueReceiver[K]) K {
 				cas(&q.tail, tail, next)
 
 			} else if next.dequeued == r.receiver {
+				if next == nil { // is queue empty?
+					return *new(K)
+				}
 				cas(&q.head, head, next)
 				q.purgeNode(head) // head is dead, put back to pool
 
@@ -103,6 +106,9 @@ func (q *MultiReceiverQueue[K]) dequeue(r *QueueReceiver[K]) K {
 				rnext := load[K](&rhead.next)
 
 				if rhead == load[K](&r.node) {
+					if rnext == nil { // is queue empty?
+						return *new(K)
+					}
 					v := rnext.value
 
 					if cas(&r.node, rhead, rnext) {
