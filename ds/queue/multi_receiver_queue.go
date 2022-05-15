@@ -98,9 +98,9 @@ func (q *MultiReceiverQueue[K]) dequeue(r *QueueReceiver[K]) K {
 				if next == nil { // is queue empty?
 					return *new(K)
 				}
-				cas(&q.head, head, next)
-				q.purgeNode(head) // head is dead, put back to pool
-
+				if cas(&q.head, head, next) {
+					q.purgeNode(head) // head is dead, put back to pool
+				}
 			} else {
 				rhead := load[K](&r.node)
 				rnext := load[K](&rhead.next)

@@ -8,7 +8,7 @@ type Condx struct {
 	*sync.Cond
 }
 
-func NewCondx(mux *sync.Mutex) *Condx {
+func NewCondx(mux sync.Locker) *Condx {
 	return &Condx{Cond: sync.NewCond(mux)}
 }
 

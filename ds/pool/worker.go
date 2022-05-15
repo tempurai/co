@@ -1,7 +1,8 @@
 package pool
 
 import (
-	"sync"
+	"runtime"
+	"sync/atomic"
 
 	"go.tempura.ink/co/ds/queue"
 	syncx "go.tempura.ink/co/internal/syncx"
@@ -11,9 +12,7 @@ func NewWorkerPool[K any](maxWorkers int) *WorkerPool[K] {
 	p := &WorkerPool[K]{
 		poolBasic: newPoolBasic[K](),
 
-		workers: make([]*Worker[K], maxWorkers),
-
-		loadCond:  syncx.NewCondx(&sync.Mutex{}),
+		workers:   make([]*Worker[K], maxWorkers),
 		loadQueue: queue.NewQueue[*job[K]](),
 	}
 
@@ -28,11 +27,10 @@ func NewWorkerPool[K any](maxWorkers int) *WorkerPool[K] {
 type WorkerPool[K any] struct {
 	*poolBasic[K]
 
-	workers []*Worker[K] // for shutting down
-	quit    bool
+	workers []*Worker[K]
 
-	loadCond  *syncx.Condx
-	loadQueue *queue.Queue[*job[K]]
+	pendingJob uint32
+	loadQueue  *queue.Queue[*job[K]]
 }
 
 func (p *WorkerPool[K]) AddJobAt(seq uint64, fn func() K) uint64 {
@@ -41,27 +39,21 @@ func (p *WorkerPool[K]) AddJobAt(seq uint64, fn func() K) uint64 {
 	load := p.jobCache.Get().(*job[K])
 	load.fn, load.seq = fn, seq
 
-	p.loadCond.Signalify(&syncx.SignalOption{
-		PreProcessFn: func() {
-			p.loadQueue.Enqueue(load)
-		},
-	})
+	p.loadQueue.Enqueue(load)
+	atomic.AddUint32(&p.pendingJob, 1)
 
 	return seq
 }
 
 func (p *WorkerPool[K]) AddJob(fn func() K) uint64 {
-	return p.AddJobAt(p.ReserveSeq(), fn)
+	s := p.ReserveSeq()
+	return p.AddJobAt(s, fn)
 }
 
 func (p *WorkerPool[K]) Stop() {
-	p.loadCond.Broadcastify(&syncx.BroadcastOption{
-		PreProcessFn: func() {
-			for _, worker := range p.workers {
-				worker.quit = true
-			}
-		}},
-	)
+	for _, worker := range p.workers {
+		worker.quit = true
+	}
 }
 
 type Worker[K any] struct {
@@ -80,22 +72,27 @@ func NewWorker[K any](p *WorkerPool[K]) *Worker[K] {
 func (w *Worker[K]) startListening() {
 	syncx.SafeGo(func() {
 		for {
-			var load *job[K]
-
-			w.pool.loadCond.Waitify(&syncx.WaitOption{
-				ConditionFn: func() bool {
-					return !w.quit && w.pool.loadQueue.IsEmpty()
-				},
-				PostProcessFn: func() {
-					load = w.pool.loadQueue.Dequeue()
-				},
-			})
+			yeildCost := 1
+			for !w.quit {
+				currentPendingJob := w.pool.pendingJob
+				if currentPendingJob > 0 {
+					if atomic.CompareAndSwapUint32(&w.pool.pendingJob, currentPendingJob, currentPendingJob-1) {
+						break
+					}
+				}
+				for i := 0; i < yeildCost; i++ {
+					runtime.Gosched()
+				}
+				yeildCost <<= 1
+			}
 
 			if w.quit {
 				return
 			}
 
+			var load *job[K] = w.pool.loadQueue.Dequeue()
 			val := load.fn()
+
 			w.pool.callCallback(load.seq, val)
 
 			w.pool.jobCache.Put(load)
