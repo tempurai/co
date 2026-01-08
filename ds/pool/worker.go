@@ -12,7 +12,7 @@ func NewWorkerPool[K any](maxWorkers int) *WorkerPool[K] {
 	p := &WorkerPool[K]{
 		poolBasic: newPoolBasic[K](),
 
-		workers:   make([]*Worker[K], maxWorkers),
+		workers:   make([]*Worker[K], 0, maxWorkers),
 		loadQueue: queue.NewQueue[*job[K]](),
 	}
 
