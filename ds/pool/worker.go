@@ -74,7 +74,7 @@ func (w *Worker[K]) startListening() {
 		for {
 			yeildCost := 1
 			for !w.quit {
-				currentPendingJob := w.pool.pendingJob
+				currentPendingJob := atomic.LoadUint32(&w.pool.pendingJob)
 				if currentPendingJob > 0 {
 					if atomic.CompareAndSwapUint32(&w.pool.pendingJob, currentPendingJob, currentPendingJob-1) {
 						break

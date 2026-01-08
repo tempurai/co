@@ -51,6 +51,8 @@ func (q *MultiReceiverQueue[K]) Count() int {
 func (q *MultiReceiverQueue[K]) Enqueue(v K) {
 	n := q.nodeCache.Get().(*node[K])
 	n.value = v
+	atomic.StoreUint32(&n.dequeued, 0)
+	atomic.StorePointer(&n.next, nil)
 
 	for {
 		tail := load[K](&q.tail)
@@ -72,7 +74,8 @@ func (q *MultiReceiverQueue[K]) Enqueue(v K) {
 
 func (q *MultiReceiverQueue[K]) purgeNode(n *node[K]) {
 	atomic.AddInt32(&q.size, -1)
-	n.dequeued, n.next = 0, nil
+	atomic.StoreUint32(&n.dequeued, 0)
+	atomic.StorePointer(&n.next, nil)
 	q.nodeCache.Put(n) // head is dead, put back to pool
 }
 
@@ -94,7 +97,7 @@ func (q *MultiReceiverQueue[K]) dequeue(r *QueueReceiver[K]) K {
 				// tail is falling behind.  try to advance it
 				cas(&q.tail, tail, next)
 
-			} else if next.dequeued == r.receiver {
+			} else if atomic.LoadUint32(&next.dequeued) == r.receiver {
 				if next == nil { // is queue empty?
 					return *new(K)
 				}
@@ -109,9 +112,9 @@ func (q *MultiReceiverQueue[K]) dequeue(r *QueueReceiver[K]) K {
 					if rnext == nil { // is queue empty?
 						return *new(K)
 					}
-					v := rnext.value
 
 					if cas(&r.node, rhead, rnext) {
+						v := rnext.value // Read value after successful CAS
 						if atomic.AddUint32(&rnext.dequeued, 1) == q.receiver {
 							// where the receiver is the last receiver in the queue
 							if cas(&q.head, rhead, rnext) {
