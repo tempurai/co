@@ -4,7 +4,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	syncx "go.tempura.ink/co/internal/syncx"
+	syncx "github.com/tempurai/co/internal/syncx"
 )
 
 type poolBasic[K any] struct {

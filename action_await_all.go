@@ -3,7 +3,7 @@ package co
 import (
 	"sync"
 
-	syncx "go.tempura.ink/co/internal/syncx"
+	syncx "github.com/tempurai/co/internal/syncx"
 )
 
 type actionAwait[R any] struct {

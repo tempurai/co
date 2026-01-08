@@ -10,8 +10,8 @@ import (
 
 	"github.com/Jeffail/tunny"
 	"github.com/panjf2000/ants/v2"
-	"go.tempura.ink/co"
-	"go.tempura.ink/co/ds/pool"
+	"github.com/tempurai/co"
+	"github.com/tempurai/co/ds/pool"
 )
 
 var (

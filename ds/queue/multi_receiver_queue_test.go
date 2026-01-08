@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/smartystreets/goconvey/convey"
-	"go.tempura.ink/co/ds/queue"
-	"golang.org/x/exp/slices"
+	"github.com/tempurai/co/ds/queue"
+	"slices"
 )
 
 func TestMultiReceiverQueue(t *testing.T) {

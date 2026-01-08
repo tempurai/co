@@ -1,8 +1,11 @@
 package co
 
-import (
-	"golang.org/x/exp/constraints"
-)
+type Ordered interface {
+	~int | ~int8 | ~int16 | ~int32 | ~int64 |
+		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr |
+		~float32 | ~float64 |
+		~string
+}
 
 func Copy[T any](v *T) *T {
 	v2 := *v
@@ -16,7 +19,7 @@ func CastOrNil[T any](el any) T {
 	return el.(T)
 }
 
-func EvertGET[T constraints.Ordered](ele []T, target T) bool {
+func EvertGET[T Ordered](ele []T, target T) bool {
 	for _, e := range ele {
 		if e <= target {
 			return false
