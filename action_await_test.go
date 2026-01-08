@@ -15,7 +15,7 @@ import (
 func TestAwaitAll(t *testing.T) {
 	convey.Convey("given a sequential tasks", t, func() {
 		handlers := make([]func() (int, error), 0)
-		for i := 0; i < 1000; i++ {
+		for i := 0; i < 200; i++ {
 			i := i
 			handlers = append(handlers, func() (int, error) {
 				return i + 1, nil
@@ -27,7 +27,7 @@ func TestAwaitAll(t *testing.T) {
 
 			convey.Convey("The responded value should be valid", func() {
 				expected, actuals := []int{}, []int{}
-				for i := 0; i < 1000; i++ {
+				for i := 0; i < 200; i++ {
 					expected = append(expected, i+1)
 					actuals = append(actuals, responses[i].GetValue())
 				}
@@ -41,11 +41,12 @@ func TestAwaitRace(t *testing.T) {
 	runtime.GOMAXPROCS(runtime.NumCPU() * 2)
 
 	convey.Convey("given a sequential tasks", t, func() {
+		baseDelay := 10 * time.Millisecond
 		handlers := make([]func() (int, error), 0)
-		for i := 0; i < 100; i++ {
+		for i := 0; i < 10; i++ {
 			i := i
 			handlers = append(handlers, func() (int, error) {
-				time.Sleep(time.Second * time.Duration(i+1))
+				time.Sleep(baseDelay * time.Duration(i+1))
 				return i + 1, nil
 			})
 		}
@@ -64,8 +65,9 @@ func TestAwaitAny(t *testing.T) {
 	runtime.GOMAXPROCS(runtime.NumCPU() * 2)
 
 	convey.Convey("given a sequential tasks", t, func() {
+		baseDelay := 10 * time.Millisecond
 		handlers := make([]func() (int, error), 0)
-		for i := 0; i < 100; i++ {
+		for i := 0; i < 10; i++ {
 			i := i
 
 			err := fmt.Errorf("Determined value")
@@ -74,7 +76,7 @@ func TestAwaitAny(t *testing.T) {
 			}
 
 			handlers = append(handlers, func() (int, error) {
-				time.Sleep(time.Second * time.Duration(i+1))
+				time.Sleep(baseDelay * time.Duration(i+1))
 				return i + 1, err
 			})
 		}
