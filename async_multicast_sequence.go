@@ -3,14 +3,15 @@ package co
 import (
 	"log"
 	"sync"
+	"sync/atomic"
 
-	"go.tempura.ink/co/ds/queue"
-	syncx "go.tempura.ink/co/internal/syncx"
+	"github.com/tempurai/co/ds/queue"
+	syncx "github.com/tempurai/co/internal/syncx"
 )
 
 type AsyncMulticastSequence[R any] struct {
 	previousIterator Iterator[R]
-	sourceEnded      bool
+	sourceEnded      uint32
 	runOnce          sync.Once
 
 	bufferedQueue *queue.MultiReceiverQueue[R]
@@ -38,7 +39,7 @@ func (a *AsyncMulticastSequence[T]) startListening() {
 				})
 			}
 			a.bufferWait.Broadcastify(&syncx.BroadcastOption{
-				PreProcessFn: func() { a.sourceEnded = true },
+				PreProcessFn: func() { atomic.StoreUint32(&a.sourceEnded, 1) },
 			})
 		})
 	})
@@ -78,12 +79,12 @@ type asyncMulticastSequenceIterator[R any] struct {
 func (it *asyncMulticastSequenceIterator[R]) next() *Optional[R] {
 	it.bufferWait.Waitify(&syncx.WaitOption{
 		ConditionFn: func() bool {
-			return !it.sourceEnded && it.receiver.IsEmpty()
+			return atomic.LoadUint32(&it.sourceEnded) == 0 && it.receiver.IsEmpty()
 		},
 	})
 
-	log.Println("it.sourceEnded && it.receiver.IsEmpty() ", it.sourceEnded, it.receiver.IsEmpty())
-	if it.sourceEnded && it.receiver.IsEmpty() {
+	log.Println("it.sourceEnded && it.receiver.IsEmpty() ", atomic.LoadUint32(&it.sourceEnded) == 1, it.receiver.IsEmpty())
+	if atomic.LoadUint32(&it.sourceEnded) == 1 && it.receiver.IsEmpty() {
 		return NewOptionalEmpty[R]()
 	}
 

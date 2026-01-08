@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/smartystreets/goconvey/convey"
-	"go.tempura.ink/co"
+	"github.com/tempurai/co"
 )
 
 func TestAsyncMapSequence(t *testing.T) {

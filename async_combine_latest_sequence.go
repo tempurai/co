@@ -3,8 +3,8 @@ package co
 import (
 	"sync"
 
-	"go.tempura.ink/co/ds/queue"
-	syncx "go.tempura.ink/co/internal/syncx"
+	"github.com/tempurai/co/ds/queue"
+	syncx "github.com/tempurai/co/internal/syncx"
 )
 
 type asyncCombineLatestFn[R any] func([]any) R
@@ -149,7 +149,10 @@ func (a *asyncCombineLatestSequenceIterator[R]) pass() {
 	}
 
 	for i := range a.its {
-		if a.statusData[i].sourceEnded {
+		a.mux.Lock()
+		sourceEnded := a.statusData[i].sourceEnded
+		a.mux.Unlock()
+		if sourceEnded {
 			continue
 		}
 		if !a.statusData[i].asyncData.IsIdel() {

@@ -2,9 +2,10 @@ package co
 
 import (
 	"sync"
+	"sync/atomic"
 
-	"go.tempura.ink/co/ds/queue"
-	syncx "go.tempura.ink/co/internal/syncx"
+	"github.com/tempurai/co/ds/queue"
+	syncx "github.com/tempurai/co/internal/syncx"
 )
 
 type AsyncAnySequence[R any] struct {
@@ -37,14 +38,14 @@ type asyncAnySequenceIterator[R any] struct {
 
 	*AsyncAnySequence[R]
 	dataQueue    *queue.Queue[R]
-	sourceEnded  bool
+	sourceEnded  uint32
 	waitCond     *syncx.Condx
 	completedCh  chan bool
 	ifProcessing syncx.AtomicBool
 }
 
 func (it *asyncAnySequenceIterator[R]) next() *Optional[R] {
-	if it.sourceEnded {
+	if atomic.LoadUint32(&it.sourceEnded) == 1 {
 		return NewOptionalEmpty[R]()
 	}
 	if it.dataQueue.Len() != 0 {
@@ -68,7 +69,7 @@ func (it *asyncAnySequenceIterator[R]) next() *Optional[R] {
 			return
 		}
 		it.waitCond.Broadcastify(&syncx.BroadcastOption{
-			PreProcessFn: func() { it.sourceEnded = true }},
+			PreProcessFn: func() { atomic.StoreUint32(&it.sourceEnded, 1) }},
 		)
 	}()
 
@@ -86,11 +87,11 @@ func (it *asyncAnySequenceIterator[R]) next() *Optional[R] {
 
 	it.waitCond.Waitify(&syncx.WaitOption{
 		ConditionFn: func() bool {
-			return !it.sourceEnded && it.dataQueue.Len() == 0
+			return atomic.LoadUint32(&it.sourceEnded) == 0 && it.dataQueue.Len() == 0
 		},
 	})
 
-	if it.sourceEnded {
+	if atomic.LoadUint32(&it.sourceEnded) == 1 {
 		return NewOptionalEmpty[R]()
 	}
 	return OptionalOf(it.dataQueue.Dequeue())

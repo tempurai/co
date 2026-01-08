@@ -1,4 +1,4 @@
-module go.tempura.ink/co
+module github.com/tempurai/co
 
 go 1.24.0
 

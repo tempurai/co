@@ -2,10 +2,11 @@ package co
 
 import (
 	"sync"
+	"sync/atomic"
 	"time"
 
-	"go.tempura.ink/co/ds/queue"
-	syncx "go.tempura.ink/co/internal/syncx"
+	"github.com/tempurai/co/ds/queue"
+	syncx "github.com/tempurai/co/internal/syncx"
 )
 
 type AsyncDebounceSequence[R any] struct {
@@ -54,7 +55,7 @@ type asyncDebounceSequenceIterator[R any] struct {
 	bufferedData *queue.Queue[R]
 
 	runOnce     sync.Once
-	sourceEnded bool
+	sourceEnded uint32
 	bufferWait  *syncx.Condx
 }
 
@@ -85,7 +86,7 @@ func (it *asyncDebounceSequenceIterator[R]) startBuffer() {
 				}
 			}
 			it.bufferWait.Broadcastify(&syncx.BroadcastOption{
-				PreProcessFn: func() { it.sourceEnded = true },
+				PreProcessFn: func() { atomic.StoreUint32(&it.sourceEnded, 1) },
 			})
 		})
 	})
@@ -96,11 +97,11 @@ func (it *asyncDebounceSequenceIterator[R]) next() *Optional[R] {
 
 	it.bufferWait.Waitify(&syncx.WaitOption{
 		ConditionFn: func() bool {
-			return !it.sourceEnded && it.bufferedData.Len() == 0
+			return atomic.LoadUint32(&it.sourceEnded) == 0 && it.bufferedData.Len() == 0
 		},
 	})
 
-	if it.sourceEnded && it.bufferedData.Len() == 0 {
+	if atomic.LoadUint32(&it.sourceEnded) == 1 && it.bufferedData.Len() == 0 {
 		return NewOptionalEmpty[R]()
 	}
 

@@ -2,9 +2,10 @@ package co
 
 import (
 	"sync"
+	"sync/atomic"
 	"time"
 
-	syncx "go.tempura.ink/co/internal/syncx"
+	syncx "github.com/tempurai/co/internal/syncx"
 )
 
 type AsyncBufferTimeSequence[R any, T []R] struct {
@@ -47,7 +48,7 @@ type asyncBufferTimeSequenceIterator[R any, T []R] struct {
 	bufferedData *List[T]
 
 	runOnce     sync.Once
-	sourceEnded bool
+	sourceEnded uint32
 	bufferWait  *syncx.Condx
 }
 
@@ -76,7 +77,7 @@ func (it *asyncBufferTimeSequenceIterator[R, T]) startBuffer() {
 				}
 			}
 			it.bufferWait.Broadcastify(&syncx.BroadcastOption{
-				PreProcessFn: func() { it.sourceEnded = true }},
+				PreProcessFn: func() { atomic.StoreUint32(&it.sourceEnded, 1) }},
 			)
 		})
 	})
@@ -87,11 +88,11 @@ func (it *asyncBufferTimeSequenceIterator[R, T]) next() *Optional[T] {
 
 	it.bufferWait.Waitify(&syncx.WaitOption{
 		ConditionFn: func() bool {
-			return !it.sourceEnded && (it.bufferedData.len() == 0 || !it.intervalPassed())
+			return atomic.LoadUint32(&it.sourceEnded) == 0 && (it.bufferedData.len() == 0 || !it.intervalPassed())
 		},
 	})
 
-	if it.sourceEnded && it.bufferedData.len() == 0 {
+	if atomic.LoadUint32(&it.sourceEnded) == 1 && it.bufferedData.len() == 0 {
 		return NewOptionalEmpty[T]()
 	}
 

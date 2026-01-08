@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/smartystreets/goconvey/convey"
-	"go.tempura.ink/co"
+	"github.com/tempurai/co"
 	"golang.org/x/exp/slices"
 )
 

@@ -4,8 +4,8 @@ import (
 	"runtime"
 	"sync/atomic"
 
-	"go.tempura.ink/co/ds/queue"
-	syncx "go.tempura.ink/co/internal/syncx"
+	"github.com/tempurai/co/ds/queue"
+	syncx "github.com/tempurai/co/internal/syncx"
 )
 
 func NewWorkerPool[K any](maxWorkers int) *WorkerPool[K] {

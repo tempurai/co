@@ -1,14 +1,16 @@
 package co
 
 import (
-	syncx "go.tempura.ink/co/internal/syncx"
+	"sync/atomic"
+
+	syncx "github.com/tempurai/co/internal/syncx"
 )
 
 type AsyncSubject[R any] struct {
 	*asyncSequence[R]
 
 	latestDataCh chan *data[R]
-	sourceEnded  bool
+	sourceEnded  uint32
 }
 
 func NewAsyncSubject[R any]() *AsyncSubject[R] {
@@ -36,7 +38,7 @@ func (c *AsyncSubject[R]) Error(err error) *AsyncSubject[R] {
 }
 
 func (c *AsyncSubject[R]) Complete() *AsyncSubject[R] {
-	c.sourceEnded = true
+	atomic.StoreUint32(&c.sourceEnded, 1)
 	syncx.SafeClose(c.latestDataCh)
 	return c
 }
@@ -56,7 +58,7 @@ type asyncSubjectIterator[R any] struct {
 }
 
 func (it *asyncSubjectIterator[R]) next() *Optional[R] {
-	if it.sourceEnded {
+	if atomic.LoadUint32(&it.sourceEnded) == 1 {
 		return NewOptionalEmpty[R]()
 	}
 

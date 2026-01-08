@@ -28,7 +28,7 @@ However, even though I have mentioned a lot of ReactiveX patterns above. I do no
 
 ## APIs
 
-https://godoc.org/go.tempura.ink/co
+https://godoc.org/github.com/tempurai/co
 
 ### Promising functions:
 
@@ -81,13 +81,13 @@ https://godoc.org/go.tempura.ink/co
 Navigate to your project base and run:
 
 ```bash
-go get go.tempura.ink/co
+go get github.com/tempurai/co
 ```
 
 If you're behind a firewall or need to fetch without a proxy:
 
 ```bash
-GOSUMDB=off GOPROXY=direct go get go.tempura.ink/co
+GOSUMDB=off GOPROXY=direct go get github.com/tempurai/co
 ```
 
 **Requirements**: Go 1.22 or later
@@ -178,7 +178,7 @@ Pool benchmark
 ```golang
 goos: darwin
 goarch: amd64
-pkg: go.tempura.ink/co/benchmark
+pkg: github.com/tempurai/co/benchmark
 cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
 BenchmarkUnmarshalLargeJSONWithSequence-12                    50          45000332 ns/op        11435352 B/op     137058 allocs/op
 BenchmarkUnmarshalLargeJSONWithAwaitAll-12                    50           9901537 ns/op        11207428 B/op     134323 allocs/op
@@ -187,5 +187,5 @@ BenchmarkUnmarshalLargeJSONWithAnts-12                        50          100755
 BenchmarkUnmarshalLargeJSONWithWorkPool-12                    50           9658117 ns/op        11206981 B/op     134322 allocs/op
 BenchmarkUnmarshalLargeJSONWithDispatchPool-12                50          10893923 ns/op        11207039 B/op     134322 allocs/op
 PASS
-ok      go.tempura.ink/co/benchmark     6.793s
+ok      github.com/tempurai/co/benchmark     6.793s
 ```
