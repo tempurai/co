@@ -86,6 +86,12 @@ If you are in an environment without access to the public Go proxy, you can fetc
 GOPROXY=direct go get github.com/tempurai/co
 ```
 
+If module checksum verification is blocked in your environment, you can also disable it:
+
+```bash
+GOPROXY=direct GOSUMDB=off go get github.com/tempurai/co
+```
+
 ## Examples
 
 ### Parallel
