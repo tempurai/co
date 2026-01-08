@@ -68,7 +68,7 @@ func (d *parallel[R]) receiveValue(seq uint64, val R) {
 
 func (d *parallel[R]) GetData() []R {
 	if !d.ifPersistentData {
-		panic("co/paralle error when get data: persistent data mode is not set")
+		panic("co/parallel error when get data: persistent data mode is not set")
 	}
 	return d.storedData.list
 }

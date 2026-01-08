@@ -78,7 +78,19 @@ https://godoc.org/go.tempura.ink/co
 
 ## Getting started
 
-Navigate to your project base and `go get go.tempura.ink/co`
+Navigate to your project base and run:
+
+```bash
+go get go.tempura.ink/co
+```
+
+If you're behind a firewall or need to fetch without a proxy:
+
+```bash
+GOSUMDB=off GOPROXY=direct go get go.tempura.ink/co
+```
+
+**Requirements**: Go 1.22 or later
 
 ## Examples
 
@@ -155,7 +167,7 @@ go func() {
 
 result := [][]int{}
 for data := range bList.Iter() {
-    result = append(acturesultal, data)
+    result = append(result, data)
 }
 ```
 
