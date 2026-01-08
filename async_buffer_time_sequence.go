@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	syncx "go.tempura.ink/co/internal/syncx"
+	syncx "github.com/tempurai/co/internal/syncx"
 )
 
 type AsyncBufferTimeSequence[R any, T []R] struct {
@@ -46,9 +46,11 @@ type asyncBufferTimeSequenceIterator[R any, T []R] struct {
 	previousTime time.Time
 	bufferedData *List[T]
 
-	runOnce     sync.Once
-	sourceEnded bool
-	bufferWait  *syncx.Condx
+	runOnce        sync.Once
+	sourceEnded    bool
+	bufferWait     *syncx.Condx
+	tickerStop     chan struct{}
+	tickerStopOnce sync.Once
 }
 
 func (it *asyncBufferTimeSequenceIterator[R, T]) intervalPassed() bool {
@@ -58,6 +60,7 @@ func (it *asyncBufferTimeSequenceIterator[R, T]) intervalPassed() bool {
 func (it *asyncBufferTimeSequenceIterator[R, T]) startBuffer() {
 	it.runOnce.Do(func() {
 		it.previousTime = time.Now()
+		it.tickerStop = make(chan struct{})
 
 		syncx.SafeGo(func() {
 			for op := it.previousIterator.next(); op.valid; op = it.previousIterator.next() {
@@ -71,14 +74,38 @@ func (it *asyncBufferTimeSequenceIterator[R, T]) startBuffer() {
 
 				if reachedInterval {
 					it.bufferWait.Broadcastify(&syncx.BroadcastOption{
-						PreProcessFn: func() { it.previousTime = time.Now() }},
-					)
+						PreProcessFn: func() { it.previousTime = time.Now() },
+					})
 				}
 			}
 			it.bufferWait.Broadcastify(&syncx.BroadcastOption{
-				PreProcessFn: func() { it.sourceEnded = true }},
-			)
+				PreProcessFn: func() {
+					it.sourceEnded = true
+					it.stopTicker()
+				},
+			})
 		})
+
+		if it.interval > 0 {
+			syncx.SafeGo(func() {
+				ticker := time.NewTicker(it.interval)
+				defer ticker.Stop()
+				for {
+					select {
+					case <-ticker.C:
+						it.bufferWait.Broadcastify(&syncx.BroadcastOption{})
+					case <-it.tickerStop:
+						return
+					}
+				}
+			})
+		}
+	})
+}
+
+func (it *asyncBufferTimeSequenceIterator[R, T]) stopTicker() {
+	it.tickerStopOnce.Do(func() {
+		close(it.tickerStop)
 	})
 }
 

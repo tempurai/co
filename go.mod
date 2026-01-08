@@ -1,10 +1,9 @@
-module go.tempura.ink/co
+module github.com/tempurai/co
 
-go 1.18
+go 1.22
 
 require (
 	github.com/smartystreets/goconvey v1.7.2
-	golang.org/x/exp v0.0.0-20220328175248-053ad81199eb
 )
 
 require (

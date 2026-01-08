@@ -1,6 +1,6 @@
 package co
 
-import syncx "go.tempura.ink/co/internal/syncx"
+import syncx "github.com/tempurai/co/internal/syncx"
 
 type AsyncCompactedSequence[R comparable] struct {
 	*asyncSequence[R]

@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/smartystreets/goconvey/convey"
-	"go.tempura.ink/co"
+	"github.com/tempurai/co"
 )
 
 type vData struct{ v int }

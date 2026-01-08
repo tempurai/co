@@ -1,7 +1,7 @@
 package co
 
 import (
-	syncx "go.tempura.ink/co/internal/syncx"
+	syncx "github.com/tempurai/co/internal/syncx"
 )
 
 type AsyncChannel[R any] struct {

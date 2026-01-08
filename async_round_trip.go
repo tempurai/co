@@ -4,8 +4,8 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"go.tempura.ink/co/ds/pool"
-	syncx "go.tempura.ink/co/internal/syncx"
+	"github.com/tempurai/co/ds/pool"
+	syncx "github.com/tempurai/co/internal/syncx"
 )
 
 type seqItem[R any] struct {
